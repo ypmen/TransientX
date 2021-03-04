@@ -375,7 +375,7 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
             sp.maxw = stoi(parameters[6]);
 
             sp.rfilist.clear();
-            for (auto opt=parameters.begin()+9; opt!=parameters.end(); ++opt)
+            for (auto opt=parameters.begin()+7; opt!=parameters.end(); ++opt)
             {
                 if (*opt=="mask" or *opt=="kadaneF" or *opt=="kadaneT")
                 {
