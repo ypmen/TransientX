@@ -372,7 +372,7 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
             sp.ddm = stod(parameters[3]);
             sp.ndm = stol(parameters[4]);
             sp.snrloss = stof(parameters[5]);
-            sp.maxw = stoi(parameters[6]);
+            sp.maxw = stof(parameters[6]);
 
             sp.rfilist.clear();
             for (auto opt=parameters.begin()+7; opt!=parameters.end(); ++opt)
