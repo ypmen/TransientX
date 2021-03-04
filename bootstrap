@@ -1,0 +1,19 @@
+#!/bin/sh
+
+if autoreconf --install --force; then
+
+  echo
+  echo "Bootstrap complete.  You can now run the configure script."
+  echo
+  exit 0
+
+else
+
+  echo
+  echo "An error occured while running the GNU autotools."
+  echo "Please see http://psrchive.sourceforge.net/third/autotools"
+  echo
+  exit -1
+
+fi
+
