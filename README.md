@@ -14,3 +14,11 @@ TransientX is a one command line high performance transient search software.
 - ./configure --prefix=[install_path]
 - make
 - make install
+
+## Usage
+
+- transientx -h for help
+
+## Example
+
+[exmaple](https://gitlab.mpcdf.mpg.de/ypmen/TransientX/-/blob/master/examples/example.png)
