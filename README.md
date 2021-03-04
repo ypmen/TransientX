@@ -21,4 +21,4 @@ TransientX is a one command line high performance transient search software.
 
 ## Example
 
-[exmaple](https://gitlab.mpcdf.mpg.de/ypmen/TransientX/-/blob/master/examples/example.png)
+![exmaple](examples/example.png)
