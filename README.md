@@ -11,7 +11,7 @@ TransientX is a one command line high performance transient search software.
 ## Install
 
 - ./bootstrap
-- ./configure --prefix=[install_path]
+- ./configure --prefix=[install_path] LDFLAGS="-L/path_to_sofa" CPPFLAGS="-I/path_to_sofa"
 - make
 - make install
 
