@@ -57,7 +57,7 @@ private:
 	T distence(vector<T> &point1, vector<T> &point2)
 	{
 		long int n = point1.size();
-		long int dis = 0;
+		T dis = 0;
 		for (long int i=0; i<n; i++)
 		{
 			dis += (point1[i]-point2[i])*(point1[i]-point2[i]);

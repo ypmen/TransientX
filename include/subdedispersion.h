@@ -27,8 +27,9 @@ namespace RealTime
         ~Subband();
         void prepare();
         void run(vector<float> &data);
-        void get_subdata(vector<float> &subdata, int idm) const;
-        void get_timdata(vector<float> &timdata, int idm) const;
+        void cache();
+        void get_subdata(vector<float> &subdata, int idm, bool overlaped=false) const;
+        void get_timdata(vector<float> &timdata, int idm, bool overlaped=false) const;
         void dumpsubdata(const string &rootname, int idm) const
         {
             ofstream outfile;
@@ -60,6 +61,7 @@ namespace RealTime
         bool inplace;
         string rootname;
         int ndump;
+        int noverlap;
         int nchans;
         int nsub;
         int ndm_per_sub;
@@ -77,6 +79,8 @@ namespace RealTime
         vector<float> buffer;
         vector<float> bufferT;
         vector<float> buffertim;
+        vector<float> cachetim;
+        vector<float> cachesub;
     };
 
     class SubbandDedispersion
@@ -86,16 +90,17 @@ namespace RealTime
         ~SubbandDedispersion();
         void prepare(DataBuffer<float> &databuffer);
         void run(DataBuffer<float> &databuffer, long int ns);
+        void cache(){sub.cache();}
         void preparedump();
         void rundump();
-        void get_subdata(vector<float> &subdata, int idm) const
+        void get_subdata(vector<float> &subdata, int idm, bool overlaped=false) const
         {
-            sub.get_subdata(subdata, idm);
+            sub.get_subdata(subdata, idm, overlaped);
         }
 
-        void get_timdata(vector<float> &timdata, int idm) const
+        void get_timdata(vector<float> &timdata, int idm, bool overlaped=false) const
         {
-            sub.get_timdata(timdata, idm);
+            sub.get_timdata(timdata, idm, overlaped);
         }
 
         void dumpsubdata(const string &rootname, int idm) const
@@ -114,11 +119,13 @@ namespace RealTime
         double dms;
         double ddm;
         int ndm;
+        double overlap;
     public:
         float mean;
         float var;
         long int counter;
-        long int offset;
+        int offset;
+        int noverlap;
         int nsubband;
         int nchans;
         long int nsamples;

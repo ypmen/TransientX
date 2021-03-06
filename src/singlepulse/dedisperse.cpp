@@ -40,9 +40,6 @@ int main(int argc, const char *argv[])
 	desc.add_options()
 			("help,h", "Help")
 			("verbose,v", "Print debug information")
-			("duplicate", "Search on 1/2 overlap data segment")
-			("drop", "Drop candidates with maximum search width")
-			("iqr", "Calculate variance and mean based on IQR")
 			("threads,t", value<unsigned int>()->default_value(1), "Number of threads")
 			("jump,j", value<vector<double>>()->multitoken()->default_value(vector<double>{0, 0}, "0, 0"), "Time jump at the beginning and end (s)")
 			("td", value<int>()->default_value(1), "Time downsample")
@@ -50,6 +47,7 @@ int main(int argc, const char *argv[])
 			("dms", value<double>()->default_value(0), "DM start")
 			("ddm", value<double>()->default_value(1), "DM step")
 			("ndm", value<int>()->default_value(200), "Number of DM")
+			("overlap", value<double>()->default_value(0), "Overlap ratio")
 			("ddplan", value<string>(), "Input ddplan file")
 			("thre", value<float>()->default_value(7), "S/N threshold")
 			("minw", value<float>()->default_value(1e-4), "Minimum pulse width (s)")
@@ -73,6 +71,8 @@ int main(int argc, const char *argv[])
 			("threKadaneT", value<float>()->default_value(7), "S/N threshold of KadaneT")
 			("source_name,s", value<string>()->default_value("J0000-00"), "Source name")
 			("rootname,o", value<string>()->default_value("J0000-00"), "Output rootname")
+			("drop", "Drop candidates with maximum search width")
+			("iqr", "Calculate variance and mean based on IQR")
 			("repeater", "Using 2D matched filter (under development)")
 			("cont", "Input files are contiguous")
 			("input,f", value<vector<string>>()->multitoken()->composing(), "Input files");
@@ -104,7 +104,6 @@ int main(int argc, const char *argv[])
 	}
 
 	bool contiguous = vm.count("cont");
-	bool duplicate = vm.count("duplicate");
 	repeater = vm.count("repeater");
 
 	num_threads = vm["threads"].as<unsigned int>();
@@ -218,8 +217,6 @@ int main(int argc, const char *argv[])
 
 	vector<SinglePulse> search1;
 	parse(vm, search1);
-	vector<SinglePulse> search2;
-	if (duplicate) parse(vm, search2);
 
 	vector<int> tds;
 	for (auto sp=search1.begin(); sp!=search1.end(); ++sp)
@@ -235,15 +232,6 @@ int main(int argc, const char *argv[])
 	databuf.tsamp = tsamp;
 	memcpy(&databuf.frequencies[0], it.frequencies, sizeof(double)*nchans);
 
-	/** duplicate */
-	DataBuffer<float> databuf2;
-	if (duplicate)
-	{
-		databuf2.resize(ndump, nchans);
-		databuf2.tsamp = tsamp;
-		memcpy(&databuf2.frequencies[0], it.frequencies, sizeof(double)*nchans);
-	}
-
 	long int nstart = jump[0]/tsamp;
 	long int nend = ntotal-jump[1]/tsamp;
 
@@ -257,17 +245,6 @@ int main(int argc, const char *argv[])
 		search1[k].src_raj = src_raj;
 		search1[k].src_dej = src_dej;
 		search1[k].prepare(databuf);
-
-		if (duplicate)
-		{
-			search2[k].tstart = tstart+(nstart+ndump/2)*tsamp/86400.;
-			search2[k].source_name = source_name;
-			search2[k].telescope = s_telescope;
-			search2[k].ibeam = ibeam;
-			search2[k].src_raj = src_raj;
-			search2[k].src_dej = src_dej;
-			search2[k].prepare(databuf2);
-		}
 	}
 
 	if (verbose == 1)
@@ -338,28 +315,6 @@ int main(int argc, const char *argv[])
 						(*sp).run(databuf);
 					}
                     bcnt1 = 0;
-				}
-
-				if (duplicate)
-				{
-					if (ntot >= ndump/2)
-					{
-						memcpy(&databuf2.buffer[0]+bcnt2*nchans, buffer, sizeof(float)*1*nchans);
-						bcnt2++;
-						ntot2++;
-
-						if (ntot2%ndump == 0)
-						{
-							for (auto sp=search2.begin(); sp!=search2.end(); ++sp)
-							{
-								(*sp).fileid = idxn+1;
-								(*sp).fname = fnames[n];
-								(*sp).verbose = verbose;
-								(*sp).run(databuf2);
-							}
-							bcnt2 = 0;
-						}
-					}
 				}
 
 				pcur += it.npol*it.nchan;

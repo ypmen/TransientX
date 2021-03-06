@@ -68,6 +68,7 @@ public:
     double dms;
     double ddm;
     long int ndm;
+    double overlap;
 
     //boxcar
     float minw;

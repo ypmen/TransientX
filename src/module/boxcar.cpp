@@ -139,7 +139,7 @@ void Boxcar::resize(long int ns, long int nd)
 
 void Boxcar::prepare(RealTime::SubbandDedispersion &dedisp)
 {
-	resize(dedisp.ndump, dedisp.ndm);
+	resize(dedisp.ndump+dedisp.noverlap, dedisp.ndm);
 	dms = dedisp.dms;
 	ddm = dedisp.ddm;
 	tsamp = dedisp.tsamp;
@@ -178,7 +178,7 @@ bool Boxcar::run(RealTime::SubbandDedispersion &dedisp, vector<int> &vwn, bool i
 void Boxcar::match(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &dedisp, bool iqr)
 {
     vector<float> tim;
-    dedisp.get_timdata(tim, idm);
+    dedisp.get_timdata(tim, idm, true);
 
 	int n = vwn.size();
 

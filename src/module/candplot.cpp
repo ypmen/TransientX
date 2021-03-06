@@ -44,8 +44,8 @@ void CandPlot::plot(const Cluster &cluster, const Boxcar &boxcar, const RealTime
         int wn = get<2>(candlist[k]);
         float S = get<3>(candlist[k]);
         float snr = S;
-        double mjd = tstart+(-dedisp.offset+boxcar.counter-boxcar.nsamples+isamp)*boxcar.tsamp/86400.;
-        double bmjd = tstart+(-dedisp.offset+boxcar.counter-boxcar.nsamples)*boxcar.tsamp/86400.;
+        double mjd = tstart+(-dedisp.offset+boxcar.counter-dedisp.ndump+isamp)*boxcar.tsamp/86400.;
+        double bmjd = tstart+(-dedisp.offset+boxcar.counter-dedisp.ndump)*boxcar.tsamp/86400.;
 
         long int size = cluster.candcluster[k].size();
         long int idm_min = 100000000;
@@ -119,8 +119,8 @@ void CandPlot::plot(const Cluster &cluster, const Boxcar &boxcar, const RealTime
         string figname = basename + ".png";
 
         vector<float> tim, sub;
-        dedisp.get_timdata(tim, idm);
-        dedisp.get_subdata(sub, idm);
+        dedisp.get_timdata(tim, idm, true);
+        dedisp.get_subdata(sub, idm, true);
         long int nsamples = tim.size();
         long int nchans = sub.size()/tim.size();
 
@@ -158,7 +158,7 @@ void CandPlot::plot(const Cluster &cluster, const Boxcar &boxcar, const RealTime
         {
             for (long int i=0; i<nsamples; i++)
             {
-                mxft[j*nsamples+i] = sub[j*dedisp.ndump + start_sample+i]/dedisp.fcnt[j];
+                mxft[j*nsamples+i] = sub[j*(dedisp.noverlap+dedisp.ndump) + start_sample+i]/dedisp.fcnt[j];
                 if (i>isamp-start_sample-wn and i<isamp-start_sample+wn)
                 {
                     vpf[j] += mxft[j*nsamples+i];

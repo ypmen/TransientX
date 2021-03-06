@@ -59,6 +59,8 @@ bool Cluster::run(Boxcar &boxcar, float threS, double radius_smearing, int kvalu
 	counter = boxcar.counter;
 	if (counter <= 0) return false;
 
+	tsamp = boxcar.tsamp;
+
 	candlist.clear();
 	candcluster.clear();
 	candstate.clear();

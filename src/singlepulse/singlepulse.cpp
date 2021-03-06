@@ -30,6 +30,7 @@ SinglePulse::SinglePulse()
     dms = 0;
     ddm = 1;
     ndm = 1000;
+    overlap = 0.;
     minw = 1e-4;
     maxw = 2e-2;
     snrloss = 0.1;
@@ -77,6 +78,7 @@ SinglePulse::SinglePulse(const SinglePulse &sp)
 	dms = sp.dms;
 	ddm = sp.ddm;
 	ndm = sp.ndm;
+    overlap = sp.overlap;
 	minw = sp.minw;
     maxw = sp.maxw;
 	snrloss = sp.snrloss;
@@ -134,6 +136,7 @@ SinglePulse & SinglePulse::operator=(const SinglePulse &sp)
 	dms = sp.dms;
 	ddm = sp.ddm;
 	ndm = sp.ndm;
+    overlap = sp.overlap;
 	minw = sp.minw;
     maxw = sp.maxw;
 	snrloss = sp.snrloss;
@@ -190,6 +193,7 @@ void SinglePulse::prepare(DataBuffer<float> &databuffer)
     dedisp.dms = dms;
     dedisp.ddm = ddm;
     dedisp.ndm = ndm;
+    dedisp.overlap = overlap;
     dedisp.ndump = rfi.nsamples;
     dedisp.rootname = rootname;
     dedisp.prepare(rfi);
@@ -293,6 +297,8 @@ void SinglePulse::run(DataBuffer<float> &databuffer)
             candplot.plot(cluster, boxcar, dedisp, tstart, thre, rootname, id, fileid, fname, obsinfo);
         }
     }
+    
+    dedisp.cache();
     databuffer.open();
 }
 
@@ -340,6 +346,7 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
     sp.dms = vm["dms"].as<double>();
 	sp.ddm = vm["ddm"].as<double>();
 	sp.ndm = vm["ndm"].as<int>();
+    sp.overlap = vm["overlap"].as<double>();
 
     sp.minw = vm["minw"].as<float>();
     sp.snrloss = vm["snrloss"].as<float>();

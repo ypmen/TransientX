@@ -20,6 +20,7 @@ Subband::Subband()
 
     counter = 0;
     ndump = 0;
+    noverlap = 0;
     nchans = 0;
     nsub = 0;
     ndm_per_sub = 0;
@@ -49,6 +50,8 @@ void Subband::prepare()
     buffer.resize(nsub*nsamples*nchans, 0.);
     bufferT.resize(nsub*nchans*nsamples, 0.);
     buffertim.resize(nsub*ndm_per_sub*ndump, 0.);
+    cachetim.resize(nsub*ndm_per_sub*noverlap, 0.);
+    cachesub.resize(nsub*nchans*(noverlap+(nsamples-ndump)), 0.);
 }
 
 void Subband::run(vector<float> &data)
@@ -102,52 +105,153 @@ void Subband::run(vector<float> &data)
     counter += ndump;
 }
 
-void Subband::get_subdata(vector<float> &subdata, int idm) const
+void Subband::cache()
 {
-    subdata.resize(nchans*ndump, 0.);
-
-    int isub = idm/ndm_per_sub;
-    int isubdm = idm%ndm_per_sub;
-
-    if (!inplace)
+    for (long int k=0; k<nsub; k++)
     {
-        for (long int j=0; j<nchans; j++)
+        for (long int l=0; l<ndm_per_sub; l++)
         {
-            for (long int i=0; i<ndump; i++)
+            for (long int i=0; i<noverlap; i++)
             {
-                subdata[j*ndump+i] = bufferT[(isub*nchans+j)*nsamples+i+mxdelayn[(isub*nchans+j)*ndm_per_sub+isubdm]];
+                cachetim[(k*ndm_per_sub+l)*noverlap+i] = buffertim[(k*ndm_per_sub+l)*ndump+(i+ndump-noverlap)];
             }
         }
     }
-    else
+
+    for (long int k=0; k<nsub; k++)
     {
-        int isub_real = decodeisub[isub];
         for (long int j=0; j<nchans; j++)
         {
-            for (long int i=0; i<ndump; i++)
+            for (long int i=0; i<noverlap+nsamples-ndump; i++)
             {
-                subdata[j*ndump+i] = bufferT[(isub_real*nchans+j)*nsamples+i+mxdelayn[(isub*nchans+j)*ndm_per_sub+isubdm]];
+                cachesub[(k*nchans+j)*(noverlap+nsamples-ndump)+i] = bufferT[(k*nchans+j)*nsamples+(i+ndump-noverlap)];
             }
         }
     }
 }
 
-void Subband::get_timdata(vector<float> &timdata, int idm) const
+void Subband::get_subdata(vector<float> &subdata, int idm, bool overlaped) const
 {
-    timdata.resize(ndump, 0.);
-    if (!inplace)
+    if (!overlaped)
     {
-        for (long int i=0; i<ndump; i++)
+        subdata.resize(nchans*ndump, 0.);
+
+        int isub = idm/ndm_per_sub;
+        int isubdm = idm%ndm_per_sub;
+
+        if (!inplace)
         {
-            timdata[i] = buffertim[idm*ndump+i];
+            for (long int j=0; j<nchans; j++)
+            {
+                for (long int i=0; i<ndump; i++)
+                {
+                    subdata[j*ndump+i] = bufferT[(isub*nchans+j)*nsamples+i+mxdelayn[(isub*nchans+j)*ndm_per_sub+isubdm]];
+                }
+            }
+        }
+        else
+        {
+            int isub_real = decodeisub[isub];
+            for (long int j=0; j<nchans; j++)
+            {
+                for (long int i=0; i<ndump; i++)
+                {
+                    subdata[j*ndump+i] = bufferT[(isub_real*nchans+j)*nsamples+i+mxdelayn[(isub*nchans+j)*ndm_per_sub+isubdm]];
+                }
+            }
         }
     }
     else
     {
-        int idm_real = decodeidm[idm];
-        for (long int i=0; i<ndump; i++)
+        subdata.resize(nchans*(noverlap+ndump), 0.);
+
+        int isub = idm/ndm_per_sub;
+        int isubdm = idm%ndm_per_sub;
+
+        if (!inplace)
         {
-            timdata[i] = buffertim[idm_real*ndump+i];
+            for (long int j=0; j<nchans; j++)
+            {
+                for (long int i=0; i<noverlap; i++)
+                {
+                    subdata[j*(noverlap+ndump)+i] = cachesub[(isub*nchans+j)*(noverlap+(nsamples-ndump))+i+mxdelayn[(isub*nchans+j)*ndm_per_sub+isubdm]];
+                }
+            }
+            for (long int j=0; j<nchans; j++)
+            {
+                for (long int i=0; i<ndump; i++)
+                {
+                    subdata[j*(noverlap+ndump)+(i+noverlap)] = bufferT[(isub*nchans+j)*nsamples+i+mxdelayn[(isub*nchans+j)*ndm_per_sub+isubdm]];
+                }
+            }
+        }
+        else
+        {
+            int isub_real = decodeisub[isub];
+            for (long int j=0; j<nchans; j++)
+            {
+                for (long int i=0; i<noverlap; i++)
+                {
+                    subdata[j*(noverlap+ndump)+i] = cachesub[(isub_real*nchans+j)*(noverlap+(nsamples-ndump))+i+mxdelayn[(isub_real*nchans+j)*ndm_per_sub+isubdm]];
+                }
+            }
+            for (long int j=0; j<nchans; j++)
+            {
+                for (long int i=0; i<ndump; i++)
+                {
+                    subdata[j*(noverlap+ndump)+(i+noverlap)] = bufferT[(isub_real*nchans+j)*nsamples+i+mxdelayn[(isub_real*nchans+j)*ndm_per_sub+isubdm]];
+                }
+            }
+        }
+    }
+}
+
+void Subband::get_timdata(vector<float> &timdata, int idm, bool overlaped) const
+{
+    if (!overlaped)
+    {
+        timdata.resize(ndump, 0.);
+        if (!inplace)
+        {
+            for (long int i=0; i<ndump; i++)
+            {
+                timdata[i] = buffertim[idm*ndump+i];
+            }
+        }
+        else
+        {
+            int idm_real = decodeidm[idm];
+            for (long int i=0; i<ndump; i++)
+            {
+                timdata[i] = buffertim[idm_real*ndump+i];
+            }
+        }
+    }
+    else
+    {
+        timdata.resize(noverlap+ndump, 0.);
+        if (!inplace)
+        {
+            for (long int i=0; i<noverlap; i++)
+            {
+                timdata[i] = cachetim[idm*noverlap+i];
+            }
+            for (long int i=0; i<ndump; i++)
+            {
+                timdata[i+noverlap] = buffertim[idm*ndump+i];
+            }
+        }
+        else
+        {
+            int idm_real = decodeidm[idm];
+            for (long int i=0; i<noverlap; i++)
+            {
+                timdata[i] = cachetim[idm_real*noverlap+i];
+            }
+            for (long int i=0; i<noverlap+ndump; i++)
+            {
+                timdata[i+noverlap] = buffertim[idm_real*ndump+i];
+            }
         }
     }
 }
@@ -159,11 +263,13 @@ SubbandDedispersion::SubbandDedispersion()
     var = 0.;
     counter = 0;
     offset = 0;
+    noverlap = 0;
     nsubband = 0;
     ndump = 0;
     dms = 0.;
     ddm = 0.;
     ndm = 0;
+    overlap = 0.;
     nchans = 0;
     nsamples = 0;
     tsamp = 0.;
@@ -233,8 +339,11 @@ void SubbandDedispersion::prepare(DataBuffer<float> &databuffer)
     nsub = ceil((float)ndm/nsubband);
     mxdelayn.resize(nchans*nsub, 0);
     
+    noverlap = overlap*ndump;
+
     sub.rootname = rootname;
     sub.ndump = ndump;
+    sub.noverlap = noverlap;
     sub.nchans = nsubband;
     sub.nsub = nsub;
     sub.ndm_per_sub = nsubband;
@@ -267,7 +376,7 @@ void SubbandDedispersion::prepare(DataBuffer<float> &databuffer)
     buffersub.resize(nsubband*nsub*ndump, 0.);
     buffersubT.resize(nsubband*nsub*ndump, 0.);
 
-    offset = (nsamples-ndump)+(sub.nsamples-sub.ndump);
+    offset = (nsamples-ndump)+(sub.nsamples-sub.ndump)+sub.noverlap;
 }
 
 void SubbandDedispersion::run(DataBuffer<float> &databuffer, long int ns)
