@@ -300,12 +300,6 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
 
     sp.bswidth = vm["baseline"].as<float>();
 
-	//fast
-	// sp.zaplist.push_back(pair<double, double>(1170, 1186));
-	// sp.zaplist.push_back(pair<double, double>(1197, 1215));
-	// sp.zaplist.push_back(pair<double, double>(1260, 1271));
-	// sp.zaplist.push_back(pair<double, double>(1470, 1500));
-
     vector<string> rfi_opts;
 	if (vm.count("rfi"))
 	{

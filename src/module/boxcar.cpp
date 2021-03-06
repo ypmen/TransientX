@@ -182,11 +182,9 @@ void Boxcar::match(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &ded
 
 	int n = vwn.size();
 
-	//float *vS = new float [nsamples];
 	float *vS = (float *)_mm_malloc(sizeof(float)*nsamples, 32);
 	memset(vS, 0, sizeof(float)*nsamples);
 
-	//int *vwn_maxS = new int [nsamples];
 	int *vwn_maxS = (int *)_mm_malloc(sizeof(float)*nsamples, 32);
 	memset(vwn_maxS, 0, sizeof(int)*nsamples);
 
@@ -219,7 +217,6 @@ void Boxcar::match(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &ded
 	// var = ((Q3-Q1)/1.349)*((Q3-Q1)/1.349);
 
 	float *csump = (float *)_mm_malloc(sizeof(float)*nsamples, 32);
-    //vector<float> csump(nsamples);
     float csum = 0.;
     for (long int i=0; i<nsamples; i++)
 	{
@@ -241,7 +238,6 @@ void Boxcar::match(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &ded
             for (long int i=wl; i<nsamples-wh; i++)
             {
                 float boxsum = csump[i+wh]-csump[i-wl];
-                //float S = abs(boxsum*temp);
 				float S = boxsum*temp;	
 				if (S>=vS[i])
                 {
@@ -276,8 +272,6 @@ void Boxcar::match(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &ded
 	_mm_free(csump);
 	_mm_free(vS);
 	_mm_free(vwn_maxS);
-	//delete [] vwn_maxS;
-	//delete [] vS;
 }
 
 //not work
