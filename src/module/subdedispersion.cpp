@@ -305,22 +305,6 @@ void SubbandDedispersion::run(DataBuffer<float> &databuffer, long int ns)
 
     sub.run(buffersubT);
 
-    // mean = 0.;
-    // var = 0.;
-    // for (long int i=0; i<nsamples; i++)
-    // {
-    //     float temp = 0.;
-    //     for (long int j=0; j<nchans; j++)
-    //     {
-    //         temp += buffer[i*nchans+j];
-    //     }
-    //     mean += temp;
-    //     var += temp*temp;
-    // }
-    // mean /= nsamples;
-    // var /= nsamples;
-    // var -= mean*mean;
-
     for (long int i=0; i<nspace; i++)
     {
         for (long int j=0; j<nchans; j++)

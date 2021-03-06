@@ -23,8 +23,8 @@ public:
 	~Boxcar();
 	void prepare(RealTime::SubbandDedispersion &dedisp);
 	void resize(long int nt, long int ndm);
-	bool run(RealTime::SubbandDedispersion &dedisp, vector<int> &vwn);
-	void match(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &dedisp);
+	bool run(RealTime::SubbandDedispersion &dedisp, vector<int> &vwn, bool iqr=false);
+	void match(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &dedisp, bool iqr);
 	void match2D(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &dedisp);
 	void dump2txt(const string fname) const;
 public:

@@ -153,7 +153,7 @@ void Boxcar::prepare(RealTime::SubbandDedispersion &dedisp)
 	}
 }
 
-bool Boxcar::run(RealTime::SubbandDedispersion &dedisp, vector<int> &vwn)
+bool Boxcar::run(RealTime::SubbandDedispersion &dedisp, vector<int> &vwn, bool iqr)
 {
 	counter = dedisp.counter;
 	if (counter <= dedisp.offset+dedisp.ndump) return false;
@@ -167,7 +167,7 @@ bool Boxcar::run(RealTime::SubbandDedispersion &dedisp, vector<int> &vwn)
     for (long int k=0; k<dedisp.ndm; k++)
     {
         if (!repeater)
-			match(k, vwn, dedisp);
+			match(k, vwn, dedisp, iqr);
 		else
 			match2D(k, vwn, dedisp);
     }
@@ -175,7 +175,7 @@ bool Boxcar::run(RealTime::SubbandDedispersion &dedisp, vector<int> &vwn)
 	return true;
 }
 
-void Boxcar::match(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &dedisp)
+void Boxcar::match(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &dedisp, bool iqr)
 {
     vector<float> tim;
     dedisp.get_timdata(tim, idm);
@@ -191,6 +191,7 @@ void Boxcar::match(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &ded
 	float mean = 0.;
 	float var = 0.;
     
+	if (!iqr)
 	{
 		for (long int i=0; i<nsamples; i++)
 		{
@@ -201,20 +202,19 @@ void Boxcar::match(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &ded
 		var /= nsamples;
 		var -= mean*mean;
 	}
-    
-    // mean = dedisp.mean;
-    // var = dedisp.var;
-	
-	// vector<float> timcopy = tim;
-	// std::nth_element(timcopy.begin(), timcopy.begin()+nsamples/4, timcopy.end(), std::less<float>());
-    // float Q1 = timcopy[nsamples/4];
-	// std::nth_element(timcopy.begin(), timcopy.begin()+nsamples/2, timcopy.end(), std::less<float>());
-    // float Q2 = timcopy[nsamples/2];
-    // std::nth_element(timcopy.begin(), timcopy.begin()+nsamples/4, timcopy.end(), std::greater<float>());
-    // float Q3 = timcopy[nsamples/4];
+	else
+	{
+		vector<float> timcopy = tim;
+		std::nth_element(timcopy.begin(), timcopy.begin()+nsamples/4, timcopy.end(), std::less<float>());
+		float Q1 = timcopy[nsamples/4];
+		std::nth_element(timcopy.begin(), timcopy.begin()+nsamples/2, timcopy.end(), std::less<float>());
+		float Q2 = timcopy[nsamples/2];
+		std::nth_element(timcopy.begin(), timcopy.begin()+nsamples/4, timcopy.end(), std::greater<float>());
+		float Q3 = timcopy[nsamples/4];
 
-	// mean = Q2;
-	// var = ((Q3-Q1)/1.349)*((Q3-Q1)/1.349);
+		mean = Q2;
+		var = ((Q3-Q1)/1.349)*((Q3-Q1)/1.349);
+	}
 
 	float *csump = (float *)_mm_malloc(sizeof(float)*nsamples, 32);
     float csum = 0.;

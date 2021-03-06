@@ -74,6 +74,7 @@ public:
     float maxw;
     float snrloss;
     int nbox;
+    bool iqr;
     vector<int> vwn;
 
     //cluster

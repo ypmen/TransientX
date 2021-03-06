@@ -34,6 +34,7 @@ SinglePulse::SinglePulse()
     maxw = 2e-2;
     snrloss = 0.1;
     nbox = 0;
+    iqr = false;
     thre = 7;
     radius_smearing = 0.003;
     kvalue = 2;
@@ -80,6 +81,8 @@ SinglePulse::SinglePulse(const SinglePulse &sp)
     maxw = sp.maxw;
 	snrloss = sp.snrloss;
 	nbox = sp.nbox;
+    vwn = sp.vwn;
+    iqr = sp.iqr;
 
 	thre = sp.thre;
     radius_smearing = sp.radius_smearing;
@@ -135,6 +138,8 @@ SinglePulse & SinglePulse::operator=(const SinglePulse &sp)
     maxw = sp.maxw;
 	snrloss = sp.snrloss;
 	nbox = sp.nbox;
+    vwn = sp.vwn;
+    iqr = sp.iqr;
 
 	thre = sp.thre;
     radius_smearing = sp.radius_smearing;
@@ -281,7 +286,7 @@ void SinglePulse::run(DataBuffer<float> &databuffer)
     dedisp.run(rfi, rfi.nsamples);
     rfi.close();
 
-    if (boxcar.run(dedisp, vwn))
+    if (boxcar.run(dedisp, vwn, iqr))
     {
         if (cluster.run(boxcar, thre, radius_smearing, kvalue, remove_cand_with_maxwidth))
         {
@@ -339,6 +344,7 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
     sp.minw = vm["minw"].as<float>();
     sp.snrloss = vm["snrloss"].as<float>();
     sp.maxw = vm["maxw"].as<float>();
+    sp.iqr = vm.count("iqr");
 
     sp.thre = vm["thre"].as<float>();
     sp.radius_smearing = vm["radius"].as<double>()/1000.;
