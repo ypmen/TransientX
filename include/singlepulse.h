@@ -44,7 +44,7 @@ public:
     RealTime::SubbandDedispersion dedisp;
     
     Boxcar boxcar;
-    Cluster cluster;
+    Cluster<double> cluster;
     CandPlot candplot;
 
     //downsample
@@ -82,6 +82,7 @@ public:
     float thre;
     double radius_smearing;
 	int kvalue;
+    int minpts;
     bool remove_cand_with_maxwidth;
 
     //candplot

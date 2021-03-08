@@ -29,7 +29,7 @@ CandPlot::CandPlot(){}
 
 CandPlot::~CandPlot(){}
 
-void CandPlot::plot(const Cluster &cluster, const Boxcar &boxcar, const RealTime::SubbandDedispersion &dedisp, double tstart, float threS, const string &rootname, int id, int fileid, std::string &fname, std::map<std::string, std::string> &obsinfo)
+void CandPlot::plot(const Cluster<double> &cluster, const Boxcar &boxcar, const RealTime::SubbandDedispersion &dedisp, double tstart, float threS, const string &rootname, int id, int fileid, std::string &fname, std::map<std::string, std::string> &obsinfo)
 {
     vector<tuple<long int, long int, int, float>> candlist = cluster.candlist;
     vector<size_t> idx = argsort(candlist);
@@ -63,7 +63,7 @@ void CandPlot::plot(const Cluster &cluster, const Boxcar &boxcar, const RealTime
             isamp_max = isamp_tmp>isamp_max ? isamp_tmp:isamp_max;            
         }
 
-        if (idm_min == idm_max)
+        if ((idm_max-idm_min) < 20)
         {
             idm_max += 10;
             idm_min -= 10;

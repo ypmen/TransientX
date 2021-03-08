@@ -326,10 +326,8 @@ void SubbandDedispersion::prepare(DataBuffer<float> &databuffer)
     }
 
     double maxsubdelayN = ceil(dmdelay(dms+ndm*ddm, fmax, fmin)/nsubband/tsamp);
-    double maxdelayN = ceil(dmdelay(dms+ndm*ddm, fmax, fmin)/tsamp);
 
     nsamples = maxsubdelayN+ndump;
-    //assert(nsamples>=2*(nsamples-ndump));
 
     buffer.resize(nsamples*nchans, 0.);
     bufferT.resize(nchans*nsamples, 0.);
@@ -348,15 +346,17 @@ void SubbandDedispersion::prepare(DataBuffer<float> &databuffer)
     sub.nsub = nsub;
     sub.ndm_per_sub = nsubband;
     sub.ndm = nsub*nsubband;
-    sub.nsamples = maxdelayN+ndump;
-    //assert(sub.nsamples>=2*(sub.nsamples-sub.ndump));
-    sub.tsamp = tsamp;
 
     sub.vdm.resize(sub.ndm, 0.);
     for (long int i=0; i<sub.ndm; i++)
     {
         sub.vdm[i] = dms + i*ddm;
     }
+
+    double maxdelayN = ceil(dmdelay(*std::max_element(sub.vdm.begin(), sub.vdm.end()), fmax, fmin)/tsamp);
+    sub.nsamples = maxdelayN+ndump;
+    sub.tsamp = tsamp;
+
     sub.frequencies.resize(nsubband, 0.);
     sub.frequencies = frefsub;
     sub.fcnt.resize(nsubband, 0);

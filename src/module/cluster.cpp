@@ -14,7 +14,8 @@
 
 using namespace std;
 
-Cluster::Cluster()
+template <typename T>
+Cluster<T>::Cluster()
 {
 	counter = 0;
 	tsamp = 0.;
@@ -24,7 +25,8 @@ Cluster::Cluster()
 	ndm = 0;
 }
 
-Cluster::Cluster(const Cluster &cluster)
+template <typename T>
+Cluster<T>::Cluster(const Cluster &cluster)
 {
 	counter = cluster.counter;
 	tsamp = cluster.tsamp;
@@ -37,7 +39,8 @@ Cluster::Cluster(const Cluster &cluster)
 	candstate = cluster.candstate;
 }
 
-Cluster & Cluster::operator=(const Cluster &cluster)
+template <typename T>
+Cluster<T> & Cluster<T>::operator=(const Cluster &cluster)
 {
 	counter = cluster.counter;
 	tsamp = cluster.tsamp;
@@ -52,9 +55,11 @@ Cluster & Cluster::operator=(const Cluster &cluster)
 	return *this;
 }
 
-Cluster::~Cluster(){}
+template <typename T>
+Cluster<T>::~Cluster(){}
 
-bool Cluster::run(Boxcar &boxcar, float threS, double radius_smearing, int kvalue, bool remove_cand_with_maxwidth)
+template <typename T>
+bool Cluster<T>::run(Boxcar &boxcar, float threS, double radius_smearing, int kvalue, int minpts, bool remove_cand_with_maxwidth)
 {
 	counter = boxcar.counter;
 	if (counter <= 0) return false;
@@ -93,7 +98,7 @@ bool Cluster::run(Boxcar &boxcar, float threS, double radius_smearing, int kvalu
 				candleft.push_back(pos);
 
 				double dm = boxcar.dms+j*boxcar.ddm;
-				pos_smearing[0] = RealTime::SubbandDedispersion::dmdelay(dm, boxcar.fmax, boxcar.fmin);
+				pos_smearing[0] = RealTime::SubbandDedispersion::dmdelay(dm, boxcar.fmax, boxcar.fmin)*0.5;
 				pos_smearing[1] = i*tsamp;
 				candleft_smearing.push_back(pos_smearing);
 
@@ -116,15 +121,11 @@ bool Cluster::run(Boxcar &boxcar, float threS, double radius_smearing, int kvalu
 	vector<long int> cluster_mxS_i(kdtree.ncluster, -1);
 	vector<float> cluster_maxS(kdtree.ncluster, 0.);
 	candcluster.resize(kdtree.ncluster);
-	vector<long int> cstate(4);
 
 	for (auto i=state.begin(); i!=state.end(); ++i)
 	{
-		cstate[0] = candleft[(*i)[0]][0];
-		cstate[1] = candleft[(*i)[0]][1];
-		cstate[2] = (*i)[1];
-		cstate[3] = (*i)[2];
-		candstate.push_back(cstate);
+		candstate.push_back(std::make_tuple(candleft_smearing[(*i)[0]][0], candleft_smearing[(*i)[0]][1], (*i)[1], (*i)[2]));
+		
 		if ((*i)[1] !=0 )
 		{
 			pair<long int, long int> cand(candleft[(*i)[0]][0], candleft[(*i)[0]][1]);
@@ -138,32 +139,36 @@ bool Cluster::run(Boxcar &boxcar, float threS, double radius_smearing, int kvalu
 		}
 	}
 
-	for (auto i=cluster_mxS_i.begin(); i!=cluster_mxS_i.end(); ++i)
+	for (long int k=0; k<kdtree.ncluster; k++)
 	{
 		tuple<long int, long int, int, float> cand; 
-		cand = make_tuple(candleft[*i][0], candleft[*i][1], leftwn[*i], leftS[*i]);
+		cand = make_tuple(candleft[cluster_mxS_i[k]][0], candleft[cluster_mxS_i[k]][1], leftwn[cluster_mxS_i[k]], leftS[cluster_mxS_i[k]]);
 		
-		if ((!remove_cand_with_maxwidth) || (leftwn[*i] != boxcar.maxwn))
+		if (((!remove_cand_with_maxwidth) || (leftwn[cluster_mxS_i[k]] != boxcar.maxwn)) && candcluster[k].size()>=minpts)
 		{
 			candlist.push_back(cand);
+		}
+		else
+		{
+			candcluster.erase(candcluster.begin()+k);
 		}
 	}
 
 	return true;
 }
 
-void Cluster::dumpstate2txt(const string fname)
+template <typename T>
+void Cluster<T>::dumpstate2txt(const string fname)
 {
-	FILE *fptr = fopen(fname.c_str(), "w");
+	std::ofstream outfile;
+	outfile.open(fname);
 
 	for (auto i=candstate.begin(); i!=candstate.end(); ++i)
 	{
-		for (auto j=(*i).begin(); j!=(*i).end(); j++)
-		{
-			fprintf(fptr,"%ld ", *j);
-		}
-		fprintf(fptr,"\n");
+		outfile<<std::get<0>(*i)<<" "<<std::get<1>(*i)<<" "<<std::get<2>(*i)<<" "<<std::get<3>(*i)<<std::endl;
 	}
 
-	fclose(fptr);
+	outfile.close();
 }
+
+template class Cluster<double>;

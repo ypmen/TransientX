@@ -22,7 +22,7 @@ class CandPlot
 public:
     CandPlot();
     ~CandPlot();
-    void plot(const Cluster &cluster, const Boxcar &boxcar, const RealTime::SubbandDedispersion &dedisp, double tstart, float threS, const string &rootname, int id, int fileid, std::string &fname, std::map<std::string, std::string> &obsinfo);
+    void plot(const Cluster<double> &cluster, const Boxcar &boxcar, const RealTime::SubbandDedispersion &dedisp, double tstart, float threS, const string &rootname, int id, int fileid, std::string &fname, std::map<std::string, std::string> &obsinfo);
 private:
     vector<size_t> argsort(const vector<tuple<long int, long int, int, float>> &candlist)
     {

@@ -18,6 +18,7 @@
 
 using namespace std;
 
+template <typename T>
 class Cluster
 {
 public:
@@ -25,7 +26,7 @@ public:
 	Cluster(const Cluster &cluster);
 	Cluster & operator=(const Cluster &cluster);
 	~Cluster();
-	bool run(Boxcar &boxcar, float threS, double radius_smearing, int kvalue, bool remove_cand_with_maxwidth);
+	bool run(Boxcar &boxcar, float threS, double radius_smearing, int kvalue, int minpts, bool remove_cand_with_maxwidth);
 	void dumpstate2txt(const string fname);
 public:
 	long int counter;
@@ -36,7 +37,7 @@ public:
 	long int ndm;
 	vector<tuple<long int, long int, int, float>> candlist;
 	vector<vector<pair<long int, long int>>> candcluster;
-	vector<vector<long int>> candstate;
+	vector<tuple<T, T, long int, long int>> candstate;
 };
 
 
