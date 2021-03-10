@@ -374,6 +374,9 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
         int id = 0;
         while (getline(ddplan, line))
         {
+            boost::trim(line);
+			if (line.rfind("#", 0) == 0) continue;
+            
             vector<string> parameters;
             boost::split(parameters, line, boost::is_any_of("\t "), boost::token_compress_on);
             
