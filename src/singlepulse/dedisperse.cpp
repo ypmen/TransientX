@@ -75,6 +75,11 @@ int main(int argc, const char *argv[])
 			("drop", "Drop candidates with maximum search width")
 			("iqr", "Calculate variance and mean based on IQR")
 			("repeater", "Using 2D matched filter (under development)")
+			("mean", value<float>()->default_value(10), "Mean of dedispersed time series")
+			("std", value<float>()->default_value(3), "Standard deviation of dedispersed time series")
+			("nbits", value<int>()->default_value(8), "Data type of dedispersed time series")
+			("savetim", "Output dedispersed data (sigproc format by default)")
+			("presto", "Output presto tim and inf")
 			("cont", "Input files are contiguous")
 			("input,f", value<vector<string>>()->multitoken()->composing(), "Input files");
 
@@ -245,6 +250,12 @@ int main(int argc, const char *argv[])
 		search1[k].ibeam = ibeam;
 		search1[k].src_raj = src_raj;
 		search1[k].src_dej = src_dej;
+
+		search1[k].fildedisp.tstart = tstarts[idx[0]].to_day();
+		search1[k].fildedisp.ibeam = ibeam;
+		search1[k].fildedisp.fch1 = databuf.frequencies.front();
+		search1[k].fildedisp.foff = databuf.frequencies.back()-databuf.frequencies.front();
+		search1[k].fildedisp.nchans = databuf.frequencies.size();
 		search1[k].prepare(databuf);
 	}
 
@@ -322,6 +333,14 @@ int main(int argc, const char *argv[])
 			}
 		}
 		psf[n].close();
+	}
+
+	if (vm.count("presto"))
+	{
+		for (auto sp=search1.begin(); sp!=search1.end(); ++sp)
+		{
+			(*sp).dedisp.makeinf((*sp).fildedisp);
+		}
 	}
 
 	if (verbose)

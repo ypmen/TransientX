@@ -51,6 +51,12 @@ SinglePulse::SinglePulse()
 
     incoherent = false;
     verbose = false;
+
+    outmean = 0.;
+    outstd = 0.;
+    outnbits = 0;
+    savetim = false;
+    presto = false;
 }
 
 SinglePulse::SinglePulse(const SinglePulse &sp)
@@ -108,6 +114,12 @@ SinglePulse::SinglePulse(const SinglePulse &sp)
 
     incoherent = sp.incoherent;
     verbose = sp.verbose;
+
+    outmean = sp.outmean;
+    outstd = sp.outstd;
+    outnbits = sp.outnbits;
+    savetim = sp.savetim;
+    presto = sp.presto;
 
     obsinfo = sp.obsinfo;
 }
@@ -169,6 +181,12 @@ SinglePulse & SinglePulse::operator=(const SinglePulse &sp)
 
     verbose = sp.verbose;
 
+    outmean = sp.outmean;
+    outstd = sp.outstd;
+    outnbits = sp.outnbits;
+    savetim = sp.savetim;
+    presto = sp.presto;
+
     obsinfo = sp.obsinfo;
 
     return *this;
@@ -193,6 +211,8 @@ void SinglePulse::prepare(DataBuffer<float> &databuffer)
     rfi.prepare(baseline);
     rfi.close();
 
+    if (presto) outnbits = 32;
+
     dedisp.dms = dms;
     dedisp.ddm = ddm;
     dedisp.ndm = ndm;
@@ -200,6 +220,8 @@ void SinglePulse::prepare(DataBuffer<float> &databuffer)
     dedisp.ndump = rfi.nsamples;
     dedisp.rootname = rootname;
     dedisp.prepare(rfi);
+    if (savetim)
+        dedisp.preparedump(fildedisp, outnbits, presto);
 
     boxcar.prepare(dedisp);
 
@@ -303,6 +325,8 @@ void SinglePulse::run(DataBuffer<float> &databuffer)
     
     dedisp.cache();
     databuffer.open();
+    if (savetim)
+        dedisp.rundump(outmean, outstd, outnbits);
 }
 
 void parse(variables_map &vm, vector<SinglePulse> &search)
@@ -365,6 +389,12 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
 	sp.rootname = vm["rootname"].as<string>();
 
     sp.incoherent = vm.count("incoherent");
+
+    sp.outmean = vm["mean"].as<float>();
+    sp.outstd = vm["std"].as<float>();
+    sp.outnbits = vm["nbits"].as<int>();
+    sp.savetim = vm.count("savetim");
+    sp.presto = vm.count("presto");
 
     if (vm.count("ddplan"))
     {

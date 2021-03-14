@@ -14,6 +14,8 @@
 #include "databuffer.h"
 #include "dedisperse.h"
 
+#include "filterbank.h"
+
 using namespace std;
 
 #define SAVESUB 1
@@ -91,8 +93,9 @@ namespace RealTime
         void prepare(DataBuffer<float> &databuffer);
         void run(DataBuffer<float> &databuffer, long int ns);
         void cache(){sub.cache();}
-        void preparedump();
-        void rundump();
+        void makeinf(Filterbank &fil);
+        void preparedump(Filterbank &fil, int nbits, bool presto=false);
+        void rundump(float mean, float std, int nbits);
         void get_subdata(vector<float> &subdata, int idm, bool overlaped=false) const
         {
             sub.get_subdata(subdata, idm, overlaped);
@@ -140,6 +143,7 @@ namespace RealTime
         vector<float> buffersub;
         vector<float> buffersubT;
         int nsub;
+        long int ntot;
         Subband sub;
     public:
         static double dmdelay(double dm, double fh, double fl)

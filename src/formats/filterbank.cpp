@@ -87,7 +87,136 @@ Filterbank::Filterbank(const string fname)
 	ndata = 0;
 	data = NULL;
 	fptr = NULL;
+}
 
+Filterbank::Filterbank(const Filterbank &fil)
+{
+	filename = fil.filename;
+	header_size = fil.header_size;
+	use_frequence_table = fil.use_frequence_table;
+	telescope_id = fil.telescope_id;
+	machine_id = fil.machine_id;
+	data_type = fil.data_type;
+	strcpy(rawdatafile, fil.rawdatafile);
+	strcpy(source_name, fil.source_name);
+	barycentric = fil.barycentric;
+	pulsarcentric = fil.pulsarcentric;
+	ibeam = fil.ibeam;
+	nbeams = fil.nbeams;
+	npuls = fil.npuls;
+	nbins = fil.nbins;
+	az_start = fil.az_start;
+	za_start = fil.za_start;
+	src_raj = fil.src_raj;
+	src_dej = fil.src_dej;
+	tstart = fil.tstart;
+	tsamp = fil.tsamp;
+	nbits = fil.nbits;
+	nsamples = fil.nsamples;
+	nifs = fil.nifs;
+	nchans = fil.nchans;
+	fch1 = fil.fch1;
+	foff = fil.foff;
+	refdm = fil.refdm;
+	period = fil.period;
+
+	if (fil.frequency_table != NULL)
+	{
+		frequency_table = new double [16320];
+		memcpy(frequency_table, fil.frequency_table, sizeof(double)*16320);
+	}
+	else
+	{
+		frequency_table = NULL;
+	}
+
+	ndata = fil.ndata;
+
+	if (fil.data != NULL)
+	{
+		switch (nbits)
+		{
+		case 8:
+		{
+			data = new unsigned char [ndata*nifs*nchans];
+			memcpy(data, fil.data, sizeof(unsigned char)*ndata*nifs*nchans); break;
+		}
+		case 32:
+		{
+			data = new float [ndata*nifs*nchans];
+			memcpy(data, fil.data, sizeof(float)*ndata*nifs*nchans); break;
+		}
+		default: cerr<<"Error: data type not support"<<endl; break;
+		}
+	}
+	else
+	{
+		data = NULL;
+	}
+
+	fptr = NULL;
+}
+
+Filterbank & Filterbank::operator=(const Filterbank &fil)
+{
+	filename = fil.filename;
+	header_size = fil.header_size;
+	use_frequence_table = fil.use_frequence_table;
+	telescope_id = fil.telescope_id;
+	machine_id = fil.machine_id;
+	data_type = fil.data_type;
+	strcpy(rawdatafile, fil.rawdatafile);
+	strcpy(source_name, fil.source_name);
+	barycentric = fil.barycentric;
+	pulsarcentric = fil.pulsarcentric;
+	ibeam = fil.ibeam;
+	nbeams = fil.nbeams;
+	npuls = fil.npuls;
+	nbins = fil.nbins;
+	az_start = fil.az_start;
+	za_start = fil.za_start;
+	src_raj = fil.src_raj;
+	src_dej = fil.src_dej;
+	tstart = fil.tstart;
+	tsamp = fil.tsamp;
+	nbits = fil.nbits;
+	nsamples = fil.nsamples;
+	nifs = fil.nifs;
+	nchans = fil.nchans;
+	fch1 = fil.fch1;
+	foff = fil.foff;
+	refdm = fil.refdm;
+	period = fil.period;
+
+	if (fil.frequency_table != NULL)
+	{
+		if (frequency_table != NULL) delete [] frequency_table;
+		frequency_table = new double [16320];
+		memcpy(frequency_table, fil.frequency_table, sizeof(double)*16320);
+	}
+
+	ndata = fil.ndata;
+
+	if (fil.data != NULL)
+	{
+		if (data != NULL) delete [] data;
+		switch (nbits)
+		{
+		case 8:
+		{
+			data = new unsigned char [ndata*nifs*nchans];
+			memcpy(data, fil.data, sizeof(unsigned char)*ndata*nifs*nchans); break;
+		}
+		case 32:
+		{
+			data = new float [ndata*nifs*nchans];
+			memcpy(data, fil.data, sizeof(float)*ndata*nifs*nchans); break;
+		}
+		default: cerr<<"Error: data type not support"<<endl; break;
+		}
+	}
+
+	return *this;
 }
 
 Filterbank::~Filterbank()
@@ -520,9 +649,12 @@ bool Filterbank::write_header()
     fwrite(&nifs, sizeof(nifs), 1, fptr);
     //put_string(fptr, "npuls");
     //fwrite (&npuls, sizeof(npuls), 1, fptr);
-    //put_string(fptr, "refdm");
-    //fwrite (&refDM, sizeof(refDM), 1, fptr);
-    put_string(fptr, "HEADER_END");
+	if (data_type == 2)
+	{
+    	put_string(fptr, "refdm");
+    	fwrite (&refdm, sizeof(refdm), 1, fptr);
+	}
+	put_string(fptr, "HEADER_END");
     return true;
 }
 

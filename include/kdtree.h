@@ -89,6 +89,11 @@ public:
 		findNeighborsRec(root, point, radius, neighbors);
 	}
 
+	void findNeighborsAdd(vector<T> &point, T radius, list<KDnode<T> *> &neighbors)
+	{
+		findNeighborsRec(root, point, radius, neighbors);
+	}
+
 	void findDensityReach(KDnode<T> *node, T radius, int k, int clusterID)
 	{
 		list<KDnode<T> *> neighbors;

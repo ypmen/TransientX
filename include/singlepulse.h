@@ -101,6 +101,14 @@ public:
 
     bool verbose;
 
+    float outmean;
+    float outstd;
+    int outnbits;
+    bool savetim;
+    bool presto;
+
+    Filterbank fildedisp;
+
     std::map<std::string, std::string> obsinfo;
 };
 

@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <assert.h>
+
 #include "subdedispersion.h"
 
 using namespace std;
@@ -275,6 +276,7 @@ SubbandDedispersion::SubbandDedispersion()
     tsamp = 0.;
 
     nsub = 0;
+    ntot = 0;
 }
 
 SubbandDedispersion::~SubbandDedispersion(){}
@@ -425,7 +427,7 @@ void SubbandDedispersion::run(DataBuffer<float> &databuffer, long int ns)
     counter += ndump;
 }
 
-void SubbandDedispersion::preparedump()
+void SubbandDedispersion::preparedump(Filterbank &fil, int nbits, bool presto)
 {
     double fmin = 1e6;
 	double fmax = 0.;
@@ -435,25 +437,59 @@ void SubbandDedispersion::preparedump()
         fmin = frequencies[j]<fmin? frequencies[j]:fmin;
     }
 
-    for (long int k=0; k<ndm; k++)
-    {
-        double dm = sub.vdm[k];
-        stringstream ss_dm;
-        ss_dm << "DM" /*<< setw(8)*/ << setprecision(2) << fixed << setfill('0') << dm;
-        string s_dm = ss_dm.str();
+    double dt = (ceil(1.*offset/ndump)*ndump-offset)*tsamp;
 
-        ofstream outfile;
-        outfile.open(rootname + "_" + s_dm + ".dat", ios::binary|ios::app);
-        outfile.write((char *)(&dm), sizeof(double));
-        outfile.write((char *)(&tsamp), sizeof(double));
-        outfile.write((char *)(&fmin), sizeof(double));
-        outfile.write((char *)(&fmax), sizeof(double));
-        outfile.close();
+    if (!presto)
+    {
+        for (long int k=0; k<ndm; k++)
+        {
+            double dm = sub.vdm[k];
+            stringstream ss_dm;
+            ss_dm << "DM" /*<< setw(8)*/ << setprecision(2) << fixed << setfill('0') << dm;
+            string s_dm = ss_dm.str();
+
+            std::string fname = rootname + "_" + s_dm + ".dat";
+            fil.filename = fname;
+            fil.tstart += dt;
+            fil.refdm = dm;
+            fil.tsamp = tsamp;
+            fil.nchans = 1;
+            fil.nbits = nbits;
+            fil.nifs = 1;
+            fil.data_type = 2;
+            if (!fil.write_header())
+                std::cout<<"Error: Can not write dedisperse series header"<<std::endl;
+            fil.close();
+        }
+    }
+    else
+    {
+        for (long int k=0; k<ndm; k++)
+        {
+            double dm = sub.vdm[k];
+            stringstream ss_dm;
+            ss_dm << "DM" /*<< setw(8)*/ << setprecision(2) << fixed << setfill('0') << dm;
+            string s_dm = ss_dm.str();
+            
+            std::string fname = rootname + "_" + s_dm + ".dat";
+            ofstream outfile;
+            outfile.open(fname, ios::binary);
+        }
     }
 }
 
-void SubbandDedispersion::rundump()
+void SubbandDedispersion::makeinf(Filterbank &fil)
 {
+    double fmin = 1e6;
+	double fmax = 0.;
+    for (long int j=0; j<nchans; j++)
+    {
+        fmax = frequencies[j]>fmax? frequencies[j]:fmax;
+        fmin = frequencies[j]<fmin? frequencies[j]:fmin;
+    }
+
+    double dt = (ceil(1.*offset/ndump)*ndump-offset)*tsamp;
+
     for (long int k=0; k<ndm; k++)
     {
         double dm = sub.vdm[k];
@@ -461,9 +497,91 @@ void SubbandDedispersion::rundump()
         ss_dm << "DM" /*<< setw(8)*/ << setprecision(2) << fixed << setfill('0') << dm;
         string s_dm = ss_dm.str();
 
+        std::string basename = rootname + "_" + s_dm;
+        double fcentre = 0.5*(fmin+fmax);
+        double bandwidth = fmax-fmin;
+        double tstart = fil.tstart + dt;
+
+        std::ofstream finf;
+        finf.open(basename+".inf");
+        finf<<" Data file name without suffix          =  "<<basename<<std::endl;
+        finf<<" Telescope used                         =  Unknown"<<std::endl;
+        finf<<" Instrument used                        =  Unknown"<<std::endl;
+        finf<<" Object being observed                  =  Unknown"<<std::endl;
+        finf<<" J2000 Right Ascension (hh:mm:ss.ssss)  =  00:00:00.0000"<<std::endl;
+        finf<<" J2000 Declination     (dd:mm:ss.ssss)  =  00:00:00.0000"<<std::endl;
+        finf<<" Data observed by                       =  Unknown"<<std::endl;
+        finf<<" Epoch of observation (MJD)             =  "<<std::fixed<<std::setprecision(15)<<tstart<<std::endl;
+        finf<<" Barycentered?           (1=yes, 0=no)  =  0"<<std::endl;
+        finf<<" Number of bins in the time series      =  "<<ntot<<std::endl;
+        finf<<" Width of each time series bin (sec)    =  "<<std::fixed<<std::setprecision(17)<<tsamp<<std::endl;
+        finf<<" Any breaks in the data? (1=yes, 0=no)  =  0"<<std::endl;
+        finf<<" Type of observation (EM band)          =  Radio"<<std::endl;
+        finf<<" Beam diameter (arcsec)                 =  0.00"<<std::endl;
+        finf<<" Dispersion measure (cm-3 pc)           =  "<<dm<<std::endl;
+        finf<<" Central freq of low channel (Mhz)      =  "<<fmin<<std::endl;
+        finf<<" Total bandwidth (Mhz)                  =  "<<bandwidth<<std::endl;
+        finf<<" Number of channels                     =  "<<nchans<<std::endl;
+        finf<<" Channel bandwidth (Mhz)                =  "<<fcentre<<std::endl;
+        finf<<" Data analyzed by                       =  PulsarX"<<std::endl;
+        finf.close();
+    }
+}
+
+void SubbandDedispersion::rundump(float mean, float std, int nbits)
+{
+    if (counter < offset+ndump) return;
+    
+    for (long int k=0; k<ndm; k++)
+    {
+        double dm = sub.vdm[k];
+        stringstream ss_dm;
+        ss_dm << "DM" /*<< setw(8)*/ << setprecision(2) << fixed << setfill('0') << dm;
+        string s_dm = ss_dm.str();
+        
+        std::string fname = rootname + "_" + s_dm + ".dat";
         ofstream outfile;
-        outfile.open(rootname + "_" + s_dm + ".dat", ios::binary|ios::app);
-        outfile.write((char *)(&sub.buffertim[0]+k*sub.ndump), sizeof(float)*sub.ndump);
+        outfile.open(fname, ios::binary|ios::app);
+
+        if (nbits == 8)
+        {
+            double meantim=0., stdtim=0.;
+            for (long int i=0; i<sub.ndump; i++)
+            {
+                meantim += sub.buffertim[k*sub.ndump+i];
+                stdtim += sub.buffertim[k*sub.ndump+i]*sub.buffertim[k*sub.ndump+i];
+            }
+            meantim /= sub.ndump;
+            stdtim /= sub.ndump;
+            stdtim -= meantim*meantim;
+            stdtim = std::sqrt(stdtim);
+
+            float scl = std/stdtim;
+            float offs = mean-scl*meantim;
+
+            std::vector<unsigned char> tim8bit(sub.ndump, 0);
+            for (long int i=0; i<sub.ndump; i++)
+            {
+                float tmp = scl*sub.buffertim[k*sub.ndump+i]+offs;
+                tmp = std::max(0.f, tmp);
+                tmp = std::min(255.f, tmp);
+                tim8bit[i] = tmp;
+            }
+
+            outfile.write((char *)(tim8bit.data()), sizeof(unsigned char)*sub.ndump);
+        }
+        else if (nbits == 32)
+        {
+            outfile.write((char *)(sub.buffertim.data()+k*sub.ndump), sizeof(float)*sub.ndump);
+        }
+        else
+        {
+            outfile.write((char *)(sub.buffertim.data()+k*sub.ndump), sizeof(float)*sub.ndump);
+            std::cout<<"Warning: data type not supported, use float instead"<<std::endl;
+        }
+
         outfile.close();
     }
+
+    ntot += ndump;
 }

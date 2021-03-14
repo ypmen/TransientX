@@ -17,6 +17,8 @@ class Filterbank
 {
 public:
 	Filterbank();
+	Filterbank(const Filterbank &fil);
+	Filterbank & operator=(const Filterbank &fil);
 	Filterbank(const string fname);
 	~Filterbank();
 	void free();
