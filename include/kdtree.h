@@ -10,7 +10,7 @@
 
 #include <iostream>
 #include <vector>
-#include <list>
+#include <vector>
 
 #include "utils.h"
 
@@ -48,8 +48,8 @@ public:
 private:
 	KDnode<T> * buildRec(KDnode<T> *root, const vector<vector<size_t>> &idxs, const vector<vector<T>> &points, long int depth);
 	KDnode<T> * insertRec(KDnode<T> *root, vector<T> &point, long int index, long int depth);
-	void findNeighborsRec(KDnode<T> *root, vector<T> &point, T radius, list<KDnode<T> *> &neighbors);
-	void findDensityReachRec(list<KDnode<T> *> &neighbors, T radius, int k, int clusterID);
+	void findNeighborsRec(KDnode<T> *root, vector<T> &point, T radius, vector<KDnode<T> *> &neighbors);
+	void findDensityReachRec(vector<KDnode<T> *> &neighbors, T radius, int k, int clusterID);
 	void runDBSCANRec(KDnode<T> *node, T radius, int k, int &clusterID);
 	void showRec(KDnode<T> *root);
 	void recycleRec(KDnode<T> *root, vector<vector<long int>> &state);
@@ -83,20 +83,20 @@ public:
 		root = insertRec(root, point, index, 0);
 	}
 
-	void findNeighbors(vector<T> &point, T radius, list<KDnode<T> *> &neighbors)
+	void findNeighbors(vector<T> &point, T radius, vector<KDnode<T> *> &neighbors)
 	{
 		neighbors.clear();
 		findNeighborsRec(root, point, radius, neighbors);
 	}
 
-	void findNeighborsAdd(vector<T> &point, T radius, list<KDnode<T> *> &neighbors)
+	void findNeighborsAdd(vector<T> &point, T radius, vector<KDnode<T> *> &neighbors)
 	{
 		findNeighborsRec(root, point, radius, neighbors);
 	}
 
 	void findDensityReach(KDnode<T> *node, T radius, int k, int clusterID)
 	{
-		list<KDnode<T> *> neighbors;
+		vector<KDnode<T> *> neighbors;
 		findNeighbors(node->point, radius, neighbors);
 
         //cout<<node->point[0]<<" "<<node->point[1]<<endl;

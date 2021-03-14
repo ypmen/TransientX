@@ -26,7 +26,7 @@ public:
 	Cluster(const Cluster &cluster);
 	Cluster & operator=(const Cluster &cluster);
 	~Cluster();
-	bool run(Boxcar &boxcar, float threS, double radius_smearing, int kvalue, int minpts, bool remove_cand_with_maxwidth);
+	bool run(Boxcar &boxcar, float threS, double radius_smearing, int kvalue, int maxncand, int minpts, bool remove_cand_with_maxwidth);
 	void dumpstate2txt(const string fname);
 public:
 	long int counter;

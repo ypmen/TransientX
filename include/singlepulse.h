@@ -82,6 +82,7 @@ public:
     float thre;
     double radius_smearing;
 	int kvalue;
+    int maxncand;
     int minpts;
     bool remove_cand_with_maxwidth;
 

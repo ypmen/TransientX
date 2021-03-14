@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "cluster.h"
+#include "clustering.h"
 #include "kdtree.h"
 #include "subdedispersion.h"
 
@@ -59,7 +60,7 @@ template <typename T>
 Cluster<T>::~Cluster(){}
 
 template <typename T>
-bool Cluster<T>::run(Boxcar &boxcar, float threS, double radius_smearing, int kvalue, int minpts, bool remove_cand_with_maxwidth)
+bool Cluster<T>::run(Boxcar &boxcar, float threS, double radius_smearing, int kvalue, int maxncand, int minpts, bool remove_cand_with_maxwidth)
 {
 	counter = boxcar.counter;
 	if (counter <= 0) return false;
@@ -113,10 +114,10 @@ bool Cluster<T>::run(Boxcar &boxcar, float threS, double radius_smearing, int kv
 	KDtree<double> kdtree(2);
 	kdtree.build(candleft_smearing);
 
-	kdtree.runDBSCAN(radius_smearing*radius_smearing, kvalue);
-
 	vector<vector<long int>> state;
-	kdtree.recycle(state);
+	//kdtree.runDBSCAN(radius_smearing*radius_smearing, kvalue);
+	//kdtree.recycle(state);
+	clustering<double>(state, candleft_smearing, leftS, kdtree, radius_smearing*radius_smearing, maxncand);
 
 	vector<long int> cluster_mxS_i(kdtree.ncluster, -1);
 	vector<float> cluster_maxS(kdtree.ncluster, 0.);

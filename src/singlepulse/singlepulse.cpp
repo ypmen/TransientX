@@ -39,6 +39,7 @@ SinglePulse::SinglePulse()
     thre = 7;
     radius_smearing = 0.003;
     kvalue = 2;
+    maxncand = 100;
     minpts = 0;
     remove_cand_with_maxwidth = false;
     tstart = 0;
@@ -96,6 +97,7 @@ SinglePulse::SinglePulse(const SinglePulse &sp)
 	thre = sp.thre;
     radius_smearing = sp.radius_smearing;
     kvalue = sp.kvalue;
+    maxncand = sp.maxncand;
     minpts = sp.minpts;
     remove_cand_with_maxwidth = sp.remove_cand_with_maxwidth;
 
@@ -161,6 +163,7 @@ SinglePulse & SinglePulse::operator=(const SinglePulse &sp)
 	thre = sp.thre;
     radius_smearing = sp.radius_smearing;
     kvalue = sp.kvalue;
+    maxncand = sp.maxncand;
     minpts = sp.minpts;
     remove_cand_with_maxwidth = sp.remove_cand_with_maxwidth;
     
@@ -317,7 +320,7 @@ void SinglePulse::run(DataBuffer<float> &databuffer)
 
     if (boxcar.run(dedisp, vwn, iqr))
     {
-        if (cluster.run(boxcar, thre, radius_smearing, kvalue, minpts, remove_cand_with_maxwidth))
+        if (cluster.run(boxcar, thre, radius_smearing, kvalue, maxncand, minpts, remove_cand_with_maxwidth))
         {
             candplot.plot(cluster, boxcar, dedisp, tstart, thre, rootname, id, fileid, fname, obsinfo);
         }
@@ -383,6 +386,7 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
     sp.thre = vm["thre"].as<float>();
     sp.radius_smearing = vm["radius"].as<double>()/1000.;
     sp.kvalue = vm["neighbors"].as<unsigned int>();
+    sp.maxncand = vm["maxncand"].as<int>();
     sp.minpts = vm["minpts"].as<int>();
     sp.remove_cand_with_maxwidth = vm.count("drop");
 

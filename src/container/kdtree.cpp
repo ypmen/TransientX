@@ -8,7 +8,7 @@
 #include "kdtree.h"
 
 #include <iostream>
-#include <list>
+#include <vector>
 #include <utility>
 #include <algorithm>
 
@@ -157,7 +157,7 @@ KDnode<T> * KDtree<T>::insertRec(KDnode<T> *root, vector<T> &point, long int ind
 }
 
 template <typename T>
-void KDtree<T>::findNeighborsRec(KDnode<T> *root, vector<T> &point, T radius, list<KDnode<T> *> &neighbors)
+void KDtree<T>::findNeighborsRec(KDnode<T> *root, vector<T> &point, T radius, vector<KDnode<T> *> &neighbors)
 {
 	if (root == NULL)
 		return;
@@ -190,7 +190,7 @@ void KDtree<T>::findNeighborsRec(KDnode<T> *root, vector<T> &point, T radius, li
 }
 
 // template <typename T>
-// void KDtree<T>::findDensityReachRec(list<KDnode<T> *> &neighbors, T radius, int k, int clusterID)
+// void KDtree<T>::findDensityReachRec(vector<KDnode<T> *> &neighbors, T radius, int k, int clusterID)
 // {
 // 	for (auto nbr=neighbors.begin(); nbr!=neighbors.end(); ++nbr)
 // 	{
@@ -199,7 +199,7 @@ void KDtree<T>::findNeighborsRec(KDnode<T> *root, vector<T> &point, T radius, li
 // 		{
 //             //cout<<(*nbr)->point[0]<<" "<<(*nbr)->point[1]<<endl;
 
-// 			list<KDnode<T> *> nbrs;
+// 			vector<KDnode<T> *> nbrs;
 // 			findNeighbors((*nbr)->point, radius, nbrs);
 // 			if (nbrs.size() >= k)
 // 			{
@@ -215,9 +215,9 @@ void KDtree<T>::findNeighborsRec(KDnode<T> *root, vector<T> &point, T radius, li
 // }
 
 template <typename T>
-void KDtree<T>::findDensityReachRec(list<KDnode<T> *> &neighbors, T radius, int k, int clusterID)
+void KDtree<T>::findDensityReachRec(vector<KDnode<T> *> &neighbors, T radius, int k, int clusterID)
 {
-    list<KDnode<T> *> neighbors_temp;
+    vector<KDnode<T> *> neighbors_temp;
 
 	for (auto nbr=neighbors.begin(); nbr!=neighbors.end(); ++nbr)
 	{
@@ -226,7 +226,7 @@ void KDtree<T>::findDensityReachRec(list<KDnode<T> *> &neighbors, T radius, int 
 		{
             //cout<<(*nbr)->point[0]<<" "<<(*nbr)->point[1]<<endl;
 
-			list<KDnode<T> *> nbrs;
+			vector<KDnode<T> *> nbrs;
 			findNeighbors((*nbr)->point, radius, nbrs);
 			if (nbrs.size() >= k)
 			{
@@ -242,7 +242,7 @@ void KDtree<T>::findDensityReachRec(list<KDnode<T> *> &neighbors, T radius, int 
 
     for (auto nbr=neighbors_temp.begin(); nbr!=neighbors_temp.end(); ++nbr)
 	{
-        list<KDnode<T> *> nbrs;
+        vector<KDnode<T> *> nbrs;
 		findNeighbors((*nbr)->point, radius, nbrs);
 		findDensityReachRec(nbrs, radius, k, clusterID);
     }
@@ -256,7 +256,7 @@ void KDtree<T>::runDBSCANRec(KDnode<T> *node, T radius, int k, int &clusterID)
 
 	if (node->flag == 0)
 	{
-	    list<KDnode<T> *> neighbors;
+	    vector<KDnode<T> *> neighbors;
 	    findNeighbors(node->point, radius, neighbors);
 	    if (neighbors.size() >= k)
         {
