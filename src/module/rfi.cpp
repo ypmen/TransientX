@@ -74,17 +74,17 @@ void RFI::zap(DataBuffer<float> &databuffer, const vector<pair<double, double>> 
 
 void RFI::zdot(DataBuffer<float> &databuffer)
 {
-    vector<float> xe(nchans, 0.);
-    vector<float> xs(nchans, 0.);
-    vector<float> alpha(nchans, 0.);
-    vector<float> beta(nchans, 0.);
-    vector<float> s(nsamples, 0.);
-    float se = 0.;
-    float ss = 0.;
+    vector<double> xe(nchans, 0.);
+    vector<double> xs(nchans, 0.);
+    vector<double> alpha(nchans, 0.);
+    vector<double> beta(nchans, 0.);
+    vector<double> s(nsamples, 0.);
+    double se = 0.;
+    double ss = 0.;
 
     for (long int i=0; i<nsamples; i++)
     {
-        float temp = 0.;
+        double temp = 0.;
         for (long int j=0; j<nchans; j++)
         {
             temp += databuffer.buffer[i*nchans+j];
@@ -107,7 +107,7 @@ void RFI::zdot(DataBuffer<float> &databuffer)
         s[i] = temp;
     }
 
-    float tmp = se*se-ss*nsamples;
+    double tmp = se*se-ss*nsamples;
     for (long int j=0; j<nchans; j++)
     {
         alpha[j] = (xe[j]*se-xs[j]*nsamples)/tmp;
@@ -135,7 +135,7 @@ void RFI::zero(DataBuffer<float> &databuffer)
 #endif
     for (long int i=0; i<nsamples; i++)
     {
-        float s = 0;
+        double s = 0;
         for (long int j=0; j<nchans; j++)
         {
             s += databuffer.buffer[i*nchans+j];
