@@ -18,7 +18,8 @@ public:
     Equalize & operator=(const Equalize &equalize);
     ~Equalize();
     void prepare(DataBuffer<float> &databuffer);
-    void run(DataBuffer<float> &databuffer);
+    DataBuffer<float> * run(DataBuffer<float> &databuffer);
+    DataBuffer<float> * get(){return this;}
 private:
     vector<double> chmean;
     vector<double> chstd;

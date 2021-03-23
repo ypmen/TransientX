@@ -93,9 +93,10 @@ namespace RealTime
         void prepare(DataBuffer<float> &databuffer);
         void run(DataBuffer<float> &databuffer, long int ns);
         void cache(){sub.cache();}
+        void modifynblock();
         void makeinf(Filterbank &fil);
-        void preparedump(Filterbank &fil, int nbits, bool presto=false);
-        void rundump(float mean, float std, int nbits);
+        void preparedump(Filterbank &fil, int nbits, const string &format);
+        void rundump(float mean, float std, int nbits, const string &format);
         void get_subdata(vector<float> &subdata, int idm, bool overlaped=false) const
         {
             sub.get_subdata(subdata, idm, overlaped);
@@ -151,6 +152,30 @@ namespace RealTime
             return 4.148741601e3*dm*(1./(fl*fl)-1./(fh*fh));
         }
     };
+
+    struct TDMTHeader{
+        uint32_t headersize; // Header size in bytes
+        double tsamp; // Sampling time in seconds
+        double fcentre; // Centre frequency in MHz
+        double bandwidth; // Bandwidth in MHz
+        double acceleration; // Acceleration in m/s/s
+        uint32_t nblocks; // The number of DM-T blocks
+        double dms; // The start DM in pc cm^{-3}
+        double ddm; // The DM step size in pc cm^{-3}
+        uint32_t ndm; // The total number of DM trials
+        uint32_t blocksize; // The number of time samples per DM-T block
+        uint32_t nbits; // The data encoding
+        /*
+        *****************************************************************
+        * Dimensions of data after the header are (from outer to inner):
+        * [nblocks, ndm, blocksize]
+        * The value of nbits corresponds to the following encodings:
+        * - 8  == int8_t
+        * - 32 == float
+        * Other values are currently undefined
+        *****************************************************************
+        */
+       }__attribute__((packed));
 }
 
 #endif /* SUBDEDISPERSION */

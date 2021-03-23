@@ -40,8 +40,15 @@ void Equalize::prepare(DataBuffer<float> &databuffer)
     chstd.resize(nchans, 0.);
 }
 
-void Equalize::run(DataBuffer<float> &databuffer)
+DataBuffer<float> * Equalize::run(DataBuffer<float> &databuffer)
 {
+    if (databuffer.equalized)
+    {
+        return databuffer.get();
+    }
+
+    if (closable) open();
+
     fill(chmean.begin(), chmean.end(), 0.);
     fill(chstd.begin(), chstd.end(), 0.);
 
@@ -79,4 +86,11 @@ void Equalize::run(DataBuffer<float> &databuffer)
 
     equalized = true;
     counter += nsamples;
+
+    databuffer.isbusy = false;
+    isbusy = true;
+
+    if (databuffer.closable) databuffer.close();
+
+    return this;
 }

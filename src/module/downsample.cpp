@@ -63,9 +63,14 @@ void Downsample::prepare(DataBuffer<float> &databuffer)
     }
 }
 
-void Downsample::run(DataBuffer<float> &databuffer)
+DataBuffer<float> * Downsample::run(DataBuffer<float> &databuffer)
 {
-    fill(buffer.begin(), buffer.end(), 0.);
+    if (td == 1 && fd ==1)
+    {
+        return databuffer.get();
+    }
+
+    if (closable) open();
 
 #ifdef _OPENMP
 #pragma omp parallel for num_threads(num_threads)
@@ -86,4 +91,11 @@ void Downsample::run(DataBuffer<float> &databuffer)
     
     equalized = false;
     counter += nsamples;
+
+    databuffer.isbusy = false;
+    isbusy = true;
+
+    if (databuffer.closable) databuffer.close();
+
+    return this;
 }

@@ -143,11 +143,14 @@ void CandPlot::plot(const Cluster<double> &cluster, const Boxcar &boxcar, const 
             vt[i] = (start_sample+i)*dedisp.sub.tsamp;
         }
 
+        vector<float> vfnorm(nchans, 0.);
+
         float fmax = 0.;
         float fmin = 1e6;
         for (long int j=0; j<nchans; j++)
         {
             vf[j] = dedisp.sub.frequencies[j];
+            vfnorm[j] = dedisp.sub.frequencies.front()+j/(nchans-1.)*(dedisp.sub.frequencies.back()-dedisp.sub.frequencies.front());
             vpf[j] = 0.;
             vpfcum[j] = 0.;
             fmax = vf[j]>fmax ? vf[j]:fmax;
@@ -224,8 +227,8 @@ void CandPlot::plot(const Cluster<double> &cluster, const Boxcar &boxcar, const 
         long int fstart=0;
         long int fend=0;
         kadane<float>(vpf.data(), vpf.size(), &fstart, &fend);
-        fl = vf[fstart];
-        fh = vf[fend];
+        fl = vfnorm[fstart];
+        fh = vfnorm[fend];
 
         float vp_down_std = 0.;
         float vp_down_mean = 0.;
@@ -341,7 +344,7 @@ void CandPlot::plot(const Cluster<double> &cluster, const Boxcar &boxcar, const 
 
         /* power-f */
         plt::Axes ax_powf(0.75+adjustx, 0.95+adjustx, 0.35+adjusty, 0.65+adjusty);
-        ax_powf.plot(vpfcum, vf);
+        ax_powf.plot(vpfcum, vfnorm);
         ax_powf.annotate("Integral Flux", 0.1, 1.2);
         ax_powf.axhline(fl, 0., 1., {{"color", "red"}});
         ax_powf.axhline(fh, 0., 1., {{"color", "red"}});

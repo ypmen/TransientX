@@ -57,7 +57,6 @@ SinglePulse::SinglePulse()
     outstd = 0.;
     outnbits = 0;
     savetim = false;
-    presto = false;
 }
 
 SinglePulse::SinglePulse(const SinglePulse &sp)
@@ -121,7 +120,7 @@ SinglePulse::SinglePulse(const SinglePulse &sp)
     outstd = sp.outstd;
     outnbits = sp.outnbits;
     savetim = sp.savetim;
-    presto = sp.presto;
+    format = sp.format;
 
     obsinfo = sp.obsinfo;
 }
@@ -188,7 +187,7 @@ SinglePulse & SinglePulse::operator=(const SinglePulse &sp)
     outstd = sp.outstd;
     outnbits = sp.outnbits;
     savetim = sp.savetim;
-    presto = sp.presto;
+    format = sp.format;
 
     obsinfo = sp.obsinfo;
 
@@ -203,18 +202,22 @@ void SinglePulse::prepare(DataBuffer<float> &databuffer)
     downsample.fd = fd;
     downsample.prepare(databuffer);
     downsample.close();
+    downsample.closable = true;
 
     equalize.prepare(downsample);
     equalize.close();
+    equalize.closable = true;
 
     baseline.width = bswidth;
     baseline.prepare(equalize);
     baseline.close();
+    baseline.closable = true;
 
     rfi.prepare(baseline);
     rfi.close();
+    rfi.closable = true;
 
-    if (presto) outnbits = 32;
+    if (format == "presto") outnbits = 32;
 
     dedisp.dms = dms;
     dedisp.ddm = ddm;
@@ -224,7 +227,7 @@ void SinglePulse::prepare(DataBuffer<float> &databuffer)
     dedisp.rootname = rootname;
     dedisp.prepare(rfi);
     if (savetim)
-        dedisp.preparedump(fildedisp, outnbits, presto);
+        dedisp.preparedump(fildedisp, outnbits, format);
 
     boxcar.prepare(dedisp);
 
@@ -275,48 +278,46 @@ void SinglePulse::prepare(DataBuffer<float> &databuffer)
 
 void SinglePulse::run(DataBuffer<float> &databuffer)
 {
-    downsample.open();
-    downsample.run(databuffer);
-    databuffer.close();
+    DataBuffer<float> *data = downsample.run(databuffer);
 
-    equalize.open();
-    equalize.run(downsample);
-    downsample.close();
+    data = equalize.run(*data);
 
-    baseline.open();
-    baseline.run(equalize);
-    equalize.close();
+    data = baseline.run(*data);
 
-    rfi.open();
-    rfi.zap(baseline, zaplist);
+    data = rfi.zap(*data, zaplist);
+    if (rfi.isbusy) rfi.closable = false;
 
 	for (auto irfi = rfilist.begin(); irfi!=rfilist.end(); ++irfi)
 	{
         if ((*irfi)[0] == "mask")
         {
-            rfi.mask(rfi, threMask, stoi((*irfi)[1]), stoi((*irfi)[2]));
+            data = rfi.mask(*data, threMask, stoi((*irfi)[1]), stoi((*irfi)[2]));
+            if (rfi.isbusy) rfi.closable = false;
         }
         else if ((*irfi)[0] == "kadaneF")
         {
-            rfi.kadaneF(rfi, threKadaneF*threKadaneF, widthlimit, stoi((*irfi)[1]), stoi((*irfi)[2]));
+            data = rfi.kadaneF(*data, threKadaneF*threKadaneF, widthlimit, stoi((*irfi)[1]), stoi((*irfi)[2]));
+            if (rfi.isbusy) rfi.closable = false;
         }
         else if ((*irfi)[0] == "kadaneT")
         {
-            rfi.kadaneT(rfi, threKadaneT*threKadaneT, bandlimitKT, stoi((*irfi)[1]), stoi((*irfi)[2]));
+            data = rfi.kadaneT(*data, threKadaneT*threKadaneT, bandlimitKT, stoi((*irfi)[1]), stoi((*irfi)[2]));
+            if (rfi.isbusy) rfi.closable = false;
         }
 		else if ((*irfi)[0] == "zdot")
         {
-			rfi.zdot(rfi);
+			data = rfi.zdot(*data);
+            if (rfi.isbusy) rfi.closable = false;
         }
 		else if ((*irfi)[0] == "zero")
         {
-			rfi.zero(rfi);
+			data = rfi.zero(*data);
+            if (rfi.isbusy) rfi.closable = false;
         }
 	}
-    baseline.close();
 
-    dedisp.run(rfi, rfi.nsamples);
-    rfi.close();
+    if (!databuffer.isbusy) data->closable = true;
+    dedisp.run(*data, data->nsamples);
 
     if (boxcar.run(dedisp, vwn, iqr))
     {
@@ -327,19 +328,15 @@ void SinglePulse::run(DataBuffer<float> &databuffer)
     }
     
     dedisp.cache();
-    databuffer.open();
     if (savetim)
-        dedisp.rundump(outmean, outstd, outnbits);
+        dedisp.rundump(outmean, outstd, outnbits, format);
 }
 
 void parse(variables_map &vm, vector<SinglePulse> &search)
 {
     SinglePulse sp;
 
-    sp.td = vm["td"].as<int>();
-	sp.fd = vm["fd"].as<int>();
-
-    sp.bswidth = vm["baseline"].as<float>();
+    sp.bswidth = vm["baseline"].as<vector<float>>().back();
 
     vector<string> rfi_opts;
 	if (vm.count("rfi"))
@@ -390,15 +387,13 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
     sp.minpts = vm["minpts"].as<int>();
     sp.remove_cand_with_maxwidth = vm.count("drop");
 
-	sp.rootname = vm["rootname"].as<string>();
-
     sp.incoherent = vm.count("incoherent");
 
     sp.outmean = vm["mean"].as<float>();
     sp.outstd = vm["std"].as<float>();
     sp.outnbits = vm["nbits"].as<int>();
     sp.savetim = vm.count("savetim");
-    sp.presto = vm.count("presto");
+    sp.format = vm["format"].as<string>();
 
     if (vm.count("ddplan"))
     {
@@ -409,7 +404,7 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
         while (getline(ddplan, line))
         {
             boost::trim(line);
-			if (line.rfind("#", 0) == 0) continue;
+			if(!isdigit(line[0])) continue;
             
             vector<string> parameters;
             boost::split(parameters, line, boost::is_any_of("\t "), boost::token_compress_on);
@@ -422,7 +417,6 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
             sp.snrloss = stof(parameters[5]);
             sp.maxw = stof(parameters[6]);
 
-            sp.rfilist.clear();
             for (auto opt=parameters.begin()+7; opt!=parameters.end(); ++opt)
             {
                 if (*opt=="mask" or *opt=="kadaneF" or *opt=="kadaneT")

@@ -32,7 +32,8 @@ public:
     DataBuffer(long int ns, int nc);
     virtual ~DataBuffer();
     virtual void prepare(DataBuffer<T> &databuffer);
-    virtual void run(DataBuffer<T> &databuffer);
+    virtual DataBuffer<T> * run(DataBuffer<T> &databuffer);
+    virtual DataBuffer<T> * get(){return this;}
     void open();
     void close();
     void dump2txt(const string fname);
@@ -42,6 +43,8 @@ public:
     void get_mean_rms(vector<T> &mean, vector<T> &var);
 public:
     bool equalized;
+    bool isbusy;
+    bool closable;
     long int counter;
     long int nsamples;
     double tsamp;

@@ -106,6 +106,7 @@ AVLNode<T> * AVLTree<T>::newNode(T val)
 	return node;
 }
 
+
 template <typename T>
 void AVLTree<T>::removeValue(T val)
 {

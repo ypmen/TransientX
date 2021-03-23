@@ -1100,6 +1100,11 @@ template void transpose<float>(float *out, float *in, int m, int n);
 template void transpose_pad<float>(float *out, float *in, int m, int n);
 template void transpose_pad<float>(float *out, float *in, int m, int n, int tiley, int tilex);
 template void transpose<complex<float>>(complex<float> *out, complex<float> *in, int m, int n);
+template void transpose_pad<unsigned char>(unsigned char *out, unsigned char *in, int m, int n);
+template void transpose_pad<unsigned char>(unsigned char *out, unsigned char *in, int m, int n, int tiley, int tilex);
+template void transpose_pad<short>(short *out, short *in, int m, int n);
+template void transpose_pad<short>(short *out, short *in, int m, int n, int tiley, int tilex);
+
 template void transpose_pad<complex<float>>(complex<float> *out, complex<float> *in, int m, int n);
 template void transpose_pad<complex<float>>(complex<float> *out, complex<float> *in, int m, int n, int tiley, int tilex);
 
@@ -1108,5 +1113,6 @@ template void transpose_pad<double>(double *out, double *in, int m, int n);
 template void transpose_pad<double>(double *out, double *in, int m, int n, int tiley, int tilex);
 
 template void runMedian2<float>(float *data, float *datMedian, long int size, int w);
+template void runMedian2<double>(double *data, double *datMedian, long int size, int w);
 
 template void runMedian3<float>(float *data, float *datMedian, long int size, int w);

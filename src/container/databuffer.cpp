@@ -20,6 +20,8 @@ template <typename T>
 DataBuffer<T>::DataBuffer()
 {
     equalized = false;
+    isbusy = false;
+    closable = false;
     counter = 0;
     nsamples = 0;
     tsamp = 0.;
@@ -30,6 +32,8 @@ template <typename T>
 DataBuffer<T>::DataBuffer(const DataBuffer<T> &databuffer)
 {
     equalized = databuffer.equalized;
+    isbusy = databuffer.isbusy;
+    closable = databuffer.closable;
     counter = databuffer.counter;
     nsamples = databuffer.nsamples;
     tsamp = databuffer.tsamp;
@@ -42,6 +46,8 @@ template <typename T>
 DataBuffer<T> & DataBuffer<T>::operator=(const DataBuffer<T> &databuffer)
 {
     equalized = databuffer.equalized;
+    isbusy = databuffer.isbusy;
+    closable = databuffer.closable;
     counter = databuffer.counter;
     nsamples = databuffer.nsamples;
     tsamp = databuffer.tsamp;
@@ -58,6 +64,10 @@ DataBuffer<T>::DataBuffer(long int ns, int nc)
     counter = 0;
     resize(ns, nc);
     tsamp = 0.;
+
+    equalized = false;
+    isbusy = false;
+    closable = false;
 }
 
 template <typename T>
@@ -77,16 +87,22 @@ void DataBuffer<T>::prepare(DataBuffer<T> &databuffer)
 }
 
 template <typename T>
-void DataBuffer<T>::run(DataBuffer<T> &databuffer)
+DataBuffer<T> * DataBuffer<T>::run(DataBuffer<T> &databuffer)
 {
     buffer = databuffer.buffer;
 
     counter += nsamples;
+
+    databuffer.isbusy = false;
+    isbusy = true;
+
+    return this;
 };
 
 template <typename T>
 void DataBuffer<T>::open()
 {
+    buffer.clear();
     buffer.resize(nsamples*nchans, 0.);
 }
 
@@ -170,6 +186,7 @@ void DataBuffer<T>::get_mean_rms(vector<T> &mean, vector<T> &var)
 
 template class DataBuffer<char>;
 template class DataBuffer<unsigned char>;
+template class DataBuffer<short>;
 template class DataBuffer<float>;
 template class DataBuffer<double>;
 template class DataBuffer<complex<float>>;

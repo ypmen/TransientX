@@ -106,7 +106,7 @@ public:
     float outstd;
     int outnbits;
     bool savetim;
-    bool presto;
+    string format;
 
     Filterbank fildedisp;
 

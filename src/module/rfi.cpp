@@ -44,8 +44,16 @@ void RFI::prepare(const DataBuffer<float> &databuffer)
     weights.resize(nchans, 1);
 }
 
-void RFI::zap(DataBuffer<float> &databuffer, const vector<pair<double, double>> &zaplist)
+DataBuffer<float> * RFI::zap(DataBuffer<float> &databuffer, const vector<pair<double, double>> &zaplist)
 {
+    if (zaplist.empty())
+    {
+        return databuffer.get();
+    }
+
+    if (closable) open();
+    fill(weights.begin(), weights.end(), 1);
+
     for (long int j=0; j<nchans; j++)
     {
         for (auto k=zaplist.begin(); k!=zaplist.end(); ++k)
@@ -70,10 +78,19 @@ void RFI::zap(DataBuffer<float> &databuffer, const vector<pair<double, double>> 
 
     equalized = databuffer.equalized;
     counter += nsamples;
+
+    databuffer.isbusy = false;
+    isbusy = true;
+
+    if (databuffer.closable) databuffer.close();
+
+    return this;
 }
 
-void RFI::zdot(DataBuffer<float> &databuffer)
+DataBuffer<float> * RFI::zdot(DataBuffer<float> &databuffer)
 {
+    if (closable) open();
+
     vector<double> xe(nchans, 0.);
     vector<double> xs(nchans, 0.);
     vector<double> alpha(nchans, 0.);
@@ -126,10 +143,19 @@ void RFI::zdot(DataBuffer<float> &databuffer)
     }
 
     equalized = false;
+
+    databuffer.isbusy = false;
+    isbusy = true;
+
+    if (databuffer.closable) databuffer.close();
+
+    return this;
 }
 
-void RFI::zero(DataBuffer<float> &databuffer)
+DataBuffer<float> * RFI::zero(DataBuffer<float> &databuffer)
 {
+    if (closable) open();
+
 #ifdef _OPENMP
 #pragma omp parallel for num_threads(num_threads)
 #endif
@@ -149,10 +175,19 @@ void RFI::zero(DataBuffer<float> &databuffer)
     }
 
     equalized = false;
+
+    databuffer.isbusy = false;
+    isbusy = true;
+
+    if (databuffer.closable) databuffer.close();
+
+    return this;
 }
 
-bool RFI::mask(DataBuffer<float> &databuffer, float threRFI2, int td, int fd)
+DataBuffer<float> * RFI::mask(DataBuffer<float> &databuffer, float threRFI2, int td, int fd)
 {
+    if (closable) open();
+
     long int nsamples_ds = nsamples/td;
     long int nchans_ds = nchans/fd;
 
@@ -210,16 +245,23 @@ bool RFI::mask(DataBuffer<float> &databuffer, float threRFI2, int td, int fd)
 
     equalized = databuffer.equalized;
 
-    return true;
+    databuffer.isbusy = false;
+    isbusy = true;
+
+    if (databuffer.closable) databuffer.close();
+
+    return this;
 }
 
-bool RFI::kadaneF(DataBuffer<float> &databuffer, float threRFI2, double widthlimit, int td, int fd)
+DataBuffer<float> * RFI::kadaneF(DataBuffer<float> &databuffer, float threRFI2, double widthlimit, int td, int fd)
 {
     if (!databuffer.equalized)
     {
         cerr<<"Error: data is not equalize"<<endl;
-        return false;
+        return databuffer.get();
     }
+
+    if (closable) open();
 
     vector<float> bufferT(nchans*nsamples, 0.);
 
@@ -343,18 +385,25 @@ bool RFI::kadaneF(DataBuffer<float> &databuffer, float threRFI2, double widthlim
 
     equalized = databuffer.equalized;
 
+    databuffer.isbusy = false;
+    isbusy = true;
+
+    if (databuffer.closable) databuffer.close();
+
     delete [] chdata_t;
 
-    return true;
+    return this;
 }
 
-bool RFI::kadaneT(DataBuffer<float> &databuffer, float threRFI2, double bandlimit, int td, int fd)
+DataBuffer<float> * RFI::kadaneT(DataBuffer<float> &databuffer, float threRFI2, double bandlimit, int td, int fd)
 {
     if (!databuffer.equalized)
     {
         cerr<<"Error: data is not equalize"<<endl;
-        return false;
+        return databuffer.get();
     }
+
+    if (closable) open();
 
     long int nsamples_ds = nsamples/td;
     long int nchans_ds = nchans/fd;
@@ -487,7 +536,12 @@ bool RFI::kadaneT(DataBuffer<float> &databuffer, float threRFI2, double bandlimi
 
     equalized = databuffer.equalized;
 
+    databuffer.isbusy = false;
+    isbusy = true;
+
+    if (databuffer.closable) databuffer.close();
+
     delete [] tsdata_t;
 
-    return true;
+    return this;
 }

@@ -28,28 +28,27 @@ void BaseLine::prepare(DataBuffer<float> &databuffer)
     frequencies = databuffer.frequencies;
 }
 
-void BaseLine::run(DataBuffer<float> &databuffer)
+DataBuffer<float> * BaseLine::run(DataBuffer<float> &databuffer)
 {
     if (int(width/tsamp) < 3)
     {
-        buffer = databuffer.buffer;
-        equalized = databuffer.equalized;
-        counter += nsamples;
-        return;
+        return databuffer.get();
     }
 
-    vector<float> xe(nchans, 0.);
-    vector<float> xs(nchans, 0.);
-    vector<float> alpha(nchans, 0.);
-    vector<float> beta(nchans, 0.);
-    vector<float> szero(nsamples, 0.);
-    vector<float> s(nsamples, 0.);
-    float se = 0.;
-    float ss = 0.;
+    if (closable) open();
+
+    vector<double> xe(nchans, 0.);
+    vector<double> xs(nchans, 0.);
+    vector<double> alpha(nchans, 0.);
+    vector<double> beta(nchans, 0.);
+    vector<double> szero(nsamples, 0.);
+    vector<double> s(nsamples, 0.);
+    double se = 0.;
+    double ss = 0.;
 
     for (long int i=0; i<nsamples; i++)
     {
-        float temp = 0.;
+        double temp = 0.;
         for (long int j=0; j<nchans; j++)
         {
             temp += databuffer.buffer[i*nchans+j];
@@ -75,19 +74,16 @@ void BaseLine::run(DataBuffer<float> &databuffer)
         }
     }
 
-    float tmp = se*se-ss*nsamples;
+    double tmp = se*se-ss*nsamples;
     for (long int j=0; j<nchans; j++)
     {
         alpha[j] = (xe[j]*se-xs[j]*nsamples)/tmp;
         beta[j] = (xs[j]*se-xe[j]*ss)/tmp;
     }
 
-    vector<float> chmean(nchans, 0.);
-    vector<float> chstd(nchans, 0.);
+    vector<double> chmean(nchans, 0.);
+    vector<double> chstd(nchans, 0.);
 
-#ifdef _OPENMP
-#pragma omp parallel for num_threads(num_threads)
-#endif
     for (long int i=0; i<nsamples; i++)
     {
         for (long int j=0; j<nchans; j++)
@@ -124,4 +120,11 @@ void BaseLine::run(DataBuffer<float> &databuffer)
 
     equalized = true;
     counter += nsamples;
+
+    databuffer.isbusy = false;
+    isbusy = true;
+
+    if (databuffer.closable) databuffer.close();
+
+    return this;
 }

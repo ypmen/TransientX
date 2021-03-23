@@ -20,6 +20,7 @@
 #include "utils.h"
 #include "databuffer.h"
 #include "singlepulse.h"
+#include "preprocess.h"
 
 using namespace std;
 using namespace boost::program_options;
@@ -44,8 +45,9 @@ int main(int argc, const char *argv[])
 			("verbose,v", "Print debug information")
 			("threads,t", value<unsigned int>()->default_value(1), "Number of threads")
 			("jump,j", value<vector<double>>()->multitoken()->default_value(vector<double>{0, 0}, "0, 0"), "Time jump at the beginning and end (s)")
-			("td", value<int>()->default_value(1), "Time downsample")
-			("fd", value<int>()->default_value(1), "Frequency downsample")
+			("td", value<int>()->default_value(1), "Time downsample for preprocessing")
+			("fd", value<int>()->default_value(1), "Frequency downsample for preprocessing")
+			("zapthre", value<float>()->default_value(3), "Threshold in sigma for zapping channels")
 			("dms", value<double>()->default_value(0), "DM start")
 			("ddm", value<double>()->default_value(1), "DM step")
 			("ndm", value<int>()->default_value(200), "Number of DM")
@@ -65,7 +67,7 @@ int main(int argc, const char *argv[])
 			("neighbors,k", value<unsigned int>()->default_value(2), "DBSCAN k")
 			("maxncand", value<int>()->default_value(100), "Maximum number of candidates in one data block")
 			("minpts", value<int>()->default_value(5), "Minimum points in one cluster")
-			("baseline", value<float>()->default_value(0.1), "Remove baseline of width (s)")
+			("baseline", value<vector<float>>()->multitoken()->default_value(vector<float>{0.0, 0.1}, "0.0, 0.1"), "The scale of baseline remove (s)")
 			("rfi,z", value<vector<string>>()->multitoken()->zero_tokens()->composing(), "RFI mitigation [[mask tdRFI fdRFI] [kadaneF tdRFI fdRFI] [kadaneT tdRFI fdRFI] [zap fl fh] [zdot] [zero]]")
             ("bandlimit", value<double>()->default_value(10), "Band limit of RFI mask (MHz)")
 			("bandlimitKT", value<double>()->default_value(10), "Band limit of RFI kadaneT (MHz)")
@@ -78,11 +80,11 @@ int main(int argc, const char *argv[])
 			("drop", "Drop candidates with maximum search width")
 			("iqr", "Calculate variance and mean based on IQR")
 			("repeater", "Using 2D matched filter (under development)")
-			("mean", value<float>()->default_value(10), "Mean of dedispersed time series")
+			("mean", value<float>()->default_value(0), "Mean of dedispersed time series")
 			("std", value<float>()->default_value(3), "Standard deviation of dedispersed time series")
 			("nbits", value<int>()->default_value(8), "Data type of dedispersed time series")
 			("savetim", "Output dedispersed data (sigproc format by default)")
-			("presto", "Output presto tim and inf")
+			("format", value<string>()->default_value("pulsarx"), "Output format of dedispersed data [pulsarx(default),sigproc,presto]")
 			("cont", "Input files are contiguous")
 			("input,f", value<vector<string>>()->multitoken()->composing(), "Input files");
 
@@ -200,7 +202,7 @@ int main(int argc, const char *argv[])
     double tsamp = fil[0].tsamp;
     int nifs = fil[0].nifs;
 
-	float *buffer = new float [nchans];
+	short *buffer = new short [nchans];
 
 	vector<SinglePulse> search1;
 	parse(vm, search1);
@@ -208,23 +210,38 @@ int main(int argc, const char *argv[])
 	vector<int> tds;
 	for (auto sp=search1.begin(); sp!=search1.end(); ++sp)
 	{
-		tds.push_back((*sp).td);
+		tds.push_back((*sp).td*vm["td"].as<int>());
 	}
 
 	long int td_lcm = findlcm(&tds[0], tds.size());
 
 	long int ndump = (int)(vm["seglen"].as<float>()/tsamp)/td_lcm*td_lcm;
 
-	DataBuffer<float> databuf(ndump, nchans);
+	DataBuffer<short> databuf(ndump, nchans);
 	databuf.tsamp = tsamp;
 	memcpy(&databuf.frequencies[0], fil[0].frequency_table, sizeof(double)*nchans);
+
+	Preprocess prep;
+	prep.td = vm["td"].as<int>();
+	prep.fd = vm["fd"].as<int>();
+	prep.thresig = vm["zapthre"].as<float>();
+	prep.width = vm["baseline"].as<vector<float>>().front();
+	prep.prepare(databuf);
 
 	long int nstart = jump[0]/tsamp;
 	long int nend = ntotal-jump[1]/tsamp;
 
+	stringstream ss_ibeam;
+	if (vm.count("incoherent"))
+    	ss_ibeam << "ifbf" << setw(5) << setfill('0') << ibeam;
+	else
+		ss_ibeam << "cfbf" << setw(5) << setfill('0') << ibeam;
+	string s_ibeam = ss_ibeam.str();
+
 	long int nsearch = search1.size();
 	for (long int k=0; k<nsearch; k++)
 	{
+		search1[k].rootname = vm["rootname"].as<string>() + "_" + s_ibeam;
 		search1[k].tstart = tstart + nstart*tsamp/86400.;
 		search1[k].source_name = source_name;
 		search1[k].telescope = s_telescope;
@@ -234,7 +251,7 @@ int main(int argc, const char *argv[])
 
 		search1[k].fildedisp = fil[0];
 		search1[k].fildedisp.tstart = tstarts[idx[0]].to_day();
-		search1[k].prepare(databuf);
+		search1[k].prepare(prep);
 	}
 
 	if (verbose == 1)
@@ -274,7 +291,7 @@ int main(int argc, const char *argv[])
 					continue;
 				}
 					
-				memset(buffer, 0, sizeof(float)*nchans);
+				memset(buffer, 0, sizeof(short)*nchans);
 				long int m = 0;
 				for (long int k=0; k<sumif; k++)
 				{
@@ -284,18 +301,21 @@ int main(int argc, const char *argv[])
 					}
 				}
 
-				memcpy(&databuf.buffer[0]+bcnt1*nchans, buffer, sizeof(float)*1*nchans);
-                bcnt1++;
+				memcpy(&databuf.buffer[0]+bcnt1*nchans, buffer, sizeof(short)*1*nchans);
+                databuf.counter ++;
+				bcnt1++;
 				ntot++;
 
 				if (ntot%ndump == 0)
 				{
+					databuf.dump2bin(to_string(databuf.counter)+".sum");
+					prep.run(databuf);
 					for (auto sp=search1.begin(); sp!=search1.end(); ++sp)
 					{
 						(*sp).fileid = idxn+1;
 						(*sp).fname = fnames[n];
 						(*sp).verbose = verbose;
-						(*sp).run(databuf);
+						(*sp).run(prep);
 					}
                     bcnt1 = 0;
 				}
@@ -306,11 +326,18 @@ int main(int argc, const char *argv[])
         fil[n].free();
 	}
 
-	if (vm.count("presto"))
+	if (vm["format"].as<string>() == "presto")
 	{
 		for (auto sp=search1.begin(); sp!=search1.end(); ++sp)
 		{
 			(*sp).dedisp.makeinf((*sp).fildedisp);
+		}
+	}
+	else if (vm["format"].as<string>() != "sigproc")
+	{
+		for (auto sp=search1.begin(); sp!=search1.end(); ++sp)
+		{
+			(*sp).dedisp.modifynblock();
 		}
 	}
 
