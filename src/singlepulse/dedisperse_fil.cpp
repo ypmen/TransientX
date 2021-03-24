@@ -308,7 +308,6 @@ int main(int argc, const char *argv[])
 
 				if (ntot%ndump == 0)
 				{
-					databuf.dump2bin(to_string(databuf.counter)+".sum");
 					prep.run(databuf);
 					for (auto sp=search1.begin(); sp!=search1.end(); ++sp)
 					{
