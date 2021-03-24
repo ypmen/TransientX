@@ -75,10 +75,13 @@ DataBuffer<float> * BaseLine::run(DataBuffer<float> &databuffer)
     }
 
     double tmp = se*se-ss*nsamples;
-    for (long int j=0; j<nchans; j++)
+    if (tmp != 0)
     {
-        alpha[j] = (xe[j]*se-xs[j]*nsamples)/tmp;
-        beta[j] = (xs[j]*se-xe[j]*ss)/tmp;
+        for (long int j=0; j<nchans; j++)
+        {
+            alpha[j] = (xe[j]*se-xs[j]*nsamples)/tmp;
+            beta[j] = (xs[j]*se-xe[j]*ss)/tmp;
+        }
     }
 
     vector<double> chmean(nchans, 0.);
