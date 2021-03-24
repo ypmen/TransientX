@@ -315,22 +315,16 @@ DataBuffer<float> * Preprocess::run(DataBuffer<short> &databuffer)
     std::vector<float> kurtosis_sort = chkurtosis;
     std::nth_element(kurtosis_sort.begin(), kurtosis_sort.begin()+kurtosis_sort.size()/4, kurtosis_sort.end(), std::less<float>());
     float kurtosis_q1 = kurtosis_sort[kurtosis_sort.size()/4];
-    std::nth_element(kurtosis_sort.begin(), kurtosis_sort.begin()+kurtosis_sort.size()/2, kurtosis_sort.end(), std::less<float>());
-    float kurtosis_q2 = kurtosis_sort[kurtosis_sort.size()/2];
     std::nth_element(kurtosis_sort.begin(), kurtosis_sort.begin()+kurtosis_sort.size()/4, kurtosis_sort.end(), std::greater<float>());
     float kurtosis_q3 =kurtosis_sort[kurtosis_sort.size()/4];
-    float kurtosis_mean = kurtosis_q2;
-    float kurtosis_std = (kurtosis_q3-kurtosis_q1)/1.349;
+    float kurtosis_R = kurtosis_q3-kurtosis_q1;
 
     std::vector<float> skewness_sort = chskewness;
     std::nth_element(skewness_sort.begin(), skewness_sort.begin()+skewness_sort.size()/4, skewness_sort.end(), std::less<float>());
     float skewness_q1 = skewness_sort[skewness_sort.size()/4];
-    std::nth_element(skewness_sort.begin(), skewness_sort.begin()+skewness_sort.size()/2, skewness_sort.end(), std::less<float>());
-    float skewness_q2 = kurtosis_sort[skewness_sort.size()/2];
-    std::nth_element(skewness_sort.begin(), kurtosis_sort.begin()+skewness_sort.size()/4, skewness_sort.end(), std::greater<float>());
+    std::nth_element(skewness_sort.begin(), skewness_sort.begin()+skewness_sort.size()/4, skewness_sort.end(), std::greater<float>());
     float skewness_q3 =skewness_sort[skewness_sort.size()/4];
-    float skewness_mean = skewness_q2;
-    float skewness_std = (skewness_q3-skewness_q1)/1.349;
+    float skewness_R = skewness_q3-skewness_q1;
 
     std::vector<float> bufferT(nchans*nsamples, 0.);
 
@@ -341,7 +335,7 @@ DataBuffer<float> * Preprocess::run(DataBuffer<short> &databuffer)
 #endif
         for (long int j=0; j<nchans; j++)
         {
-            if (std::abs(chkurtosis[j*fd+l]-kurtosis_mean) < thresig*kurtosis_std && std::abs(chskewness[j*fd+l]-skewness_mean) < thresig*skewness_std)
+            if (chkurtosis[j*fd+l]>kurtosis_q1-thresig*kurtosis_R && chkurtosis[j*fd+l]<kurtosis_q3+thresig*kurtosis_R && chskewness[j*fd+l]>skewness_q1-thresig*skewness_R && chskewness[j*fd+l]<skewness_q3+thresig*skewness_R)
             {
                 for (long int m=0; m<td; m++)
                 {
