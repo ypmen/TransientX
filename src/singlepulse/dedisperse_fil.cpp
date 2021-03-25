@@ -241,7 +241,7 @@ int main(int argc, const char *argv[])
 	long int nsearch = search1.size();
 	for (long int k=0; k<nsearch; k++)
 	{
-		search1[k].rootname = vm["rootname"].as<string>() + "_" + s_ibeam;
+		search1[k].rootname = vm["rootname"].as<string>();
 		search1[k].tstart = tstart + nstart*tsamp/86400.;
 		search1[k].source_name = source_name;
 		search1[k].telescope = s_telescope;
