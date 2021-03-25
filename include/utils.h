@@ -37,6 +37,17 @@ inline vector<size_t> argsort(const vector<T> &v)
 }
 
 template <typename T>
+inline vector<size_t> argsort2(const vector<T> &v)
+{
+  vector<size_t> idx(v.size());
+  iota(idx.begin(), idx.end(), 0);
+
+  stable_sort(idx.begin(), idx.end(), [&v](size_t i1, size_t i2) {return v[i1] > v[i2];});
+
+  return idx;
+}
+
+template <typename T>
 inline vector<size_t> argsort(const vector<vector<T>> &points, int dim)
 {
   vector<size_t> idx(points.size());
