@@ -16,6 +16,7 @@
 #include <vector>
 #include <tuple>
 #include <set>
+#include <immintrin.h>
 #include <numeric>
 #include <iomanip>
 #include <algorithm>
@@ -106,6 +107,10 @@ template <typename T>
 void runMedian2(T *data, T *datMedian, long int size, int w);
 template <typename T>
 void runMedian3(T *data, T *datMedian, long int size, int w);
+
+#ifdef __AVX2__
+void transpose_AVX2(float *out, float *in, int m, int n);
+#endif
 
 template <typename T>
 void transpose(T *out, T *in, int m, int n);
