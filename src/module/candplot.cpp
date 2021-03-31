@@ -321,7 +321,7 @@ void CandPlot::plot(const Cluster<double> &cluster, const Boxcar &boxcar, const 
         plt::Figure fig(8., 1.5);
 
         fig.set_background_color("black");
-        fig.set_defalut_color("white");
+        fig.set_default_color("white");
 
         float adjustx = 0., adjusty = 0.02;
         /* profile */
