@@ -24,6 +24,7 @@ Jumei Yao (yaojumei@xao.ac.cn), Richard N Manchester
 (dick.manchester@csiro.au), Na Wang (na.wang@xao.ac.cn).
 */
 #include "cn.h"
+
 void nps(double xx,double yy,double zz,double *ne7, int *WLI, struct LI t7)
 {
   double x_c, y_c, z_c;

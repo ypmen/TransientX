@@ -24,6 +24,7 @@ Jumei Yao (yaojumei@xao.ac.cn), Richard N Manchester
 (dick.manchester@csiro.au), Na Wang (na.wang@xao.ac.cn).
 */
 #include "cn.h"
+
 #define Rlb 110
 void localbubble(double xx, double yy, double zz, double gl,double gb, double *ne6, double *WW, struct LB t6)
 {

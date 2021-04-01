@@ -25,6 +25,9 @@ Jumei Yao (yaojumei@xao.ac.cn), Richard N Manchester
 */
 
 #include "cn.h"
+
+int m_3, ww,m_5, m_6, m_7;
+
 double tsc(double dm){
   return 4.1e-11*pow(dm, 2.2)*(1+0.00194*dm*dm);
 }

@@ -23,6 +23,11 @@ authors. Please provide an example illustrating the problem.
 Jumei Yao (yaojumei@xao.ac.cn), Richard N Manchester
 (dick.manchester@csiro.au), Na Wang (na.wang@xao.ac.cn).
 */
+
+#ifndef CN_H
+#define CN_H
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -35,7 +40,7 @@ Jumei Yao (yaojumei@xao.ac.cn), Richard N Manchester
 #define mc 6
 #define MAX(a,b) ( ((a)>(b)) ? (a):(b) )
 #define MIN(a,b) ( ((a)>(b)) ? (b):(a) )
-int m_3, ww,m_5, m_6, m_7;
+extern int m_3, ww,m_5, m_6, m_7;
 struct Warp_Sun
 {
   double Gamma_w;
@@ -156,3 +161,6 @@ double ne_crd(double *x, double *y, double *z, double *gl, double *gb, double *d
 #ifdef __cplusplus
 }
 #endif
+
+
+#endif /* CN_H */

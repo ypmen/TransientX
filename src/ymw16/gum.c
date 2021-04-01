@@ -24,6 +24,7 @@ Jumei Yao (yaojumei@xao.ac.cn), Richard N Manchester
 (dick.manchester@csiro.au), Na Wang (na.wang@xao.ac.cn).
 */
 #include "cn.h"
+
 void gum(double xx, double yy, double zz, double *ne5, struct Gum t5)
 {
   double slc, clc, sbc, cbc, xc, yc, zc, rgalc;
