@@ -587,6 +587,7 @@ void SubbandDedispersion::preparedump(Filterbank &fil, int nbits, const string &
         outfile.open(fname, std::ios::binary);
         outfiles.push_back(std::move(outfile));
         outfiles[0].write((char *)&header, sizeof(header));
+        outfiles[0].close();
     }
 }
 
@@ -700,6 +701,9 @@ void SubbandDedispersion::rundump(float mean, float std, int nbits, const string
     }
     else
     {
+        std::string fname = rootname+".dat";
+        outfiles[0].open(fname, std::ios::binary|std::ios::app);
+
         if (nbits == 8)
         {
             std::vector<char> tim8bit(ndm*sub.ndump, 0);
@@ -739,6 +743,8 @@ void SubbandDedispersion::rundump(float mean, float std, int nbits, const string
             outfiles[0].write((char *)(sub.buffertim.data()), sizeof(float)*ndm*sub.ndump);
             std::cout<<"Warning: data type not supported, use float instead"<<std::endl;
         }
+
+        outfiles[0].close();
     }
 
     ntot += ndump;
