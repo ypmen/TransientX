@@ -89,6 +89,8 @@ namespace RealTime
     {
     public:
         SubbandDedispersion();
+        SubbandDedispersion(const SubbandDedispersion &dedisp);
+        SubbandDedispersion & operator=(const SubbandDedispersion &dedisp);
         ~SubbandDedispersion();
         void prepare(DataBuffer<float> &databuffer);
         void run(DataBuffer<float> &databuffer, long int ns);
@@ -146,6 +148,7 @@ namespace RealTime
         int nsub;
         long int ntot;
         Subband sub;
+        std::vector<std::ofstream> outfiles;
     public:
         static double dmdelay(double dm, double fh, double fl)
         {

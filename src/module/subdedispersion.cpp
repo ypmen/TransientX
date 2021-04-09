@@ -279,7 +279,87 @@ SubbandDedispersion::SubbandDedispersion()
     ntot = 0;
 }
 
-SubbandDedispersion::~SubbandDedispersion(){}
+SubbandDedispersion::SubbandDedispersion(const SubbandDedispersion &dedisp)
+{
+    rootname = dedisp.rootname;
+    ndump = dedisp.ndump;
+    dms = dedisp.dms;
+    ddm = dedisp.ddm;
+    ndm = dedisp.ndm;
+    overlap = dedisp.overlap;
+    mean = dedisp.mean;
+    var = dedisp.var;
+    counter = dedisp.counter;
+    offset = dedisp.offset;
+    noverlap = dedisp.noverlap;
+    nsubband = dedisp.nsubband;
+    nchans = dedisp.nchans;
+    nsamples = dedisp.nsamples;
+    tsamp = dedisp.tsamp;
+    frequencies = dedisp.frequencies;
+    mxdelayn = dedisp.mxdelayn;
+    fmap = dedisp.fmap;
+    fcnt = dedisp.fcnt;
+    frefsub = dedisp.frefsub;
+    buffer = dedisp.buffer;
+    bufferT = dedisp.bufferT;
+    buffersub = dedisp.buffersub;
+    buffersubT = dedisp.buffersubT;
+    nsub = dedisp.nsub;
+    ntot = dedisp.ntot;
+    sub = dedisp.sub;
+
+    for (auto f=outfiles.begin(); f!=outfiles.end(); ++f)
+    {
+        outfiles.push_back(std::move(*f));
+    }
+}
+
+SubbandDedispersion & SubbandDedispersion::operator=(const SubbandDedispersion &dedisp)
+{
+    rootname = dedisp.rootname;
+    ndump = dedisp.ndump;
+    dms = dedisp.dms;
+    ddm = dedisp.ddm;
+    ndm = dedisp.ndm;
+    overlap = dedisp.overlap;
+    mean = dedisp.mean;
+    var = dedisp.var;
+    counter = dedisp.counter;
+    offset = dedisp.offset;
+    noverlap = dedisp.noverlap;
+    nsubband = dedisp.nsubband;
+    nchans = dedisp.nchans;
+    nsamples = dedisp.nsamples;
+    tsamp = dedisp.tsamp;
+    frequencies = dedisp.frequencies;
+    mxdelayn = dedisp.mxdelayn;
+    fmap = dedisp.fmap;
+    fcnt = dedisp.fcnt;
+    frefsub = dedisp.frefsub;
+    buffer = dedisp.buffer;
+    bufferT = dedisp.bufferT;
+    buffersub = dedisp.buffersub;
+    buffersubT = dedisp.buffersubT;
+    nsub = dedisp.nsub;
+    ntot = dedisp.ntot;
+    sub = dedisp.sub;
+
+    for (auto f=outfiles.begin(); f!=outfiles.end(); ++f)
+    {
+        outfiles.push_back(std::move(*f));
+    }
+
+    return *this;
+}
+
+SubbandDedispersion::~SubbandDedispersion()
+{
+    for (auto f=outfiles.begin(); f!=outfiles.end(); ++f)
+    {
+        f->close();
+    }
+}
 
 void SubbandDedispersion::prepare(DataBuffer<float> &databuffer)
 {
@@ -463,6 +543,10 @@ void SubbandDedispersion::preparedump(Filterbank &fil, int nbits, const string &
             if (!fil.write_header())
                 std::cout<<"Error: Can not write dedisperse series header"<<std::endl;
             fil.close();
+            
+            std::ofstream outfile;
+            outfile.open(fname, std::ios::binary|std::ios::app);
+            outfiles.push_back(std::move(outfile));
         }
     }
     else if (format == "presto")
@@ -475,9 +559,9 @@ void SubbandDedispersion::preparedump(Filterbank &fil, int nbits, const string &
             string s_dm = ss_dm.str();
             
             std::string fname = rootname + "_" + s_dm + ".dat";
-            ofstream outfile;
-            outfile.open(fname, ios::binary);
-            outfile.close();
+            std::ofstream outfile;
+            outfile.open(fname, std::ios::binary);
+            outfiles.push_back(std::move(outfile));
         }
     }
     else
@@ -499,10 +583,10 @@ void SubbandDedispersion::preparedump(Filterbank &fil, int nbits, const string &
         header.nbits = nbits;
 
         std::string fname = rootname+".dat";
-        ofstream outfile;
-        outfile.open(fname, ios::binary);
-        outfile.write((char *)&header, sizeof(header));
-        outfile.close();
+        std::ofstream outfile;
+        outfile.open(fname, std::ios::binary);
+        outfiles.push_back(std::move(outfile));
+        outfiles[0].write((char *)&header, sizeof(header));
     }
 }
 
@@ -576,15 +660,6 @@ void SubbandDedispersion::rundump(float mean, float std, int nbits, const string
     {
         for (long int k=0; k<ndm; k++)
         {
-            double dm = sub.vdm[k];
-            stringstream ss_dm;
-            ss_dm << "DM" /*<< setw(8)*/ << setprecision(2) << fixed << setfill('0') << dm;
-            string s_dm = ss_dm.str();
-            
-            std::string fname = rootname + "_" + s_dm + ".dat";
-            ofstream outfile;
-            outfile.open(fname, ios::binary|ios::app);
-
             if (nbits == 8)
             {
                 double meantim=0., stdtim=0.;
@@ -610,27 +685,21 @@ void SubbandDedispersion::rundump(float mean, float std, int nbits, const string
                     tim8bit[i] = tmp;
                 }
 
-                outfile.write((char *)(tim8bit.data()), sizeof(unsigned char)*sub.ndump);
+                outfiles[k].write((char *)(tim8bit.data()), sizeof(char)*sub.ndump);
             }
             else if (nbits == 32)
             {
-                outfile.write((char *)(sub.buffertim.data()+k*sub.ndump), sizeof(float)*sub.ndump);
+                outfiles[k].write((char *)(sub.buffertim.data()+k*sub.ndump), sizeof(float)*sub.ndump);
             }
             else
             {
-                outfile.write((char *)(sub.buffertim.data()+k*sub.ndump), sizeof(float)*sub.ndump);
+                outfiles[k].write((char *)(sub.buffertim.data()+k*sub.ndump), sizeof(float)*sub.ndump);
                 std::cout<<"Warning: data type not supported, use float instead"<<std::endl;
             }
-
-            outfile.close();
         }
     }
     else
     {
-        std::string fname = rootname+".dat";
-        ofstream outfile;
-        outfile.open(fname, ios::binary|ios::app);
-
         if (nbits == 8)
         {
             std::vector<char> tim8bit(ndm*sub.ndump, 0);
@@ -659,19 +728,17 @@ void SubbandDedispersion::rundump(float mean, float std, int nbits, const string
                 }
             }
 
-            outfile.write((char *)(tim8bit.data()), sizeof(unsigned char)*ndm*sub.ndump);
+            outfiles[0].write((char *)(tim8bit.data()), sizeof(unsigned char)*ndm*sub.ndump);
         }
         else if (nbits == 32)
         {
-            outfile.write((char *)(sub.buffertim.data()), sizeof(float)*ndm*sub.ndump);
+            outfiles[0].write((char *)(sub.buffertim.data()), sizeof(float)*ndm*sub.ndump);
         }
         else
         {
-            outfile.write((char *)(sub.buffertim.data()), sizeof(float)*ndm*sub.ndump);
+            outfiles[0].write((char *)(sub.buffertim.data()), sizeof(float)*ndm*sub.ndump);
             std::cout<<"Warning: data type not supported, use float instead"<<std::endl;
         }
-
-        outfile.close();
     }
 
     ntot += ndump;

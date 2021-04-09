@@ -292,6 +292,12 @@ template <typename T>
 void get_mean_var(T profile, int size, double &mean, double &var);
 
 template <typename T>
+void get_mean_var2(T profile, int size, double &mean, double &var);
+
+template <typename T>
 void get_mean_var(T profiles, int nrow, int ncol, double &mean, double &var);
+
+template <typename T>
+void get_mean_var(T profile, T profiles, int nsubint, int nchan, int nbin, double &mean, double &var);
 
 #endif /* UTILS_H_ */
