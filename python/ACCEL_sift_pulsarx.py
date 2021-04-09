@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from __future__ import absolute_import
 from builtins import map
-import re
+import re, sys
 import glob
 import presto.sifting as sifting
 from operator import itemgetter, attrgetter
@@ -79,7 +79,7 @@ if len(cands):
 # Write candidates to STDOUT
 if len(cands):
     cands.sort(key=attrgetter('sigma'), reverse=True)
-    print("#id   dm acc  F0 F1 S/N")
+    print("#id   dm acc  F0 F1 S/N", file=sys.stderr)
     for k,cand in enumerate(cands):
-        print("%d\t%f\t%f\t%f\t%f\t%f" % (k+1, cand.DM, 0., cand.f, cand.z/cand.T/cand.T, cand.snr))
+        print("%d\t%f\t%f\t%f\t%f\t%f" % (k+1, cand.DM, 0., cand.f, cand.z/cand.T/cand.T, cand.snr), file=sys.stderr)
     #sifting.write_candlist(cands)
