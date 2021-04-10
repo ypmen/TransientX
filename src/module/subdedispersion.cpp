@@ -522,6 +522,9 @@ void SubbandDedispersion::preparedump(Filterbank &fil, int nbits, const string &
 
     double dt = (ceil(1.*offset/ndump)*ndump-offset)*tsamp;
 
+    outfiles.clear();
+    outfiles.shrink_to_fit();
+
     if (format == "sigproc")
     {
         for (long int k=0; k<ndm; k++)
@@ -589,6 +592,8 @@ void SubbandDedispersion::preparedump(Filterbank &fil, int nbits, const string &
         outfiles[0].write((char *)&header, sizeof(header));
         outfiles[0].close();
     }
+
+    ntot = 0;
 }
 
 void SubbandDedispersion::modifynblock()

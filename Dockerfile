@@ -71,5 +71,6 @@ RUN make && make install
 
 ENV YMW16_DIR=$HOME/software/PulsarX/src/ymw16
 ENV PATH=$PATH:$HOME/software/bin
+ENV OMP_NUM_THREADS=1
 
 WORKDIR $HOME
