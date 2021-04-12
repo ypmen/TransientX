@@ -63,6 +63,22 @@ public:
 		stt_smjd = floor(sec);
 		stt_offs = sec-stt_smjd;
 	}
+	MJD dividedby2()
+	{
+		long int nimjd = stt_imjd/2;
+		long int nsec = (stt_imjd%2)*86400/2+stt_smjd/2;
+		nimjd += nsec/86400;
+		nsec = nsec%86400;
+		double fsec = (stt_smjd%2)*0.5+stt_offs;
+		nsec += (long int)fsec;
+		fsec = fsec-(long int)fsec;
+
+		MJD tt;
+		tt.stt_imjd = nimjd;
+		tt.stt_smjd = nsec;
+		tt.stt_offs = fsec;
+		return tt;
+	}
 	const MJD & operator =(const MJD &t)
 	{
 		stt_imjd = t.stt_imjd;

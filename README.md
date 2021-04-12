@@ -8,7 +8,7 @@ TransientX is a one command line high performance transient search software.
 - PlotX (https://github.com/ypmen/PlotX)
 - sofa
 
-## Install
+## Installation
 - ./bootstrap
 - ./configure --prefix=[install_path] LDFLAGS="-L/path_to_sofa" CPPFLAGS="-I/path_to_sofa"
 - make
