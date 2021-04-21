@@ -418,6 +418,7 @@ void CandPlot::plot(const Cluster<double> &cluster, const Boxcar &boxcar, const 
         outfile<<setprecision(0)<<fixed<<fl<<"\t";
         outfile<<setprecision(0)<<fixed<<fh<<"\t";
         outfile<<basename+".png"<<"\t";
-        outfile<<s_id<<endl;
+        outfile<<s_id<<"\t";
+        outfile<<fname<<endl;
     }
 }

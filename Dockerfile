@@ -69,6 +69,7 @@ RUN ./bootstrap
 RUN ./configure --prefix=$HOME/software CXXFLAGS="-std=c++11 -O3" LDFLAGS="-L$HOME/software/sofa/20200721/c/src -L$HOME/software/lib" CPPFLAGS="-I$HOME/software/sofa/20200721/c/src -I$HOME/software/include"
 RUN make && make install
 
+ENV LD_LIBRARY_PATH=$HOME/software/lib:$LD_LIBRARY_PATH
 ENV YMW16_DIR=$HOME/software/PulsarX/src/ymw16
 ENV PATH=$PATH:$HOME/software/bin
 ENV OMP_NUM_THREADS=1
