@@ -14,6 +14,11 @@ TransientX is a one command line high performance transient search software.
 - make
 - make install
 
+## Docker
+```
+docker pull ypmen/pulsarx
+```
+
 ## Usage
 - export YMW16_DIR=/install_path/src/ymw16
 - transientx -h for help
