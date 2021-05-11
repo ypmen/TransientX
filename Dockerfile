@@ -47,7 +47,7 @@ RUN git clone https://github.com/ypmen/PulsarX.git
 #install BasebandX
 RUN git clone https://github.com/ypmen/BasebandX.git
 #install TransientX
-RUN git clone https://gitlab.mpcdf.mpg.de/ypmen/TransientX
+RUN git clone https://github.com/ypmen/TransientX
 
 WORKDIR $HOME/software/PlotX
 RUN ./bootstrap
