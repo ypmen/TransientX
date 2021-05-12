@@ -21,7 +21,7 @@ docker pull ypmen/pulsarx
 
 ## Usage
 - export YMW16_DIR=/install_path/src/ymw16
-- transientx -h for help
+- transientx/transientx_fil -h for help
 
 ## Example
 
