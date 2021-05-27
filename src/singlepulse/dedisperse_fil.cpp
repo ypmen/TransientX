@@ -270,6 +270,7 @@ int main(int argc, const char *argv[])
 	{
 		long int n = idx[idxn];
         long int nseg = ceil(1.*fil[0].nsamples/NSBLK);
+		long int ns_filn = 0;
 		for (long int s=0; s<nseg; s++)
 		{
 			if (verbose)
@@ -287,6 +288,10 @@ int main(int argc, const char *argv[])
 				count++;
 				if (count-1<nstart or count-1>nend)
 				{
+					if (++ns_filn == fil[n].nsamples)
+					{
+						goto next;
+					}
 					pcur += nifs*nchans;
 					continue;
 				}
@@ -319,9 +324,14 @@ int main(int argc, const char *argv[])
                     bcnt1 = 0;
 				}
                 
+				if (++ns_filn == fil[n].nsamples)
+                {
+                    goto next;
+                }
 				pcur += nifs*nchans;
 			}
 		}
+		next:
         fil[n].free();
 	}
 
