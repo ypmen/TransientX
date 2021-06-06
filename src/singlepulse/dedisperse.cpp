@@ -20,7 +20,7 @@
 #include "mjd.h"
 #include "databuffer.h"
 #include "singlepulse.h"
-#include "preprocess.h"
+#include "preprocesslite.h"
 
 using namespace std;
 using namespace boost::program_options;
@@ -222,7 +222,7 @@ int main(int argc, const char *argv[])
     double tsamp = psf[0].subint.tbin;
     int nifs = it.npol;
 
-	short *buffer = new short [nchans];
+	float *buffer = new float [nchans];
 
 	vector<SinglePulse> search1;
 	parse(vm, search1);
@@ -237,15 +237,14 @@ int main(int argc, const char *argv[])
 
 	long int ndump = (int)(vm["seglen"].as<float>()/tsamp)/td_lcm*td_lcm;
 
-	DataBuffer<short> databuf(ndump, nchans);
+	DataBuffer<float> databuf(ndump, nchans);
 	databuf.tsamp = tsamp;
 	memcpy(&databuf.frequencies[0], it.frequencies, sizeof(double)*nchans);
 
-	Preprocess prep;
+	PreprocessLite prep;
 	prep.td = vm["td"].as<int>();
 	prep.fd = vm["fd"].as<int>();
 	prep.thresig = vm["zapthre"].as<float>();
-	prep.width = vm["baseline"].as<vector<float>>().front();
 	prep.prepare(databuf);
 
 	long int nstart = jump[0]/tsamp;
@@ -321,7 +320,7 @@ int main(int argc, const char *argv[])
 					continue;
 				}
 
-				memset(buffer, 0, sizeof(short)*nchans);
+				memset(buffer, 0, sizeof(float)*nchans);
 				long int m = 0;
 				for (long int k=0; k<sumif; k++)
 				{
@@ -331,7 +330,7 @@ int main(int argc, const char *argv[])
 					}
 				}
 
-                memcpy(&databuf.buffer[0]+bcnt1*nchans, buffer, sizeof(short)*1*nchans);
+                memcpy(&databuf.buffer[0]+bcnt1*nchans, buffer, sizeof(float)*1*nchans);
 				databuf.counter++;
                 bcnt1++;
                 ntot++;
@@ -341,6 +340,7 @@ int main(int argc, const char *argv[])
 					prep.run(databuf);
 					for (auto sp=search1.begin(); sp!=search1.end(); ++sp)
 					{
+						prep.isbusy = true;
 						(*sp).fileid = idxn+1;
 						(*sp).fname = fnames[n];
 						(*sp).verbose = verbose;

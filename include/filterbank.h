@@ -74,5 +74,6 @@ public:
 };
 
 void get_telescope_name(int telescope_id, std::string &s_telescope);
+int get_telescope_id(const std::string &s_telescope);
 
 #endif /* FILTERBANK_H_ */

@@ -335,7 +335,7 @@ DataBuffer<float> * Preprocess::run(DataBuffer<short> &databuffer)
 #endif
         for (long int j=0; j<nchans; j++)
         {
-            if (chkurtosis[j*fd+l]>kurtosis_q1-thresig*kurtosis_R && chkurtosis[j*fd+l]<kurtosis_q3+thresig*kurtosis_R && chskewness[j*fd+l]>skewness_q1-thresig*skewness_R && chskewness[j*fd+l]<skewness_q3+thresig*skewness_R)
+            if (chkurtosis[j*fd+l]>=kurtosis_q1-thresig*kurtosis_R && chkurtosis[j*fd+l]<=kurtosis_q3+thresig*kurtosis_R && chskewness[j*fd+l]>=skewness_q1-thresig*skewness_R && chskewness[j*fd+l]<=skewness_q3+thresig*skewness_R)
             {
                 for (long int m=0; m<td; m++)
                 {
