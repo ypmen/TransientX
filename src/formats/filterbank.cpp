@@ -204,21 +204,23 @@ Filterbank & Filterbank::operator=(const Filterbank &fil)
 
 	if (fil.data != NULL)
 	{
-		if (data != NULL) delete [] data;
 		switch (nbits)
 		{
 		case 1:
 		{
+			if (data != NULL) delete [] (unsigned char *)data;
 			data = new unsigned char [ndata*nifs*nchans];
 			memcpy(data, fil.data, sizeof(unsigned char)*ndata*nifs*nchans); break;
 		}
 		case 8:
 		{
+			if (data != NULL) delete [] (unsigned char *)data;
 			data = new unsigned char [ndata*nifs*nchans];
 			memcpy(data, fil.data, sizeof(unsigned char)*ndata*nifs*nchans); break;
 		}
 		case 32:
 		{
+			if (data != NULL) delete [] (float *)data;
 			data = new float [ndata*nifs*nchans];
 			memcpy(data, fil.data, sizeof(float)*ndata*nifs*nchans); break;
 		}
@@ -850,73 +852,84 @@ void get_telescope_name(int telescope_id, std::string &s_telescope)
     }
 }
 
+bool iequals(const string& a, const string& b)
+{
+    unsigned int sz = a.size();
+    if (b.size() != sz)
+        return false;
+    for (unsigned int i = 0; i < sz; ++i)
+        if (tolower(a[i]) != tolower(b[i]))
+            return false;
+    return true;
+}
+
 int get_telescope_id(const std::string &s_telescope)
 {
-	if (s_telescope == "Fake")
+	if (iequals(s_telescope, "Fake"))
 	{
 		return 0;
 	}
-	else if (s_telescope == "Arecibo")
+	else if (iequals(s_telescope, "Arecibo"))
 	{
 		return 1;
 	}
-	else if (s_telescope == "Ooty")
+	else if (iequals(s_telescope, "Ooty"))
 	{
 		return 2;
 	}
-	else if (s_telescope == "Nancay")
+	else if (iequals(s_telescope, "Nancay"))
 	{
 		return 3;
 	}
-	else if (s_telescope == "Parkes")
+	else if (iequals(s_telescope, "Parkes"))
 	{
 		return 4;
 	}
-	else if (s_telescope == "Jodrell")
+	else if (iequals(s_telescope, "Jodrell"))
 	{
 		return 5;
 	}
-	else if (s_telescope == "GBT")
+	else if (iequals(s_telescope, "GBT"))
 	{
 		return 6;
 	}
-	else if (s_telescope == "GMRT")
+	else if (iequals(s_telescope, "GMRT"))
 	{
 		return 7;
 	}
-	else if (s_telescope == "Effelsberg")
+	else if (iequals(s_telescope, "Effelsberg"))
 	{
 		return 8;
 	}
-	else if (s_telescope == "ATA")
+	else if (iequals(s_telescope, "ATA"))
 	{
 		return 9;
 	}
-	else if (s_telescope == "SRT")
+	else if (iequals(s_telescope, "SRT"))
 	{
 		return 10;
 	}
-	else if (s_telescope == "LOFAR")
+	else if (iequals(s_telescope, "LOFAR"))
 	{
 		return 11;
 	}
-	else if (s_telescope == "VLA")
+	else if (iequals(s_telescope, "VLA"))
 	{
 		return 12;
 	}
-	else if (s_telescope == "CHIME")
+	else if (iequals(s_telescope, "CHIME"))
 	{
 		return 20;
 	}
-	else if (s_telescope == "FAST")
+	else if (iequals(s_telescope, "FAST"))
 	{
 		return 21;
 	}
-	else if (s_telescope == "MeerKAT")
+	else if (iequals(s_telescope, "MeerKAT"))
 	{
 		return 64;
 	}
-	else if (s_telescope == "KAT-7")
+	else if (iequals(s_telescope, "KAT-7"))
 	{
 		return 65;
 	}

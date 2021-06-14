@@ -11,6 +11,7 @@ src/singlepulse/transientx
 src/singlepulse/transientx_fil
 src/ymw16/ymw16
 src/ymw16/ymw16_ne
+src/singlepulse/replot_fil
 .vscode
 
 # http://www.gnu.org/software/automake

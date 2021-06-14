@@ -15,6 +15,7 @@ RUN apt-get install -y git \
     g++ \
     gfortran \
     libboost-program-options-dev \
+    libboost-log-dev \
     libcfitsio-dev \
     libblas-dev \
     liblapack-dev \

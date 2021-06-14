@@ -16,7 +16,7 @@ CXXFLAGS='-std=c++11 -O3'
 LT_INIT
 
 # Checks for libraries.
-AX_BOOST_BASE([1.56], [LIBS="$LIBS -lboost_program_options"], [echo "Boost library was not found!";exit -1])
+AX_BOOST_BASE([1.56], [LIBS="$LIBS -lboost_program_options -lboost_log"], [echo "Boost library was not found!";exit -1])
 AC_CHECK_LIB([cfitsio], [ffgky], [], [echo "cfitsio library was not found!";exit -1])
 AC_CHECK_LIB([png], [png_set_flush], [], [echo "library not found!";exit -1])
 AC_CHECK_LIB([fftw3], [fftw_malloc], [], [echo "library not found!";exit -1])
