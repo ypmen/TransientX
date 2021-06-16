@@ -11,10 +11,11 @@
 #include <plotx.h>
 namespace plt = PlotX;
 
+#include "logging.h"
 #include "dedisperse.h"
 #include "candidate.h"
 #include "archivewriter_tx.h"
-
+#include "utils.h"
 #include "hough_transform.h"
 
 Candidate::Candidate()
@@ -43,6 +44,7 @@ Candidate::Candidate()
     ndm = 0;
 
     isdedispersed = false;
+    isnormalized = false;
     maxdmid = 0;
     maxtid = 0;
 }
@@ -338,10 +340,23 @@ void Candidate::downsample(int td, int fd)
         }
     }
 
+    std::vector<double> frequencies_new(nchan_new, 0.);
+    for (long int j=0; j<nchan_new; j++)
+    {
+        for (long int jj=0; jj<fd; jj++)
+        {
+            frequencies_new[j] += frequencies[j*fd+jj];
+        }
+        frequencies_new[j] /= fd;
+    }
+
     std::swap(data_new, data);
+    std::swap(frequencies_new, frequencies);
     nchan = nchan_new;
     nbin = nbin_new;
     tbin *= td;
+
+    isnormalized = false;
 }
 
 void Candidate::get_stats()
@@ -373,6 +388,9 @@ void Candidate::get_stats()
         }
     }
 
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(num_threads)
+#endif
     for (long int j=0; j<nchan; j++)
     {
         float boxsum = 0.;
@@ -441,7 +459,7 @@ void Candidate::normalize()
 #endif
     for (long int j=0; j<npol*nchan; j++)
     {
-        if (var[j] == 0.) continue;
+        if (var[j] <= 0.) continue;
 
         float std = std::sqrt(var[j]);
         for (long int i=0; i<nbin; i++)
@@ -453,6 +471,8 @@ void Candidate::normalize()
         mean[j] = 0.;
         var[j] = 1.;
     }
+
+    isnormalized = true;
 }
 
 void Candidate::azap(float threshold)
@@ -463,21 +483,26 @@ void Candidate::azap(float threshold)
     std::nth_element(kurtosis_sort.begin(), kurtosis_sort.begin()+kurtosis_sort.size()/4, kurtosis_sort.end(), std::less<float>());
     float kurtosis_q1 = kurtosis_sort[kurtosis_sort.size()/4];
     std::nth_element(kurtosis_sort.begin(), kurtosis_sort.begin()+kurtosis_sort.size()/4, kurtosis_sort.end(), std::greater<float>());
-    float kurtosis_q3 =kurtosis_sort[kurtosis_sort.size()/4];
+    float kurtosis_q3 = kurtosis_sort[kurtosis_sort.size()/4];
     float kurtosis_R = kurtosis_q3-kurtosis_q1;
 
     std::vector<float> skewness_sort = skewness;
     std::nth_element(skewness_sort.begin(), skewness_sort.begin()+skewness_sort.size()/4, skewness_sort.end(), std::less<float>());
     float skewness_q1 = skewness_sort[skewness_sort.size()/4];
     std::nth_element(skewness_sort.begin(), skewness_sort.begin()+skewness_sort.size()/4, skewness_sort.end(), std::greater<float>());
-    float skewness_q3 =skewness_sort[skewness_sort.size()/4];
+    float skewness_q3 = skewness_sort[skewness_sort.size()/4];
     float skewness_R = skewness_q3-skewness_q1;
 
     for (long int j=0; j<nchan; j++)
     {
-        if ((kurtosis[j]<kurtosis_q1-threshold*kurtosis_R) || (kurtosis[j]>kurtosis_q3+threshold*kurtosis_R) || (skewness[j]<skewness_q1-threshold*skewness_R) || (skewness[j]>skewness_q3+threshold*skewness_R))
+        if ((kurtosis[j]<kurtosis_q1-threshold*kurtosis_R) ||
+            (kurtosis[j]>kurtosis_q3+threshold*kurtosis_R) ||
+            (skewness[j]<skewness_q1-threshold*skewness_R) ||
+            (skewness[j]>skewness_q3+threshold*skewness_R))
         {
             weights[j] = 0.;
+            var[j] = 0.;
+            mean[j] = 0;
         }
     }
 
@@ -523,6 +548,181 @@ void Candidate::zap(const std::vector<std::pair<double, double>> &zaplist)
             for (long int i=0; i<nbin; i++)
             {
                 data[k*nchan*nbin+j*nbin+i] *= weights[j];
+            }
+        }
+    }
+}
+
+void Candidate::clip(int td, int fd, float threshold)
+{
+    if (!isnormalized)
+    {
+        BOOST_LOG_TRIVIAL(warning)<<"data is not normalized, so clip filter is not performed";
+        return;
+    }
+
+    long int nsamples_ds = nbin/td;
+    long int nchans_ds = nchan/fd;
+
+    vector<float> data_ds(nchans_ds*nsamples_ds, 0.);
+
+    // downsample
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(num_threads)
+#endif
+    for (long int j=0; j<nchans_ds; j++)
+    {
+        for (long int k=0; k<fd; k++)
+        {
+            for (long int n=0; n<td; n++)
+            {
+                for (long int i=0; i<nsamples_ds; i++)       
+                {
+                    data_ds[j*nsamples_ds+i] += data[(j*fd+k)*nbin+(i*td+n)];
+                }
+            }
+        }
+    }
+
+    float tempthre = threshold*std::sqrt(td*fd);
+
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(num_threads)
+#endif
+    for (long int j=0; j<nchans_ds; j++)
+    {
+        for (long int k=0; k<fd; k++)
+        {
+            for (long int n=0; n<td; n++)
+            {
+                for (long int i=0; i<nsamples_ds; i++)
+                {
+                    if (data_ds[j*nsamples_ds+i] > tempthre)
+                    {
+                        data[(j*fd+k)*nbin+(i*td+n)] = 0.;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void Candidate::kadaneF(int td, int fd, float threshold, int nwidth)
+{
+    if (!isnormalized)
+    {
+        BOOST_LOG_TRIVIAL(warning)<<"data is not normalized, so kadane filter is not performed";
+        return;
+    }
+
+    long int nsamples_ds = nbin/td;
+    long int nchans_ds = nchan/fd;
+
+    vector<float> data_ds(nchans_ds*nsamples_ds, 0.);
+
+    // downsample
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(num_threads)
+#endif
+    for (long int j=0; j<nchans_ds; j++)
+    {
+        for (long int k=0; k<fd; k++)
+        {
+            for (long int n=0; n<td; n++)
+            {
+                for (long int i=0; i<nsamples_ds; i++)       
+                {
+                    data_ds[j*nsamples_ds+i] += data[(j*fd+k)*nbin+(i*td+n)];
+                }
+            }
+        }
+    }
+
+    // kadane filter
+#ifdef _OPENMP
+    std::vector<float> chdata_t(num_threads*nsamples_ds, 0.);
+#else
+    std::vector<float> chdata_t(nsamples_ds, 0.);
+#endif
+
+    int wnlimit = nwidth*width/tbin/td;
+
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(num_threads)
+#endif
+    for (long int j=0; j<nchans_ds; j++)
+    {
+#ifdef _OPENMP
+        float *chdata = chdata_t.data()+omp_get_thread_num()*nsamples_ds;
+#else
+        float *chdata = chdata_t.data();
+#endif
+
+        for (long int i=0; i<nsamples_ds; i++)
+        {
+            chdata[i] = data_ds[j*nsamples_ds+i];
+        }
+
+        long int start, end;
+        float snr2=0.;
+        float boxsum = kadane<float>(chdata, nsamples_ds, &start, &end);
+        long int wn = end-start+1;
+
+        float mean = 0.;
+        float var = td*fd;    
+        if (wn > wnlimit)
+        {
+            snr2 = boxsum*boxsum/(wn*var);
+        }
+        else
+        {
+            snr2 = 0.;
+        }
+
+        start *= td;
+        end += 1;
+        end *= td;
+        if (snr2 > threshold*threshold)
+        {
+            for (long int k=0; k<fd; k++)
+            {
+                for (long int i=start; i<end; i++)
+                {
+                    data[(j*fd+k)*nbin+i] = 0.;
+                }
+            }
+        }
+
+        //<0
+        for (long int i=0; i<nsamples_ds; i++)
+        {
+            chdata[i] = -chdata[i];
+        }
+
+        snr2=0.;
+        boxsum = kadane<float>(chdata, nsamples_ds, &start, &end);
+        wn = end-start+1;
+
+        if (wn > wnlimit)
+        {
+            snr2 = boxsum*boxsum/(wn*var);
+        }
+        else
+        {
+            snr2 = 0.;
+        }
+
+        start *= td;
+        end += 1;
+        end *= td;
+        if (snr2 > threshold*threshold)
+        {
+            for (long int k=0; k<fd; k++)
+            {
+                for (long int i=start; i<end; i++)
+                {
+                    data[(j*fd+k)*nbin+i] = 0.;
+                }
             }
         }
     }
@@ -936,7 +1136,7 @@ void Candidate::save2png(const std::string &rootname, float threS)
     tds = tds<1 ? 1:tds;
     tds = tds>nsamples ? nsamples:tds;
     std::vector<float> vt_down(nsamples/tds, 0.);
-    long int fds = nchans/32;
+    long int fds = nchans/64;
     fds = fds<1 ? 1:fds;
     fds = fds>nchans ? nchans:fds;
     std::vector<float> vf_down(nchans/fds, 0.);
@@ -1030,7 +1230,7 @@ void Candidate::save2png(const std::string &rootname, float threS)
         }
     }
 
-    int dmds = 8;
+    int dmds = ndm/64;
     dmds = dmds<1 ? 1:dmds;
     dmds = dmds>ndm ? ndm:dmds;
 

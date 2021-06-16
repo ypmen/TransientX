@@ -558,7 +558,7 @@ bool Filterbank::read_data()
 bool Filterbank::read_data(long int nstart, long int ns)
 {
     long int offset=(long int) (long double)nstart * (long double)nchans * (long double)nifs * ((long double)nbits / 8.0);
-    fseek(fptr, offset, SEEK_CUR);
+    fseek(fptr, offset+header_size, SEEK_SET);
     return read_data(ns);
 }
 

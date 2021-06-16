@@ -7,7 +7,6 @@
  */
 
 #define NSBLK 65536
-#define FAST 1
 
 #include <iostream>
 #include <string>
@@ -15,10 +14,8 @@
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
-#define BOOST_LOG_DYN_LINK 1
-#include <boost/log/trivial.hpp>
-#include <boost/log/expressions.hpp>
 
+#include "logging.h"
 #include "dedisperse.h"
 #include "candidate.h"
 #include "filterbank.h"
@@ -28,13 +25,11 @@ using namespace boost::program_options;
 
 unsigned int num_threads;
 
-namespace logging = boost::log;
-void init_logging()
+template<typename InputIterator, typename ValueType>
+ValueType closestdist(InputIterator first, InputIterator last, ValueType value)
 {
-    logging::core::get()->set_filter
-    (
-        logging::trivial::severity >= logging::trivial::info
-    );
+    ValueType temp = *std::min_element(first, last, [&](ValueType x, ValueType y){return std::abs(x - value) < std::abs(y - value);});
+    return std::abs(temp-value);
 }
 
 int main(int argc, char *argv[])
@@ -57,8 +52,10 @@ int main(int argc, char *argv[])
             ("snrloss", value<float>()->default_value(1e-1), "S/N loss")
             ("dm", value<double>(), "Update dm")
             ("coherent", "Apply coherent dedispersion")
-            ("zapthre", value<float>()->default_value(4), "Threshold in IQR for zapping channels")
+            ("zapthre", value<float>()->default_value(3), "Threshold in IQR for zapping channels")
             ("zdot", "Perform zero-DM matched filter")
+            ("clip", value<std::vector<int>>()->multitoken()->default_value(std::vector<int>{4, 4, 7}, "4, 4, 7"), "Perform clip filter [td, fd, threshold]")
+            ("kadane", value<std::vector<int>>()->multitoken()->default_value(std::vector<int>{4, 4, 7}, "4, 4, 7"), "Perform kadane filter [td, fd, threshold]")
             ("candfile", value<std::string>(), "Input cand file")
             ("template", value<std::string>(), "Input fold template file")
             ("srcname", value<std::string>()->default_value("PSRJ0000+00"), "Souce name")
@@ -96,17 +93,38 @@ int main(int argc, char *argv[])
 		verbose = 1;
 	}
 
-    if (vm.count("template") == 0)
+    if (vm.count("arch") != 0)
 	{
-		BOOST_LOG_TRIVIAL(error)<<"Error: no template file"<<std::endl;
-		return -1;
+        if (vm.count("template") == 0)
+        {
+		    BOOST_LOG_TRIVIAL(error)<<"Error: no template file"<<endl;
+		    return -1;
+        }
+        else
+        {
+            std::ifstream tmp(vm["template"].as<std::string>().c_str());
+            if (!tmp.good())
+            {
+                BOOST_LOG_TRIVIAL(error)<<"Error: can not open file "<<vm["template"].as<std::string>()<<endl;
+                return -1;
+            }
+        }
 	}
 
     if (vm.count("candfile") == 0)
-	{
-		BOOST_LOG_TRIVIAL(error)<<"Error: no candfile"<<std::endl;
-		return -1;
-	}
+    {
+        BOOST_LOG_TRIVIAL(error)<<"Error: no candfile file"<<endl;
+        return -1;
+    }
+    else
+    {
+        std::ifstream tmp(vm["candfile"].as<std::string>().c_str());
+        if (!tmp.good())
+        {
+            BOOST_LOG_TRIVIAL(error)<<"Error: can not open file "<<vm["candfile"].as<std::string>()<<endl;
+            return -1;
+        }
+    }
 
     if (vm.count("input") == 0)
 	{
@@ -268,6 +286,7 @@ int main(int argc, char *argv[])
         cand.fh = std::stod(parameters[7]);
         cand.pngname = parameters[8];
         cand.planid = std::stoi(parameters[9]);
+        cand.rawdata = parameters[10];
 
         double dmdelay = std::abs(Candidate::dmdelay(cand.dm, cand.frequencies.front(), cand.frequencies.back()));
         int nbin = (dmdelay+2*nwidth*cand.width)/tsamp;
@@ -286,6 +305,9 @@ int main(int argc, char *argv[])
     {
         candscnt[k] = cands[k].nbin;
     }
+
+    std::vector<long double> candsmjd;
+    candsmjd.push_back(0.);
 
     std::vector<std::vector<float>> candsbuffer(cands.size());
     
@@ -318,14 +340,12 @@ int main(int argc, char *argv[])
 
             if (hit)
             {
-                fil[n].read_data(NSBLK);
-#ifdef FAST
-			unsigned char *pcur = (unsigned char *)(fil[n].data);
-#endif
+                fil[n].read_data(ns_filn, NSBLK);
 
                 for (long int i=0; i<NSBLK; i++)
                 {
                     count++;
+                    ns_filn++;
 
                     if (fil[n].nbits == 8)
                     {
@@ -351,8 +371,6 @@ int main(int argc, char *argv[])
                     {
                         BOOST_LOG_TRIVIAL(error)<<"Error: data type is not support"<<endl;
                     }
-
-                    ns_filn++;
 
                     for (long int k=0; k<cands.size(); k++)
                     {
@@ -391,12 +409,18 @@ int main(int argc, char *argv[])
                                     cands[k].zdot();
                                 }
 
+                                BOOST_LOG_TRIVIAL(debug)<<"calculate spectra stats...";
+                                cands[k].get_stats();
+
                                 BOOST_LOG_TRIVIAL(debug)<<"dedisperse...";
                                 cands[k].dedisperse(vm.count("coherent"));
                                 cands[k].shrink_to_fit(2*nwidth);
 
-                                BOOST_LOG_TRIVIAL(debug)<<"downsample...";
-                                cands[k].downsample(vm["td"].as<int>(), vm["fd"].as<int>());
+                                BOOST_LOG_TRIVIAL(debug)<<"automatically zap channels...";
+                                cands[k].azap(vm["zapthre"].as<float>());
+    
+                                BOOST_LOG_TRIVIAL(debug)<<"manually zap channels...";
+                                cands[k].zap(zaplist);
 
                                 BOOST_LOG_TRIVIAL(debug)<<"calculate spectra stats...";
                                 cands[k].get_stats();
@@ -404,22 +428,35 @@ int main(int argc, char *argv[])
                                 BOOST_LOG_TRIVIAL(debug)<<"normalize...";
                                 cands[k].normalize();
 
-                                BOOST_LOG_TRIVIAL(debug)<<"remove rfi...";
-                                cands[k].azap(vm["zapthre"].as<float>());
-                                cands[k].zap(zaplist);
-                                
+                                if (vm.count("clip"))
+                                {
+                                    BOOST_LOG_TRIVIAL(debug)<<"clip outliers...";
+                                    cands[k].clip(vm["clip"].as<std::vector<int>>()[0], vm["clip"].as<std::vector<int>>()[1], vm["clip"].as<std::vector<int>>()[2]);
+                                }
+
+                                if (vm.count("kadane"))
+                                {
+                                    BOOST_LOG_TRIVIAL(debug)<<"perform kadane filter...";
+                                    cands[k].kadaneF(vm["kadane"].as<std::vector<int>>()[0], vm["kadane"].as<std::vector<int>>()[1], vm["kadane"].as<std::vector<int>>()[2]);
+                                }
+
+                                BOOST_LOG_TRIVIAL(debug)<<"downsample...";
+                                cands[k].downsample(vm["td"].as<int>(), vm["fd"].as<int>());
+
                                 BOOST_LOG_TRIVIAL(debug)<<"hough transform...";
                                 cands[k].optimize();
 
                                 BOOST_LOG_TRIVIAL(debug)<<"boxcar filter...";
                                 cands[k].matched_filter(vm["snrloss"].as<float>(), true);
 
-                                if (vm.count("clean") && cands[k].snr<snr_threhold)
+                                if (vm.count("clean") && (cands[k].snr<snr_threhold || closestdist(candsmjd.begin(), candsmjd.end(), cands[k].mjd)*86400.<cands[k].width))
                                 {
                                     BOOST_LOG_TRIVIAL(info)<<"candidate removed id="<<cands[k].id;
                                 }
                                 else
                                 {
+                                    candsmjd.push_back(cands[k].mjd);
+
                                     BOOST_LOG_TRIVIAL(debug)<<"save to png...";
                                     cands[k].save2png(rootname, snr_threhold);
 
@@ -440,7 +477,7 @@ int main(int argc, char *argv[])
                         }
                     }
 
-                    if (++ns_filn == fil[n].nsamples)
+                    if (ns_filn == fil[n].nsamples)
                     {
                         goto next;
                     }

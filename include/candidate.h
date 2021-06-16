@@ -54,6 +54,7 @@ public:
     /* chop number of bins */
     void shrink_to_fit(int nwidth=20);
 
+    /* convert f-t plane to dm-t plane*/
     void optimize();
 
     /* zap channels */
@@ -61,6 +62,12 @@ public:
 
     /* zap channels by skewness and kurtosis*/
     void azap(float threshold);
+
+    /* kadane filter */
+    void kadaneF(int td, int fd, float threshold=10., int nwidth=0);
+
+    /* clip outlier */
+    void clip(int td, int fd, float threshold=10.);
 
     /* zero-DM matched filter */
     void zdot();
@@ -121,8 +128,8 @@ public:
     std::vector<float> data;
 public:
     std::vector<float> weights;
-    std::vector<float> mean;
-    std::vector<float> var;
+    std::vector<double> mean;
+    std::vector<double> var;
     std::vector<float> skewness;
     std::vector<float> kurtosis;
 public:
@@ -135,6 +142,7 @@ public:
     std::vector<float> profile;
 private:
     bool isdedispersed;
+    bool isnormalized;
     int maxdmid;
     int maxtid;
 };
