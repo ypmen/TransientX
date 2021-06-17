@@ -6,7 +6,7 @@
  * @desc [description]
  */
 
-#define NSBLK 65536
+#define NSBLK 1024
 
 #include <iostream>
 #include <string>
@@ -20,6 +20,7 @@
 #include "candidate.h"
 #include "filterbank.h"
 #include "mjd.h"
+#include "ringbuffer.h"
 
 using namespace boost::program_options;
 
@@ -48,7 +49,6 @@ int main(int argc, char *argv[])
             ("td", value<int>()->default_value(1), "Time downsample")
 			("fd", value<int>()->default_value(1), "Frequency downsample")
             ("nw", value<int>()->default_value(20), "Chop data by nw*width")
-            ("thre", value<float>()->default_value(7), "S/N threshold")
             ("snrloss", value<float>()->default_value(1e-1), "S/N loss")
             ("dm", value<double>(), "Update dm")
             ("coherent", "Apply coherent dedispersion")
@@ -66,7 +66,11 @@ int main(int argc, char *argv[])
             ("rootname,o", value<string>()->default_value("J0000-00"), "Output rootname")
             ("incoherent", "The beam is incoherent (ifbf). Coherent beam by default (cfbf)")
             ("arch,a", "Generate archive file")
-            ("clean,c", "Remove candidates by S/N threshold")
+            ("dmcutoff", value<float>()->default_value(0), "DM cutoff")
+            ("ddmcutoff", value<float>()->default_value(5), "DM change cutoff (unit of pulse width)")
+            ("widthcutoff", value<float>()->default_value(0.1), "Pulse width cutoff (s)")
+            ("snrcutoff", value<float>()->default_value(7), "S/N cutoff")
+            ("clean,c", "Remove candidates by dm width snr cutoff")
             ("nosumif", "Do not sum polarizations")
             ("cont", "Input files are contiguous")
 			("input,f", value<std::vector<std::string>>()->multitoken()->composing(), "Input files");
@@ -138,7 +142,7 @@ int main(int argc, char *argv[])
 	std::string s_telescope = vm["telescope"].as<std::string>();
     num_threads = vm["threads"].as<unsigned int>();
     int ibeam = vm["ibeam"].as<int>();
-    float snr_threhold = vm["thre"].as<float>();
+    float snr_threhold = vm["snrcutoff"].as<float>();
 
     std::vector<std::string> fnames = vm["input"].as<std::vector<std::string>>();
 	double src_raj = vm["ra"].as<double>();
@@ -265,6 +269,8 @@ int main(int argc, char *argv[])
     cand.frequencies.resize(nchans);
     memcpy(cand.frequencies.data(), fil[0].frequency_table, sizeof(double)*nchans);
 
+    double dm1delay = std::abs(Candidate::dmdelay(1., cand.frequencies.front(), cand.frequencies.back()));
+
     while (getline(candfile, line))
     {
         boost::trim(line);
@@ -294,7 +300,8 @@ int main(int argc, char *argv[])
         cand.nchan = nchans;
         cand.nbin = nbin;
 
-        cands.push_back(cand);
+        if (cand.mjd+cand.nbin*cand.tbin/86400. > start_mjd)
+            cands.push_back(cand);
     }
 
 	long int count = 0;
@@ -308,10 +315,13 @@ int main(int argc, char *argv[])
 
     std::vector<long double> candsmjd;
     candsmjd.push_back(0.);
-
-    std::vector<std::vector<float>> candsbuffer(cands.size());
     
+    std::vector<bool> candsisfirst(cands.size(), true);
+
     std::vector<float> buffer(nifs*nchans, 0);
+
+    RingBuffer ringbuffer;
+    ringbuffer.resize(*std::max_element(candscnt.begin(), candscnt.end())+1, nifs*nchans);
 	
     BOOST_LOG_TRIVIAL(info)<<"start processing... ";
 
@@ -372,19 +382,19 @@ int main(int argc, char *argv[])
                         BOOST_LOG_TRIVIAL(error)<<"Error: data type is not support"<<endl;
                     }
 
+                    ringbuffer.append(buffer);
+
                     for (long int k=0; k<cands.size(); k++)
                     {
                         if (!cands[k].captured)
                         {
                             if (candscnt[k] && count*tsamp > ((cands[k].mjd-start_mjd)*86400.-nwidth*cands[k].width))
                             {
-                                if (candsbuffer[k].empty())
+                                if (candsisfirst[k])
                                 {
-                                    candsbuffer[k].resize(cands[k].nbin*cands[k].npol*cands[k].nchan, 0);
+                                    candsisfirst[k] = false;
                                     cands[k].mjd_start = start_mjd+(count-1)*tsamp/86400.;
                                 }
-
-                                std::memcpy(candsbuffer[k].data()+(cands[k].nbin-candscnt[k])*cands[k].npol*cands[k].nchan, buffer.data(), sizeof(float)*nifs*nchans);
 
                                 candscnt[k]--;
                             }
@@ -392,10 +402,13 @@ int main(int argc, char *argv[])
                             {
                                 cands[k].resize(cands[k].npol, cands[k].nchan, cands[k].nbin);
 
-                                transpose_pad<float>(cands[k].data.data(), candsbuffer[k].data(), cands[k].nbin, cands[k].npol*cands[k].nchan);
+                                std::vector<float> temp;
+                                ringbuffer.read(temp, count-cands[k].nbin-1, cands[k].nbin);
 
-                                candsbuffer[k].clear();
-                                candsbuffer[k].shrink_to_fit();
+                                transpose_pad<float>(cands[k].data.data(), temp.data(), cands[k].nbin, cands[k].npol*cands[k].nchan);
+
+                                temp.clear();
+                                temp.shrink_to_fit();
 
                                 if (vm.count("nosumif") == 0)
                                 {
@@ -412,7 +425,7 @@ int main(int argc, char *argv[])
                                 BOOST_LOG_TRIVIAL(debug)<<"calculate spectra stats...";
                                 cands[k].get_stats();
 
-                                BOOST_LOG_TRIVIAL(debug)<<"dedisperse...";
+                                BOOST_LOG_TRIVIAL(debug)<<"dedisperse at DM="<<cands[k].dm<<"...";
                                 cands[k].dedisperse(vm.count("coherent"));
                                 cands[k].shrink_to_fit(2*nwidth);
 
@@ -449,25 +462,32 @@ int main(int argc, char *argv[])
                                 BOOST_LOG_TRIVIAL(debug)<<"boxcar filter...";
                                 cands[k].matched_filter(vm["snrloss"].as<float>(), true);
 
-                                if (vm.count("clean") && (cands[k].snr<snr_threhold || closestdist(candsmjd.begin(), candsmjd.end(), cands[k].mjd)*86400.<cands[k].width))
+                                if (vm.count("clean") && (cands[k].snr<snr_threhold || closestdist(candsmjd.begin(), candsmjd.end(), cands[k].mjd)*86400. < cands[k].width || cands[k].dm_maxsnr < vm["dmcutoff"].as<float>() || cands[k].width > vm["widthcutoff"].as<float>() || std::abs(cands[k].dm_maxsnr-cands[k].dm)*dm1delay > vm["ddmcutoff"].as<float>()*cands[k].width))
                                 {
                                     BOOST_LOG_TRIVIAL(info)<<"candidate removed id="<<cands[k].id;
                                 }
                                 else
                                 {
+                                    BOOST_LOG_TRIVIAL(info)<<"candidate preserved id="<<cands[k].id;
+
                                     candsmjd.push_back(cands[k].mjd);
 
-                                    BOOST_LOG_TRIVIAL(debug)<<"save to png...";
-                                    cands[k].save2png(rootname, snr_threhold);
+                                    BOOST_LOG_TRIVIAL(debug)<<"de-dedisperse...";
+                                    cands[k].dededisperse(vm.count("coherent"));
 
                                     if (vm.count("arch"))
                                     {
-                                        BOOST_LOG_TRIVIAL(debug)<<"de-dedisperse...";
-                                        cands[k].dededisperse(vm.count("coherent"));
-
                                         BOOST_LOG_TRIVIAL(debug)<<"save to archive...";
                                         cands[k].save2ar(vm["template"].as<std::string>());
                                     }
+
+                                    cands[k].dm = cands[k].dm_maxsnr;
+
+                                    BOOST_LOG_TRIVIAL(debug)<<"dedisperse at DM="<<cands[k].dm<<"...";
+                                    cands[k].dedisperse(vm.count("coherent"));
+
+                                    BOOST_LOG_TRIVIAL(debug)<<"save to png...";
+                                    cands[k].save2png(rootname, snr_threhold);
                                 }
 
                                 cands[k].close();
@@ -489,6 +509,8 @@ int main(int argc, char *argv[])
                 {
                     count++;
                     ns_filn++;
+
+                    ringbuffer.append();
 
                     if (ns_filn == fil[n].nsamples)
                     {

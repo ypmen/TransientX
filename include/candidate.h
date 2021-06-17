@@ -35,6 +35,9 @@ public:
 
         frequencies.clear();
         frequencies.shrink_to_fit();
+
+        profile.clear();
+        profile.shrink_to_fit();
     }
     void resize(int np, int nc, int nb)
     {
