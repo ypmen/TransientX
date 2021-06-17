@@ -53,6 +53,7 @@ int main(int argc, char *argv[])
             ("dm", value<double>(), "Update dm")
             ("coherent", "Apply coherent dedispersion")
             ("zapthre", value<float>()->default_value(3), "Threshold in IQR for zapping channels")
+            ("zap", value<std::vector<double>>()->multitoken()->zero_tokens()->composing(), "Zap channels, e.g. --zap 1000 1100 1200 1300")
             ("zdot", "Perform zero-DM matched filter")
             ("clip", value<std::vector<int>>()->multitoken()->default_value(std::vector<int>{4, 4, 7}, "4, 4, 7"), "Perform clip filter [td, fd, threshold]")
             ("kadane", value<std::vector<int>>()->multitoken()->default_value(std::vector<int>{4, 4, 7}, "4, 4, 7"), "Perform kadane filter [td, fd, threshold]")
@@ -222,6 +223,15 @@ int main(int argc, char *argv[])
 
     /** rfi */
 	std::vector<std::pair<double, double>> zaplist;
+    if (vm.count("zap"))
+	{
+        std::vector<double> zap_opts = vm["zap"].as<std::vector<double>>();
+        for (auto opt=zap_opts.begin(); opt!=zap_opts.end(); ++opt)
+        {
+            zaplist.push_back(pair<double, double>(*(opt+0), *(opt+1)));
+            advance(opt, 1);
+        }
+	}
 
     long int nchans = fil[0].nchans;
     double tsamp = fil[0].tsamp;
