@@ -2,10 +2,12 @@ FROM ubuntu:20.04
 
 MAINTAINER Yunpeng Men "ypmen@mpifr-bonn.mpg.de"
 
-USER root
+RUN useradd -ms /bin/bash pulsarx
 
 ENV DEBIAN_FRONTEND noninteractive
-ENV HOME /root
+ENV HOME /home/pulsarx
+
+USER root
 
 RUN apt-get update
 
@@ -30,6 +32,8 @@ RUN apt-get install -y git \
     python3-distutils \
     python3-numpy \
     python3-matplotlib
+
+USER pulsarx
 
 #install sofa
 WORKDIR $HOME

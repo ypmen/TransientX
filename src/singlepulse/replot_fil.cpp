@@ -6,7 +6,7 @@
  * @desc [description]
  */
 
-#define NSBLK 1024
+#define NSBLK 16384
 
 #include <iostream>
 #include <string>

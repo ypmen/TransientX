@@ -11,4 +11,14 @@
 
 #define CONST_C 299792458 /*m/s*/
 
+inline double fdot2acc(double fdot, double f)
+{
+    return -fdot/f*CONST_C;
+}
+
+inline double acc2fdot(double acc, double f)
+{
+    return -f*acc/CONST_C;
+}
+
 #endif /* CONSTANTS */
