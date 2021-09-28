@@ -280,8 +280,9 @@ inline void get_rad_radec(const std::string &s_ra, const std::string &s_dec, dou
         ddmmss.push_back("0");
     }
 
+    double sign = std::signbit(stod(ddmmss[0])) ?  -1 : 1;
     ra = (stod(hhmmss[0]) + stod(hhmmss[1])/60. + stod(hhmmss[2])/3600.)*15./180.*M_PI;
-    dec = (stod(ddmmss[0]) + stod(ddmmss[1])/60. + stod(ddmmss[2])/3600.)/180.*M_PI;
+    dec = sign*(sign*stod(ddmmss[0]) + stod(ddmmss[1])/60. + stod(ddmmss[2])/3600.)/180.*M_PI;
 }
 
 void get_gl_gb(double &gl, double &gb, const std::string &s_ra, const std::string &s_dec);
