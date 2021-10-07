@@ -5,8 +5,8 @@
  *      Author: ypmen
  */
 
-#ifndef UTILS_H_
-#define UTILS_H_
+#ifndef UTILS_H
+#define UTILS_H
 
 #include "config.h"
 
@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <complex>
 #include <fftw3.h>
+#include <random>
 #include <boost/algorithm/string.hpp>
 
 using namespace std;
@@ -285,12 +286,23 @@ inline void get_rad_radec(const std::string &s_ra, const std::string &s_dec, dou
     dec = sign*(sign*stod(ddmmss[0]) + stod(ddmmss[1])/60. + stod(ddmmss[2])/3600.)/180.*M_PI;
 }
 
+template <typename T>
+T randnorm(const T &mean, const T &stddev)
+{
+    static thread_local std::mt19937 generator;
+    std::normal_distribution<T> distribution(mean, stddev);
+    return distribution(generator);
+}
+
 void get_gl_gb(double &gl, double &gb, const std::string &s_ra, const std::string &s_dec);
 double get_maxdm_ymw16(double gl, double gb);
 double get_dist_ymw16(double gl, double gb, double dm);
 
 template <typename T>
 void get_mean_var(T profile, int size, double &mean, double &var);
+
+template <typename T>
+void get_skewness_kurtosis(T profile, int size, double &skewness, double &kurtosis);
 
 template <typename T>
 void get_mean_var2(T profile, int size, double &mean, double &var);
@@ -301,4 +313,4 @@ void get_mean_var(T profiles, int nrow, int ncol, double &mean, double &var);
 template <typename T>
 void get_mean_var(T profile, T profiles, int nsubint, int nchan, int nbin, double &mean, double &var);
 
-#endif /* UTILS_H_ */
+#endif /* UTILS_H */

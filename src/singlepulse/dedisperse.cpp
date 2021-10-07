@@ -73,6 +73,7 @@ int main(int argc, const char *argv[])
 			("threMask", value<float>()->default_value(10), "S/N threshold of Mask")
             ("threKadaneF", value<float>()->default_value(7), "S/N threshold of KadaneF")
 			("threKadaneT", value<float>()->default_value(7), "S/N threshold of KadaneT")
+			("fill", value<string>()->default_value("mean"), "Fill the zapped samples by [mean, rand]")
 			("source_name,s", value<string>()->default_value("J0000-00"), "Source name")
 			("rootname,o", value<string>()->default_value("J0000-00"), "Output rootname")
 			("drop", "Drop candidates with maximum search width")
@@ -245,6 +246,7 @@ int main(int argc, const char *argv[])
 	prep.td = vm["td"].as<int>();
 	prep.fd = vm["fd"].as<int>();
 	prep.thresig = vm["zapthre"].as<float>();
+	prep.filltype = vm["fill"].as<string>();
 	prep.prepare(databuf);
 
 	long int nstart = jump[0]/tsamp;
@@ -273,6 +275,7 @@ int main(int argc, const char *argv[])
 		search1[k].fildedisp.fch1 = prep.frequencies.front();
 		search1[k].fildedisp.foff = prep.frequencies.back()-databuf.frequencies.front();
 		search1[k].fildedisp.nchans = prep.frequencies.size();
+		search1[k].filltype = vm["fill"].as<string>();
 		search1[k].prepare(prep);
 	}
 

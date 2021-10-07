@@ -26,3 +26,7 @@ docker pull ypmen/pulsarx
 ## Example
 
 ![exmaple](examples/example.png)
+
+## Acknowledgement
+Thanks for very helpful suggestions and bug reports from Guðjón Henning Hilmarsson, Emma Carli and PKU pulsar group.
+

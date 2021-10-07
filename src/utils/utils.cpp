@@ -1080,6 +1080,65 @@ double get_dist_ymw16(double gl, double gb, double dm)
 #endif
 
 template <typename T>
+void get_skewness_kurtosis(T profile, int size, double &skewness, double &kurtosis)
+{
+    long int nbin = size;
+
+    double boxsum = 0.;
+    for (long int i=0; i<nbin/2; i++)
+    {
+        boxsum += profile[i];
+    }
+    double min = boxsum;
+    long int istart = 0;
+    long int iend = nbin/2;
+    for (long int i=0; i<nbin; i++)
+    {
+        boxsum -= profile[i];
+        boxsum += profile[(i+nbin/2)%nbin];
+        if (boxsum < min)
+        {
+            min = boxsum;
+            istart = i+1;
+            iend = nbin/2+i+1;
+        }
+    }
+
+    double tmp_mean1 = 0.;
+    double tmp_mean2 = 0.;
+    double tmp_mean3 = 0.;
+    double tmp_mean4 = 0.;
+    for (long int i=istart; i<iend; i++)
+    {
+        double tmp1 = profile[i%nbin];
+        double tmp2 = tmp1*tmp1;
+        double tmp3 = tmp2*tmp1;
+        double tmp4 = tmp2*tmp2;
+        tmp_mean1 += tmp1;
+        tmp_mean2 += tmp2;
+        tmp_mean3 += tmp3;
+        tmp_mean4 += tmp4;
+    }
+    tmp_mean1 /= (nbin/2);
+    tmp_mean2 /= (nbin/2);
+    tmp_mean3 /= (nbin/2);
+    tmp_mean4 /= (nbin/2);
+
+    double tmp = tmp_mean1*tmp_mean1;
+    double tmp_std = tmp_mean2-tmp;
+    if (tmp_std == 0.)
+    {
+        skewness = 0.;
+        kurtosis = 0.;
+    }
+    else
+    {
+        skewness = (tmp_mean3-3.*tmp_mean2*tmp_mean1+2.*tmp*tmp_mean1)/(tmp_std*std::sqrt(tmp_std));
+        kurtosis = (tmp_mean4-4.*tmp_mean3*tmp_mean1+6.*tmp_mean2*tmp-3.*tmp*tmp)/(tmp_std*tmp_std) - 3.;
+    }
+}
+
+template <typename T>
 void get_mean_var(T profile, int size, double &mean, double &var)
 {
     long int nbin = size;
@@ -1326,6 +1385,9 @@ template bool get_error_from_chisq_matrix<float>(float &xerr, float &yerr, vecto
 template bool get_error_from_chisq_matrix<float>(float &xerr, vector<float> &x, vector<float> &vchisq);
 template bool get_error_from_chisq_matrix<double>(double &xerr, double &yerr, vector<double> &x, vector<double> &y, vector<double> &mxchisq);
 template bool get_error_from_chisq_matrix<double>(double &xerr, vector<double> &x, vector<double> &vchisq);
+
+template void get_skewness_kurtosis<std::vector<float>::iterator>(std::vector<float>::iterator profile, int size, double &skewness, double &kurtosis);
+template void get_skewness_kurtosis<std::vector<double>::iterator>(std::vector<double>::iterator profile, int size, double &skewness, double &kurtosis);
 
 template void get_mean_var<std::vector<float>::iterator>(std::vector<float>::iterator profile, int size, double &mean, double &var);
 template void get_mean_var2<std::vector<float>::iterator>(std::vector<float>::iterator profile, int size, double &mean, double &var);

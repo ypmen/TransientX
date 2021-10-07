@@ -7,6 +7,7 @@
  */
 
 #include <limits>
+#include <random>
 #include "preprocesslite.h"
 #include "utils.h"
 #include "dedisperse.h"
@@ -154,6 +155,41 @@ DataBuffer<float> * PreprocessLite::run(DataBuffer<float> &databuffer)
                 }
             }
         }
+    }
+
+    double stddev = std::sqrt(td*fd);
+    if (filltype == "rand")
+    {
+#ifdef _OPENMP
+        std::vector<std::random_device> r(num_threads);
+        std::vector<std::mt19937> generators;
+        for (long int k=0; k<num_threads; k++) generators.emplace_back(std::mt19937(r[k]()));
+        std::vector<std::normal_distribution<float>> distributions(num_threads, std::normal_distribution<float>(0., stddev));
+
+        #pragma omp parallel for num_threads(num_threads)
+        for (long int i=0; i<nsamples; i++)
+        {
+            int thread_id = omp_get_thread_num();
+            for (long int j=0; j<nchans; j++)
+            {
+                if (weights[j] == 0.)
+                    buffer[i*nchans+j] = distributions[thread_id](generators[thread_id]);
+            }
+        }
+#else
+        std::random_device r;
+        std::mt19937 generator(r());
+        std::normal_distribution<float> distribution(0., stddev);
+
+        for (long int i=0; i<nsamples; i++)
+        {
+            for (long int j=0; j<nchans; j++)
+            {
+                if (weights[j] == 0.)
+                    buffer[i*nchans+j] = distribution(generator);
+            }
+        }
+#endif
     }
 
     if (td == 1 && fd == 1)

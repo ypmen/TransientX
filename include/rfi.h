@@ -8,6 +8,7 @@
 #ifndef RFI_H_
 #define RFI_H_
 
+#include <string>
 #include <vector>
 #include <utility>
 
@@ -32,6 +33,7 @@ public:
     DataBuffer<float> * get(){return this;}
 public:
     vector<int> weights;
+    string filltype;
 };
 
 

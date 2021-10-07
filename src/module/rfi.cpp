@@ -10,14 +10,19 @@
 #include "rfi.h"
 #include "kdtree.h"
 #include "dedisperse.h"
+#include <random>
 
 using namespace std;
 
-RFI::RFI(){}
+RFI::RFI()
+{
+    filltype = "mean";
+}
 
 RFI::RFI(const RFI &rfi) : DataBuffer<float>(rfi)
 {
     weights = rfi.weights;
+    filltype = rfi.filltype;
 }
 
 RFI & RFI::operator=(const RFI &rfi)
@@ -25,6 +30,7 @@ RFI & RFI::operator=(const RFI &rfi)
     DataBuffer<float>::operator=(rfi);
 
     weights = rfi.weights;
+    filltype = rfi.filltype;
 
     return *this;  
 }
@@ -296,9 +302,18 @@ DataBuffer<float> * RFI::kadaneF(DataBuffer<float> &databuffer, float threRFI2, 
 #ifdef _OPENMP
     float *chdata_t = new float [num_threads*nsamples_ds];
     memset(chdata_t, 0, sizeof(float)*num_threads*nsamples_ds);
+
+    std::vector<std::random_device> r(num_threads);
+    std::vector<std::mt19937> generators;
+    for (long int k=0; k<num_threads; k++) generators.emplace_back(std::mt19937(r[k]()));
+    std::vector<std::normal_distribution<float>> distributions(num_threads, std::normal_distribution<float>(0., 1.));
 #else
     float *chdata_t = new float [nsamples_ds];
     memset(chdata_t, 0, sizeof(float)*nsamples_ds);
+
+    std::random_device r;
+    std::mt19937 generator(r());
+    std::normal_distribution<float> distribution(0., 1.);
 #endif
 
     int wnlimit = widthlimit/tsamp/td;
@@ -309,7 +324,8 @@ DataBuffer<float> * RFI::kadaneF(DataBuffer<float> &databuffer, float threRFI2, 
     for (long int j=0; j<nchans_ds; j++)
     {
 #ifdef _OPENMP
-        float *chdata = chdata_t+omp_get_thread_num()*nsamples_ds;
+        int thread_id = omp_get_thread_num();
+        float *chdata = chdata_t+thread_id*nsamples_ds;
 #else
         float *chdata = chdata_t;
 #endif
@@ -340,11 +356,28 @@ DataBuffer<float> * RFI::kadaneF(DataBuffer<float> &databuffer, float threRFI2, 
         end *= td;
         if (snr2 > threRFI2)
         {
-            for (long int k=0; k<fd; k++)
+            if (filltype == "mean")
             {
-                for (long int i=start; i<end; i++)
+                for (long int k=0; k<fd; k++)
                 {
-                    bufferT[(j*fd+k)*nsamples+i] = 0.;
+                    for (long int i=start; i<end; i++)
+                    {
+                        bufferT[(j*fd+k)*nsamples+i] = 0.;
+                    }
+                }
+            }
+            else
+            {
+                for (long int k=0; k<fd; k++)
+                {
+                    for (long int i=start; i<end; i++)
+                    {
+#ifdef _OPENMP
+                        bufferT[(j*fd+k)*nsamples+i] = distributions[thread_id](generators[thread_id]);
+#else
+                        bufferT[(j*fd+k)*nsamples+i] = distribution(generator);
+#endif
+                    }
                 }
             }
         }
@@ -373,11 +406,28 @@ DataBuffer<float> * RFI::kadaneF(DataBuffer<float> &databuffer, float threRFI2, 
         end *= td;
         if (snr2 > threRFI2)
         {
-            for (long int k=0; k<fd; k++)
+            if (filltype == "mean")
             {
-                for (long int i=start; i<end; i++)
+                for (long int k=0; k<fd; k++)
                 {
-                    bufferT[(j*fd+k)*nsamples+i] = 0.;
+                    for (long int i=start; i<end; i++)
+                    {
+                        bufferT[(j*fd+k)*nsamples+i] = 0.;
+                    }
+                }
+            }
+            else
+            {
+                for (long int k=0; k<fd; k++)
+                {
+                    for (long int i=start; i<end; i++)
+                    {
+#ifdef _OPENMP
+                        bufferT[(j*fd+k)*nsamples+i] = distributions[thread_id](generators[thread_id]);
+#else
+                        bufferT[(j*fd+k)*nsamples+i] = distribution(generator);
+#endif
+                    }
                 }
             }
         }

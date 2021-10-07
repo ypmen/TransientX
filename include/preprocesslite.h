@@ -19,6 +19,7 @@ public:
         td = 1;
         fd = 1;
         thresig = 3.;
+        filltype = "mean";
     }
     ~PreprocessLite(){}
     void prepare(DataBuffer<float> &databuffer);
@@ -28,6 +29,7 @@ public:
     int td;
     int fd;
     float thresig;
+    string filltype;
 };
 
 #endif /* PREPROCESSLITE_H */

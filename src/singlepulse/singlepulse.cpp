@@ -27,6 +27,7 @@ SinglePulse::SinglePulse()
     threKadaneT = 7;
     threKadaneF = 7;
     widthlimit = 10e-3;
+    filltype = "mean";
     dms = 0;
     ddm = 1;
     ndm = 1000;
@@ -81,6 +82,7 @@ SinglePulse::SinglePulse(const SinglePulse &sp)
     threKadaneF = sp.threKadaneF;
 	zaplist = sp.zaplist;
 	rfilist = sp.rfilist;
+    filltype = sp.filltype;
 
 	dms = sp.dms;
 	ddm = sp.ddm;
@@ -147,6 +149,7 @@ SinglePulse & SinglePulse::operator=(const SinglePulse &sp)
     threKadaneF = sp.threKadaneF;
 	zaplist = sp.zaplist;
 	rfilist = sp.rfilist;
+    filltype = sp.filltype;
 
 	dms = sp.dms;
 	ddm = sp.ddm;
@@ -213,6 +216,7 @@ void SinglePulse::prepare(DataBuffer<float> &databuffer)
     baseline.close();
     baseline.closable = true;
 
+    rfi.filltype = filltype;
     rfi.prepare(baseline);
     rfi.close();
     rfi.closable = true;

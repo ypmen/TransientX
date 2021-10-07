@@ -63,6 +63,7 @@ public:
     float threKadaneT;
     float threKadaneF;
     float threMask;
+    string filltype;
 
     //dedispere
     double dms;
