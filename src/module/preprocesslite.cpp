@@ -37,11 +37,12 @@ DataBuffer<float> * PreprocessLite::run(DataBuffer<float> &databuffer)
 {
     if (closable) open();
 
-    std::vector<float> chkurtosis(databuffer.nchans, 0.), chskewness(databuffer.nchans, 0.), chmean(databuffer.nchans, 0.), chstd(databuffer.nchans, 0.);
+    std::vector<float> chkurtosis(databuffer.nchans, 0.), chskewness(databuffer.nchans, 0.), chmean(databuffer.nchans, 0.), chstd(databuffer.nchans, 0.), chcorr(databuffer.nchans, 0.);
     std::vector<double> chmean1(databuffer.nchans, 0.), chmean2(databuffer.nchans, 0.), chmean3(databuffer.nchans, 0.), chmean4(databuffer.nchans, 0.);
 
+    std::vector<float> last_data(databuffer.nchans, 0.);
     for (long int i=0; i<databuffer.nsamples; i++)
-    {        
+    {
         for (long int j=0; j<databuffer.nchans; j++)
         {
             double tmp1 = databuffer.buffer[i*databuffer.nchans+j];
@@ -52,6 +53,9 @@ DataBuffer<float> * PreprocessLite::run(DataBuffer<float> &databuffer)
             chmean2[j] += tmp2;
             chmean3[j] += tmp3;
             chmean4[j] += tmp4;
+            
+            chcorr[j] += tmp1*last_data[j];
+            last_data[j] = tmp1;
         }
     }
 
@@ -61,6 +65,8 @@ DataBuffer<float> * PreprocessLite::run(DataBuffer<float> &databuffer)
         chmean2[j] /= databuffer.nsamples;
         chmean3[j] /= databuffer.nsamples;
         chmean4[j] /= databuffer.nsamples;
+
+        chcorr[j] /= databuffer.nsamples-1;
 
         double tmp = chmean1[j]*chmean1[j];
 
@@ -76,12 +82,17 @@ DataBuffer<float> * PreprocessLite::run(DataBuffer<float> &databuffer)
             chkurtosis[j] -= 3.;
 
             chskewness[j] /= chstd[j]*std::sqrt(chstd[j]);
+
+            chcorr[j] -= tmp;
+            chcorr[j] /= chstd[j];
         }
         else
         {
             chstd[j] = 1.;
             chkurtosis[j] = std::numeric_limits<float>::max();
             chskewness[j] = std::numeric_limits<float>::max();
+
+            chcorr[j] = std::numeric_limits<float>::max();
         }
 
         chstd[j] = std::sqrt(chstd[j]);
@@ -102,11 +113,22 @@ DataBuffer<float> * PreprocessLite::run(DataBuffer<float> &databuffer)
     float skewness_q3 =skewness_sort[skewness_sort.size()/4];
     float skewness_R = skewness_q3-skewness_q1;
 
+    std::vector<float> corr_sort = chcorr;
+    std::nth_element(corr_sort.begin(), corr_sort.begin()+corr_sort.size()/4, corr_sort.end(), std::less<float>());
+    float corr_q1 = corr_sort[corr_sort.size()/4];
+    std::nth_element(corr_sort.begin(), corr_sort.begin()+corr_sort.size()/4, corr_sort.end(), std::greater<float>());
+    float corr_q3 = corr_sort[corr_sort.size()/4];
+    float corr_R = corr_q3-corr_q1;
 
     std::vector<float> weights(databuffer.nchans, 0.);
     for (long int j=0; j<databuffer.nchans; j++)
     {
-        if (chkurtosis[j]>=kurtosis_q1-thresig*kurtosis_R && chkurtosis[j]<=kurtosis_q3+thresig*kurtosis_R && chskewness[j]>=skewness_q1-thresig*skewness_R && chskewness[j]<=skewness_q3+thresig*skewness_R)
+        if (chkurtosis[j]>=kurtosis_q1-thresig*kurtosis_R && \
+            chkurtosis[j]<=kurtosis_q3+thresig*kurtosis_R && \
+            chskewness[j]>=skewness_q1-thresig*skewness_R && \
+            chskewness[j]<=skewness_q3+thresig*skewness_R && \
+            chcorr[j]>=corr_q1-thresig*corr_R && \
+            chcorr[j]<=corr_q3+thresig*corr_R)
         {
             weights[j] = 1.;
         }
