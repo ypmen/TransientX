@@ -9,6 +9,7 @@
 
 #include "dedisperse.h"
 #include "downsample.h"
+#include "logging.h"
 
 using namespace std;
 
@@ -61,6 +62,18 @@ void Downsample::prepare(DataBuffer<float> &databuffer)
         }
         frequencies[j] /= fd;
     }
+
+    if (td != 1 or fd !=1)
+    {
+        std::vector<std::pair<std::string, std::string>> meta = {
+            {"nsamples", std::to_string(databuffer.nsamples)},
+            {"nchans", std::to_string(databuffer.nchans)},
+            {"tsamp", std::to_string(databuffer.tsamp)},
+            {"td", std::to_string(td)},
+            {"fd", std::to_string(fd)}
+        };
+        format_logging("Downsampling Info", meta);
+    }
 }
 
 DataBuffer<float> * Downsample::run(DataBuffer<float> &databuffer)
@@ -69,6 +82,8 @@ DataBuffer<float> * Downsample::run(DataBuffer<float> &databuffer)
     {
         return databuffer.get();
     }
+
+    BOOST_LOG_TRIVIAL(debug)<<"perform downsampling width td="<<td<<" fd="<<fd;
 
     if (closable) open();
 
@@ -96,6 +111,8 @@ DataBuffer<float> * Downsample::run(DataBuffer<float> &databuffer)
     isbusy = true;
 
     if (databuffer.closable) databuffer.close();
+
+    BOOST_LOG_TRIVIAL(debug)<<"finished";
 
     return this;
 }

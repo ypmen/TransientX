@@ -1,4 +1,4 @@
-noinst_LTLIBRARIES=libymw16.la
+lib_LTLIBRARIES=libymw16.la
 noinst_PROGRAMS=ymw16 ymw16_ne
 
 AM_CPPFLAGS=-I$(top_srcdir)/include

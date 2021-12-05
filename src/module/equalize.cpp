@@ -10,6 +10,7 @@
 
 #include "equalize.h"
 #include "dedisperse.h"
+#include "logging.h"
 
 using namespace std;
 
@@ -46,6 +47,8 @@ DataBuffer<float> * Equalize::run(DataBuffer<float> &databuffer)
     {
         return databuffer.get();
     }
+
+    BOOST_LOG_TRIVIAL(debug)<<"perform noramlization";
 
     if (closable) open();
 
@@ -91,6 +94,8 @@ DataBuffer<float> * Equalize::run(DataBuffer<float> &databuffer)
     isbusy = true;
 
     if (databuffer.closable) databuffer.close();
+
+    BOOST_LOG_TRIVIAL(debug)<<"finished";
 
     return this;
 }

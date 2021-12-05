@@ -21,6 +21,7 @@
 #include "databuffer.h"
 #include "singlepulse.h"
 #include "preprocesslite.h"
+#include "logging.h"
 
 using namespace std;
 using namespace boost::program_options;
@@ -36,6 +37,8 @@ bool dumptim=false;
 
 int main(int argc, const char *argv[])
 {
+	init_logging();
+
 	/* options */
 	int verbose = 0;
 
@@ -336,6 +339,18 @@ int main(int argc, const char *argv[])
 		}
 		next:
         fil[n].free();
+	}
+
+	std::fill(prep.buffer.begin(), prep.buffer.end(), 0.);
+	for (auto sp=search1.begin(); sp!=search1.end(); ++sp)
+	{
+		int nleft = sp->dedisp.offset/sp->dedisp.ndump+1;
+		for (long int k=0; k<nleft; k++)
+		{
+			prep.counter += prep.nsamples;
+			prep.isbusy = true;
+			sp->run(prep);
+		}
 	}
 
 	if (vm["format"].as<string>() == "presto")

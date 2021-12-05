@@ -11,6 +11,7 @@
 #include "preprocesslite.h"
 #include "utils.h"
 #include "dedisperse.h"
+#include "logging.h"
 
 void PreprocessLite::prepare(DataBuffer<float> &databuffer)
 {
@@ -31,10 +32,22 @@ void PreprocessLite::prepare(DataBuffer<float> &databuffer)
     }
 
     closable = false;
+
+    std::vector<std::pair<std::string, std::string>> meta = {
+        {"nsamples", std::to_string(databuffer.nsamples)},
+        {"nchans", std::to_string(databuffer.nchans)},
+        {"tsamp", std::to_string(databuffer.tsamp)},
+        {"td", std::to_string(td)},
+        {"fd", std::to_string(fd)},
+        {"IQR threshold", std::to_string(thresig)}
+    };
+    format_logging("Preprocess Info", meta);
 }
 
 DataBuffer<float> * PreprocessLite::run(DataBuffer<float> &databuffer)
 {
+    BOOST_LOG_TRIVIAL(debug)<<"perform skewness-kurtosis filter with iqr threshold="<<thresig;
+
     if (closable) open();
 
     std::vector<float> chkurtosis(databuffer.nchans, 0.), chskewness(databuffer.nchans, 0.), chmean(databuffer.nchans, 0.), chstd(databuffer.nchans, 0.), chcorr(databuffer.nchans, 0.);
@@ -225,6 +238,8 @@ DataBuffer<float> * PreprocessLite::run(DataBuffer<float> &databuffer)
     isbusy = true;
 
     if (databuffer.closable) databuffer.close();
+
+    BOOST_LOG_TRIVIAL(debug)<<"finished";
 
     return this;
 }

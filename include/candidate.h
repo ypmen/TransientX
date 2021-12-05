@@ -87,10 +87,10 @@ public:
     /* normalize the data to unit variance and zero mean */
     void normalize();
 
-    void remove_baseline();
+    void remove_baseline(){};
 
     /* boxcar filter */
-    void matched_filter(float snrloss=0., bool iqr=true);
+    void matched_filter(float snrloss=0.);
 
     /* save data to archive */
     void save2ar(const std::string &template_file);
@@ -102,8 +102,6 @@ public:
     {
         return 4.148741601e3*dm*(1./(fl*fl)-1./(fh*fh));
     }
-private:
-    void dedispRec(std::vector<float> &buffersub, std::vector<float> &buffer, std::vector<std::vector<int>> &mxdelayn, int nchans, int nsamples, int depth, int ichan);
 public:
     bool captured;
     long double mjd_start;

@@ -541,7 +541,7 @@ bool Filterbank::read_data()
         delete [] chb;
         if (icnt*8 != nchr)
         {
-                cerr<<"Warning: Data ends unexpected read to EOF"<<endl;
+                //cerr<<"Warning: Data ends unexpected read to EOF"<<endl;
         }
         ndata = icnt*8/nifs/nchans;
 	}; break;
@@ -583,7 +583,7 @@ bool Filterbank::read_data(long int ns)
         delete [] chb;
         if (icnt != nchr)
         {
-                cerr<<"Warning: Data ends unexpected read to EOF"<<endl;
+                //cerr<<"Warning: Data ends unexpected read to EOF"<<endl;
         }
         ndata = icnt/nifs/nchans;
 	}; break;
@@ -609,7 +609,7 @@ bool Filterbank::read_data(long int ns)
         delete [] chb;
         if (icnt*8 != nchr)
         {
-                cerr<<"Warning: Data ends unexpected read to EOF"<<endl;
+                //cerr<<"Warning: Data ends unexpected read to EOF"<<endl;
         }
         ndata = icnt*8/nifs/nchans;
 	}; break;

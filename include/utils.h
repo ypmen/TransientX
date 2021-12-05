@@ -313,4 +313,28 @@ void get_mean_var(T profiles, int nrow, int ncol, double &mean, double &var);
 template <typename T>
 void get_mean_var(T profile, T profiles, int nsubint, int nchan, int nbin, double &mean, double &var);
 
+inline void get_bestfit(float &a, float &b, const std::vector<float> &data, const std::vector<float> &data_ref)
+{
+    assert(data.size() == data_ref.size());
+    int N = data.size();
+
+    double xe = 0.;
+    double ss = 0.;
+    double ee = N;
+    double se = 0.;
+    double xs = 0.;
+
+    for (long int i=0; i<N; i++)
+    {
+        xe += data[i];
+        se += data_ref[i];
+        ss += data_ref[i]*data_ref[i];
+        xs += data[i]*data_ref[i];
+    }
+
+    double tmp = se*se-ss*ee;
+    a = (xe*se-xs*ee)/tmp;
+    b = (xs*se-xe*ss)/tmp;
+}
+
 #endif /* UTILS_H */

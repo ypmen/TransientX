@@ -64,7 +64,6 @@ int main(int argc, char *argv[])
             ("telescope", value<std::string>()->default_value("Fake"), "Telescope name")
             ("ra", value<double>()->default_value(0), "RA (hhmmss.s)")
 			("dec", value<double>()->default_value(0), "DEC (ddmmss.s)")
-            ("rootname,o", value<string>()->default_value("J0000-00"), "Output rootname")
             ("incoherent", "The beam is incoherent (ifbf). Coherent beam by default (cfbf)")
             ("arch,a", "Generate archive file")
             ("dmcutoff", value<float>()->default_value(0), "DM cutoff")
@@ -138,7 +137,8 @@ int main(int argc, char *argv[])
 	}
 
     bool contiguous = vm.count("cont");
-    std::string rootname = vm["rootname"].as<string>();
+    std::string rootname = vm["candfile"].as<std::string>().substr(vm["candfile"].as<std::string>().find_last_of("/") + 1);
+    rootname.erase(rootname.find(".cands"), 6);
     std::string src_name = vm["srcname"].as<std::string>();
 	std::string s_telescope = vm["telescope"].as<std::string>();
     num_threads = vm["threads"].as<unsigned int>();
@@ -470,7 +470,7 @@ int main(int argc, char *argv[])
                                 cands[k].optimize();
 
                                 BOOST_LOG_TRIVIAL(debug)<<"boxcar filter...";
-                                cands[k].matched_filter(vm["snrloss"].as<float>(), true);
+                                cands[k].matched_filter(vm["snrloss"].as<float>());
 
                                 if (vm.count("clean") && (cands[k].snr<snr_threhold || closestdist(candsmjd.begin(), candsmjd.end(), cands[k].mjd)*86400. < cands[k].width || cands[k].dm_maxsnr < vm["dmcutoff"].as<float>() || cands[k].width > vm["widthcutoff"].as<float>() || std::abs(cands[k].dm_maxsnr-cands[k].dm)*dm1delay > vm["ddmcutoff"].as<float>()*cands[k].width))
                                 {

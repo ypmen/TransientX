@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "singlepulse.h"
+#include "logging.h"
 
 using namespace std;
 
@@ -404,6 +405,11 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
         string filename = vm["ddplan"].as<string>();
         string line;
         ifstream ddplan(filename);
+        if (ddplan.fail())
+        {
+            BOOST_LOG_TRIVIAL(error)<<filename<<" not exist";
+            exit(-1);
+        }
         int id = 0;
         while (getline(ddplan, line))
         {

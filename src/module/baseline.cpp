@@ -9,6 +9,7 @@
 #include "baseline.h"
 #include "dedisperse.h"
 #include "utils.h"
+#include "logging.h"
 
 BaseLine::BaseLine()
 {
@@ -26,6 +27,17 @@ void BaseLine::prepare(DataBuffer<float> &databuffer)
 
     tsamp = databuffer.tsamp;
     frequencies = databuffer.frequencies;
+
+    if (int(width/tsamp) >= 3)
+    {
+        std::vector<std::pair<std::string, std::string>> meta = {
+            {"nsamples", std::to_string(nsamples)},
+            {"nchans", std::to_string(nchans)},
+            {"tsamp", std::to_string(tsamp)},
+            {"width", std::to_string(width)}
+        };
+        format_logging("Baseline Removal Info", meta);
+    }
 }
 
 DataBuffer<float> * BaseLine::run(DataBuffer<float> &databuffer)
@@ -34,6 +46,8 @@ DataBuffer<float> * BaseLine::run(DataBuffer<float> &databuffer)
     {
         return databuffer.get();
     }
+
+    BOOST_LOG_TRIVIAL(debug)<<"perform baseline removal with time scale="<<width;
 
     if (closable) open();
 
@@ -128,6 +142,8 @@ DataBuffer<float> * BaseLine::run(DataBuffer<float> &databuffer)
     isbusy = true;
 
     if (databuffer.closable) databuffer.close();
+
+    BOOST_LOG_TRIVIAL(debug)<<"finished";
 
     return this;
 }

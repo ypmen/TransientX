@@ -17,7 +17,7 @@
 #include <functional>
 #include <assert.h>
 
-void fadd2(float * __restrict__ x0, float * __restrict__ x1, float * __restrict__ y0, float * __restrict__ y1, int n)
+void fadd2(float * x0, float * x1, float *y0, float *y1, int n)
 {
     for (long int i=0; i<n; i++)
     {

@@ -114,6 +114,8 @@ bool Cluster<T>::run(Boxcar &boxcar, float threS, double radius_smearing, int kv
 	KDtree<double> kdtree(2);
 	kdtree.build(candleft_smearing);
 
+	if (radius_smearing < 1.5*tsamp) radius_smearing = 1.5*tsamp;
+
 	vector<vector<long int>> state;
 	//kdtree.runDBSCAN(radius_smearing*radius_smearing, kvalue);
 	//kdtree.recycle(state);

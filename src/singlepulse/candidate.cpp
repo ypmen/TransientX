@@ -876,7 +876,7 @@ void Candidate::optimize()
     hough_transform(buffer, dmtmap, nchans, nsamples, get_shift);
 }
 
-void Candidate::matched_filter(float snrloss, bool iqr)
+void Candidate::matched_filter(float snrloss)
 {
     // calculate boxcar width series
 	float wfactor = 1./((1.-snrloss)*(1.-snrloss));
@@ -887,7 +887,7 @@ void Candidate::matched_filter(float snrloss, bool iqr)
         int tmp_wn1 = vwn.back();
         int tmp_wn2 = tmp_wn1*wfactor;
 		tmp_wn2 = tmp_wn2<tmp_wn1+1 ? tmp_wn1+1:tmp_wn2;
-        if (tmp_wn2 > nbin) break;
+        if (tmp_wn2 > nbin/2) break;
         vwn.push_back(tmp_wn2);
     }
     int nbox = vwn.size();
@@ -904,33 +904,10 @@ void Candidate::matched_filter(float snrloss, bool iqr)
     {
         std::vector<float> tim(dmtmap.begin()+j*nbin, dmtmap.begin()+(j+1)*nbin);
 
-        float tmpmean = 0.;
-	    float tmpvar = 0.;
+        double tmpmean = 0.;
+        double tmpvar = 0.;
 
-        if (!iqr)
-        {
-            for (long int i=0; i<nbin; i++)
-            {
-                tmpmean += tim[i];
-                tmpvar += tim[i]*tim[i];
-            }
-            tmpmean /= nbin;
-            tmpvar /= nbin;
-            tmpvar -= tmpmean*tmpmean;
-        }
-        else
-        {
-            vector<float> timcopy = tim;
-            std::nth_element(timcopy.begin(), timcopy.begin()+nbin/4, timcopy.end(), std::less<float>());
-            float Q1 = timcopy[nbin/4];
-            std::nth_element(timcopy.begin(), timcopy.begin()+nbin/2, timcopy.end(), std::less<float>());
-            float Q2 = timcopy[nbin/2];
-            std::nth_element(timcopy.begin(), timcopy.begin()+nbin/4, timcopy.end(), std::greater<float>());
-            float Q3 = timcopy[nbin/4];
-
-            tmpmean = Q2;
-            tmpvar = ((Q3-Q1)/1.349)*((Q3-Q1)/1.349);
-        }
+        get_mean_var<std::vector<float>::iterator>(tim.begin(), tim.size(), tmpmean, tmpvar);
 
         std::vector<float> csump(2*nbin, 0.);
         float csum = 0.;
@@ -1359,7 +1336,7 @@ void Candidate::save2png(const std::string &rootname, float threS)
     fig.save(figname+"/PNG");
 
     ofstream outfile;
-    outfile.open(rootname + "_" + s_date + "_" + s_ibeam+"_replot.cands", ios_base::app); // append instead of overwrite
+    outfile.open(rootname + "_replot.cands", ios_base::app); // append instead of overwrite
     
     outfile<<s_ibeam<<"\t";
     outfile<<s_k<<"\t";

@@ -10,6 +10,7 @@
 #include "rfi.h"
 #include "kdtree.h"
 #include "dedisperse.h"
+#include "logging.h"
 #include <random>
 
 using namespace std;
@@ -57,6 +58,8 @@ DataBuffer<float> * RFI::zap(DataBuffer<float> &databuffer, const vector<pair<do
         return databuffer.get();
     }
 
+    BOOST_LOG_TRIVIAL(debug)<<"zapping channels";
+
     if (closable) open();
     fill(weights.begin(), weights.end(), 1);
 
@@ -90,11 +93,15 @@ DataBuffer<float> * RFI::zap(DataBuffer<float> &databuffer, const vector<pair<do
 
     if (databuffer.closable) databuffer.close();
 
+    BOOST_LOG_TRIVIAL(debug)<<"finished";
+
     return this;
 }
 
 DataBuffer<float> * RFI::zdot(DataBuffer<float> &databuffer)
 {
+    BOOST_LOG_TRIVIAL(debug)<<"perform zero-dm matched filter";
+
     if (closable) open();
 
     vector<double> xe(nchans, 0.);
@@ -158,11 +165,15 @@ DataBuffer<float> * RFI::zdot(DataBuffer<float> &databuffer)
 
     if (databuffer.closable) databuffer.close();
 
+    BOOST_LOG_TRIVIAL(debug)<<"finished";
+
     return this;
 }
 
 DataBuffer<float> * RFI::zero(DataBuffer<float> &databuffer)
 {
+    BOOST_LOG_TRIVIAL(debug)<<"perform zero-dm filter";
+
     if (closable) open();
 
 #ifdef _OPENMP
@@ -189,6 +200,8 @@ DataBuffer<float> * RFI::zero(DataBuffer<float> &databuffer)
     isbusy = true;
 
     if (databuffer.closable) databuffer.close();
+
+    BOOST_LOG_TRIVIAL(debug)<<"finished";
 
     return this;
 }
@@ -266,9 +279,11 @@ DataBuffer<float> * RFI::kadaneF(DataBuffer<float> &databuffer, float threRFI2, 
 {
     if (!databuffer.equalized)
     {
-        cerr<<"Error: data is not equalize"<<endl;
+        BOOST_LOG_TRIVIAL(warning)<<"Warning: data is not equalize, kadaneF filter will not be performed"<<endl;
         return databuffer.get();
     }
+
+    BOOST_LOG_TRIVIAL(debug)<<"perform kadane filter";
 
     if (closable) open();
 
@@ -444,6 +459,8 @@ DataBuffer<float> * RFI::kadaneF(DataBuffer<float> &databuffer, float threRFI2, 
     if (databuffer.closable) databuffer.close();
 
     delete [] chdata_t;
+
+    BOOST_LOG_TRIVIAL(debug)<<"finished";
 
     return this;
 }

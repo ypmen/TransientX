@@ -9,8 +9,11 @@
 #include <iomanip>
 #include <algorithm>
 #include <assert.h>
+#include <sys/time.h>
+#include <sys/resource.h> 
 
 #include "subdedispersion.h"
+#include "logging.h"
 
 using namespace std;
 using namespace RealTime;
@@ -459,11 +462,30 @@ void SubbandDedispersion::prepare(DataBuffer<float> &databuffer)
     buffersubT.resize(nsubband*nsub*ndump, 0.);
 
     offset = (nsamples-ndump)+(sub.nsamples-sub.ndump)+sub.noverlap;
+
+    std::vector<std::pair<std::string, std::string>> meta = {
+        {"nsamples", std::to_string(nsamples)},
+        {"ndump", std::to_string(ndump)},
+        {"nchans", std::to_string(nchans)},
+        {"tsamp", std::to_string(tsamp)},
+        {"minimum freq", std::to_string(fmin)},
+        {"maximum freq", std::to_string(fmax)},
+        {"nsubband", std::to_string(nsubband)},
+        {"DM start", std::to_string(dms)},
+        {"DM step", std::to_string(ddm)},
+        {"DM end", std::to_string(dms+ddm*ndm)},
+        {"number of DM", std::to_string(ndm)},
+        {"maximum delay", std::to_string(maxdelayN*tsamp)},
+        {"overlap", std::to_string(overlap)}
+    };
+    format_logging("Subband Dedispersion Info", meta);
 }
 
 void SubbandDedispersion::run(DataBuffer<float> &databuffer, long int ns)
 {
     assert(ns == ndump);
+
+    BOOST_LOG_TRIVIAL(debug)<<"perform dedispersion on data block ("<<ndump<<", "<<nchans<<")";
 
     int nspace = nsamples-ns;
 
@@ -508,6 +530,8 @@ void SubbandDedispersion::run(DataBuffer<float> &databuffer, long int ns)
     }
 
     counter += ndump;
+
+    BOOST_LOG_TRIVIAL(debug)<<"finished";
 }
 
 void SubbandDedispersion::preparedump(Filterbank &fil, int nbits, const string &format)
@@ -524,6 +548,26 @@ void SubbandDedispersion::preparedump(Filterbank &fil, int nbits, const string &
 
     outfiles.clear();
     outfiles.shrink_to_fit();
+
+    if (format == "sigproc" or format == "presto")
+    {
+        struct rlimit rlim;
+        int status = getrlimit(RLIMIT_NOFILE, &rlim);
+        if (status)
+            BOOST_LOG_TRIVIAL(warning)<<"Can't get the maximum file descriptor number";
+        int rlimit_nofile = rlim.rlim_cur;
+        if (ndm > rlimit_nofile)
+        {
+            BOOST_LOG_TRIVIAL(error)<<"Number of dedisersed files is larger than the maximum file descriptor number, please check ulimit -a";
+            exit(-1);
+        }
+
+        BOOST_LOG_TRIVIAL(info)<<"create "<<ndm<<" "<<format<<" dedispersed files";
+    }
+    else
+    {
+        BOOST_LOG_TRIVIAL(info)<<"create "<<format<<" dedispersed files";
+    }
 
     if (format == "sigproc")
     {
@@ -544,7 +588,7 @@ void SubbandDedispersion::preparedump(Filterbank &fil, int nbits, const string &
             fil.nifs = 1;
             fil.data_type = 2;
             if (!fil.write_header())
-                std::cout<<"Error: Can not write dedisperse series header"<<std::endl;
+                BOOST_LOG_TRIVIAL(error)<<"Error: Can not write dedisperse series header";
             fil.close();
             
             std::ofstream outfile;
@@ -609,6 +653,8 @@ void SubbandDedispersion::modifynblock()
 
 void SubbandDedispersion::makeinf(Filterbank &fil)
 {
+    BOOST_LOG_TRIVIAL(info)<<"create presto inf files";
+
     double fmin = 1e6;
 	double fmax = 0.;
     for (long int j=0; j<nchans; j++)
@@ -662,6 +708,8 @@ void SubbandDedispersion::rundump(float mean, float std, int nbits, const string
 {
     if (counter < offset+ndump) return;
     
+    BOOST_LOG_TRIVIAL(debug)<<"dump dedispersed data with mean="<<mean<<" stddev="<<std;
+
     if (format == "sigproc" or format == "presto")
     {
         for (long int k=0; k<ndm; k++)
@@ -700,7 +748,7 @@ void SubbandDedispersion::rundump(float mean, float std, int nbits, const string
             else
             {
                 outfiles[k].write((char *)(sub.buffertim.data()+k*sub.ndump), sizeof(float)*sub.ndump);
-                std::cout<<"Warning: data type not supported, use float instead"<<std::endl;
+                BOOST_LOG_TRIVIAL(warning)<<"Warning: data type not supported, use float instead";
             }
         }
     }
@@ -746,7 +794,7 @@ void SubbandDedispersion::rundump(float mean, float std, int nbits, const string
         else
         {
             outfiles[0].write((char *)(sub.buffertim.data()), sizeof(float)*ndm*sub.ndump);
-            std::cout<<"Warning: data type not supported, use float instead"<<std::endl;
+            BOOST_LOG_TRIVIAL(warning)<<"Warning: data type not supported, use float instead";
         }
 
         outfiles[0].close();
