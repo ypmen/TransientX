@@ -2,6 +2,7 @@
 *.o
 config.h
 bin
+lib
 *.Po
 *.la
 *.deps
