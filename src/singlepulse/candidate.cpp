@@ -1368,7 +1368,7 @@ void Candidate::save2png(const std::string &rootname, float threS)
 
     fig.save(figname+"/PNG");
 
-    ofstream outfile;
+    std::ofstream outfile;
     outfile.open(rootname + "_replot.cands", ios_base::app); // append instead of overwrite
     
     outfile<<s_ibeam<<"\t";

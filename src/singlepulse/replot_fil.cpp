@@ -22,6 +22,9 @@
 #include "mjd.h"
 #include "ringbuffer.h"
 
+#include "json.hpp"
+using json = nlohmann::json;
+
 using namespace boost::program_options;
 
 unsigned int num_threads;
@@ -278,6 +281,25 @@ int main(int argc, char *argv[])
     cand.tbin = tsamp;
     cand.frequencies.resize(nchans);
     memcpy(cand.frequencies.data(), fil[0].frequency_table, sizeof(double)*nchans);
+
+    BOOST_LOG_TRIVIAL(info)<<"create meta file";
+    json meta;
+    meta = {
+        {"Telescope", cand.obsinfo["Telescope"]},
+        {"Beam", cand.obsinfo["Beam"]},
+        {"RA", cand.obsinfo["RA"]},
+        {"DEC", cand.obsinfo["DEC"]},
+        {"Source_name", cand.obsinfo["Source_name"]},
+        {"GL", cand.obsinfo["GL"]},
+        {"GB", cand.obsinfo["GB"]},
+        {"MaxDM_YMW16", cand.obsinfo["MaxDM_YMW16"]}
+    };
+
+    std::string s_meta = meta.dump();
+    std::ofstream metafile;
+    metafile.open(rootname+"_replot.json");
+    metafile << s_meta << std::endl;
+    metafile.close();
 
     double dm1delay = std::abs(Candidate::dmdelay(1., cand.frequencies.front(), cand.frequencies.back()));
 
