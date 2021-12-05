@@ -370,6 +370,7 @@ void Candidate::get_stats()
     var.resize(npol*nchan, 0.);
     skewness.resize(nchan, 0.);
     kurtosis.resize(nchan, 0.);
+    autocorr1.resize(nchan, 0.);
 
     int nifs = std::min(npol, 2);
 
@@ -430,6 +431,7 @@ void Candidate::get_stats()
 
         float tmp_mean = min/(nbin/2);
         float tmp_var = 0.;
+        float last_data = 0;
         for (long int i=istart; i<iend; i++)
         {
             float tmp = data_sumif[j*nbin+i%nbin]-tmp_mean;
@@ -439,9 +441,18 @@ void Candidate::get_stats()
             tmp_var += tmp2;
             skewness[j] += tmp3;
             kurtosis[j] += tmp4;
+            autocorr1[j] += tmp*last_data;
+            last_data = tmp;
         }
 
         tmp_var /= nbin/2;
+
+        if (tmp_var <=0)
+        {
+            skewness[j] = 0.;
+            kurtosis[j] = 0.;
+            autocorr1[j] = 0.;
+        }
 
         skewness[j] /= nbin/2;
         skewness[j] /= tmp_var*std::sqrt(tmp_var);
@@ -449,6 +460,9 @@ void Candidate::get_stats()
         kurtosis[j] /= nbin/2;
         kurtosis[j] /= tmp_var*tmp_var;
         kurtosis[j] -= 3.;
+
+        autocorr1[j] /= nbin/2 -1;
+        autocorr1[j] /= tmp_var;
     }
 }
 
@@ -459,17 +473,27 @@ void Candidate::normalize()
 #endif
     for (long int j=0; j<npol*nchan; j++)
     {
-        if (var[j] <= 0.) continue;
-
-        float std = std::sqrt(var[j]);
-        for (long int i=0; i<nbin; i++)
+        if (var[j] <= 0.)
         {
-            data[j*nbin+i] -= mean[j];
-            data[j*nbin+i] /= std;
+            for (long int i=0; i<nbin; i++)
+            {
+                data[j*nbin+i] -= mean[j];
+            }
+            mean[j] = 0.;
+            var[j] = 0.;
         }
+        else
+        {
+            float std = std::sqrt(var[j]);
+            for (long int i=0; i<nbin; i++)
+            {
+                data[j*nbin+i] -= mean[j];
+                data[j*nbin+i] /= std;
+            }
 
-        mean[j] = 0.;
-        var[j] = 1.;
+            mean[j] = 0.;
+            var[j] = 1.;
+        }
     }
 
     isnormalized = true;
@@ -493,12 +517,21 @@ void Candidate::azap(float threshold)
     float skewness_q3 = skewness_sort[skewness_sort.size()/4];
     float skewness_R = skewness_q3-skewness_q1;
 
+    std::vector<float> autocorr1_sort = autocorr1;
+    std::nth_element(autocorr1_sort.begin(), autocorr1_sort.begin()+autocorr1_sort.size()/4, autocorr1_sort.end(), std::less<float>());
+    float autocorr1_q1 = autocorr1_sort[autocorr1_sort.size()/4];
+    std::nth_element(autocorr1_sort.begin(), autocorr1_sort.begin()+autocorr1_sort.size()/4, autocorr1_sort.end(), std::greater<float>());
+    float autocorr1_q3 = autocorr1_sort[autocorr1_sort.size()/4];
+    float autocorr1_R = autocorr1_q3-autocorr1_q1;
+
     for (long int j=0; j<nchan; j++)
     {
         if ((kurtosis[j]<kurtosis_q1-threshold*kurtosis_R) ||
             (kurtosis[j]>kurtosis_q3+threshold*kurtosis_R) ||
             (skewness[j]<skewness_q1-threshold*skewness_R) ||
-            (skewness[j]>skewness_q3+threshold*skewness_R))
+            (skewness[j]>skewness_q3+threshold*skewness_R) ||
+            (autocorr1[j]<autocorr1_q1-threshold*autocorr1_R) ||
+            (autocorr1[j]>autocorr1_q3+threshold*autocorr1_R))
         {
             weights[j] = 0.;
             var[j] = 0.;

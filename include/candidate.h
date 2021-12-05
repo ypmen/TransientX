@@ -133,6 +133,7 @@ public:
     std::vector<double> var;
     std::vector<float> skewness;
     std::vector<float> kurtosis;
+    std::vector<float> autocorr1;
 public:
     double dms;
     double ddm;
