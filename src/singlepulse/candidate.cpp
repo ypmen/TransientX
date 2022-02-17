@@ -225,9 +225,11 @@ void Candidate::dededisperse(bool coherent)
     isdedispersed = false;
 }
 
-void Candidate::shrink_to_fit(int nwidth)
+void Candidate::shrink_to_fit(int nwidth, int factor)
 {
     int nbin_new = nwidth*width/tbin;
+
+    nbin_new = std::ceil(nbin_new/factor)*factor;
 
     if (nbin_new >= nbin) return;
 
@@ -1382,4 +1384,59 @@ void Candidate::save2png(const std::string &rootname, float threS)
     outfile<<figname<<"\t";
     outfile<<s_id<<"\t";
     outfile<<rawdata<<endl;
+}
+
+void Candidate::plot()
+{
+    /* prepare plot data */
+
+    std::vector<float> vt(nbin, 0.);
+    for (long int i=0; i<nbin; i++)
+    {
+        vt[i] = i*tbin;
+    }
+
+    std::vector<float> vf(nchan, 0.);
+    for (long int j=0; j<nchan; j++)
+    {
+        vf[j] = frequencies[j];
+    }
+
+    std::vector<float> mxft(nchan*nbin, 0.);
+    for (long int k=0; k<npol; k++)
+    {
+        if (k<2)
+        {
+            for (long int j=0; j<nchan; j++)
+            {
+                for (long int i=0; i<nbin; i++)
+                {
+                    mxft[j*nbin+i] += data[k*nchan*nbin+j*nbin+i];
+                }
+            }
+        }
+    }
+
+    std::ofstream outfile("tmp.dat", std::ios::binary);
+    outfile.write((char *)mxft.data(), sizeof(float)*nchan*nbin);
+    outfile.close();
+
+    /* plot data */
+
+    plt::Figure fig(8., 1.);
+
+    fig.set_background_color("black");
+    fig.set_default_color("white");
+
+    float adjustx = 0., adjusty = 0.;
+
+    /* f-t */
+    plt::Axes ax_ft(0.1+adjustx, 0.95+adjustx, 0.1+adjusty, 0.95+adjusty);
+    ax_ft.pcolor(vt, vf, mxft, "viridis");
+    ax_ft.set_xlabel("Time (s)");
+    ax_ft.set_ylabel("Frequency (MHz)");
+    ax_ft.label(true, false, true, false);
+    fig.push(ax_ft);
+
+    fig.show();
 }

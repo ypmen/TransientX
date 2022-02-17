@@ -55,7 +55,7 @@ public:
     void dededisperse(bool coherent=false);
 
     /* chop number of bins */
-    void shrink_to_fit(int nwidth=20);
+    void shrink_to_fit(int nwidth=20, int factor=1);
 
     /* convert f-t plane to dm-t plane*/
     void optimize();
@@ -97,6 +97,10 @@ public:
 
     /* save data to png */
     void save2png(const std::string &rootname, float threS=7.);
+
+    /* plot */
+    void plot();
+
 public:
     static double dmdelay(double dm, double fh, double fl)
     {

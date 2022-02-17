@@ -459,7 +459,10 @@ int main(int argc, char *argv[])
 
                                 BOOST_LOG_TRIVIAL(debug)<<"dedisperse at DM="<<cands[k].dm<<"...";
                                 cands[k].dedisperse(vm.count("coherent"));
-                                cands[k].shrink_to_fit(2*nwidth);
+                                if (vm.count("kadane"))
+                                    cands[k].shrink_to_fit(2*nwidth, vm["kadane"].as<std::vector<int>>()[0]);
+                                else
+                                    cands[k].shrink_to_fit(2*nwidth);
 
                                 BOOST_LOG_TRIVIAL(debug)<<"automatically zap channels...";
                                 cands[k].azap(vm["zapthre"].as<float>());
