@@ -6,7 +6,7 @@ TransientX is a one command line high performance transient search software.
 
 - boost > 1.56
 - PlotX (https://github.com/ypmen/PlotX)
-- sofa
+- sofa (https://www.iausofa.org/2020_0721_C/sofa_c-20200721.tar.gz)
 
 ## Installation
 - ./bootstrap
@@ -19,11 +19,21 @@ TransientX is a one command line high performance transient search software.
 docker pull ypmen/pulsarx
 ```
 
-## Usage
+## Example usage (**please let me know if you meet any problems!**)
 - export YMW16_DIR=/install_path/src/ymw16
 - transientx/transientx_fil -h for help
 
-## Example
+### transientx_fil: search for single pulse search 
+```
+transientx_fil -v -o test -t 4 --zapthre 3.0 --fd 1 --overlap 0.1 --ddplan ddplan.txt --thre 7 --maxw 0.1 --snrloss 0.1 -l 2.0 --drop -z kadaneF 8 4 zdot -f *.fil
+```
+### replot_fil: filter out the bad candidates
+```
+replot_fil -v -t 4 --zapthre 3.0 --td 1 --fd 1 --dmcutoff 3 --widthcutoff 0.1 --snrcutoff 7 --snrloss 0.1 --zap --zdot --kadane 8 4 7 --candfile test.cands --clean -f *.fil
+```
+### example ddplan
+[ddplan.txt](examples/ddplan.txt)
+### example candidate
 
 ![exmaple](examples/example.png)
 
