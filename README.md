@@ -23,7 +23,7 @@ docker pull ypmen/pulsarx
 - export YMW16_DIR=/install_path/src/ymw16
 - transientx/transientx_fil -h for help
 
-### transientx_fil: search for single pulse search 
+### transientx_fil: search for single pulse
 ```
 transientx_fil -v -o test -t 4 --zapthre 3.0 --fd 1 --overlap 0.1 --ddplan ddplan.txt --thre 7 --maxw 0.1 --snrloss 0.1 -l 2.0 --drop -z kadaneF 8 4 zdot -f *.fil
 ```
