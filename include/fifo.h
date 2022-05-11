@@ -49,7 +49,7 @@ public:
 	}
 public:
 	template <typename U>
-    friend ostream& operator<< (ostream &os, const FIFO<U> &fifo);
+	friend ostream& operator<< (ostream &os, const FIFO<U> &fifo);
 public:
 	long int ndata;
 	long int *delay;

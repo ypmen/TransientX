@@ -95,18 +95,18 @@ public:
 	bool unload_integration(fitsfile *fptr, int k);
 	bool unload_integration(fitsfile *fptr, Integration &it);
 public:
-    int nbits;
+	int nbits;
 	double tbin;
 	int nsubint;
-    int npol;
-    int nchan;
-    int nbin;
+	int npol;
+	int nchan;
+	int nbin;
 
-    int nsblk;
-    long int nsuboffs;
-    long int nstot;
+	int nsblk;
+	long int nsuboffs;
+	long int nstot;
 
-    int nsamples;
+	int nsamples;
 
 	double dm;
 	double rm;

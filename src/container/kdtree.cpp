@@ -217,21 +217,21 @@ void KDtree<T>::findNeighborsRec(KDnode<T> *root, vector<T> &point, T radius, ve
 template <typename T>
 void KDtree<T>::findDensityReachRec(vector<KDnode<T> *> &neighbors, T radius, int k, int clusterID)
 {
-    vector<KDnode<T> *> neighbors_temp;
+	vector<KDnode<T> *> neighbors_temp;
 
 	for (auto nbr=neighbors.begin(); nbr!=neighbors.end(); ++nbr)
 	{
-	    (*nbr)->clusterID = clusterID;
+		(*nbr)->clusterID = clusterID;
 		if ((*nbr)->flag == 0)
 		{
-            //cout<<(*nbr)->point[0]<<" "<<(*nbr)->point[1]<<endl;
+			//cout<<(*nbr)->point[0]<<" "<<(*nbr)->point[1]<<endl;
 
 			vector<KDnode<T> *> nbrs;
 			findNeighbors((*nbr)->point, radius, nbrs);
 			if (nbrs.size() >= k)
 			{
 				(*nbr)->flag = 1;
-                neighbors_temp.push_back((*nbr));
+				neighbors_temp.push_back((*nbr));
 			}
 			else
 			{
@@ -240,12 +240,12 @@ void KDtree<T>::findDensityReachRec(vector<KDnode<T> *> &neighbors, T radius, in
 		}
 	}
 
-    for (auto nbr=neighbors_temp.begin(); nbr!=neighbors_temp.end(); ++nbr)
+	for (auto nbr=neighbors_temp.begin(); nbr!=neighbors_temp.end(); ++nbr)
 	{
-        vector<KDnode<T> *> nbrs;
+		vector<KDnode<T> *> nbrs;
 		findNeighbors((*nbr)->point, radius, nbrs);
 		findDensityReachRec(nbrs, radius, k, clusterID);
-    }
+	}
 }
 
 template <typename T>
@@ -256,17 +256,17 @@ void KDtree<T>::runDBSCANRec(KDnode<T> *node, T radius, int k, int &clusterID)
 
 	if (node->flag == 0)
 	{
-	    vector<KDnode<T> *> neighbors;
-	    findNeighbors(node->point, radius, neighbors);
-	    if (neighbors.size() >= k)
-        {
-            clusterID++;
-        }
+		vector<KDnode<T> *> neighbors;
+		findNeighbors(node->point, radius, neighbors);
+		if (neighbors.size() >= k)
+		{
+			clusterID++;
+		}
 	}
 
 	findDensityReach(node, radius, k, clusterID);
-    runDBSCANRec(node->left, radius, k, clusterID);
-    runDBSCANRec(node->right, radius, k, clusterID);
+	runDBSCANRec(node->left, radius, k, clusterID);
+	runDBSCANRec(node->right, radius, k, clusterID);
 }
 
 template <typename T>

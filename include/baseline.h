@@ -14,13 +14,13 @@
 class BaseLine : public DataBuffer<float>
 {
 public:
-    BaseLine();
-    ~BaseLine();
-    void prepare(DataBuffer<float> &databuffer);
-    DataBuffer<float> * run(DataBuffer<float> &databuffer);
-    DataBuffer<float> * get(){return this;}
+	BaseLine();
+	~BaseLine();
+	void prepare(DataBuffer<float> &databuffer);
+	DataBuffer<float> * run(DataBuffer<float> &databuffer);
+	DataBuffer<float> * get(){return this;}
 public:
-    float width;
+	float width;
 };
 
 #endif /* BASELINE_H */

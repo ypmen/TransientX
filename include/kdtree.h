@@ -99,7 +99,7 @@ public:
 		vector<KDnode<T> *> neighbors;
 		findNeighbors(node->point, radius, neighbors);
 
-        //cout<<node->point[0]<<" "<<node->point[1]<<endl;
+		//cout<<node->point[0]<<" "<<node->point[1]<<endl;
 
 		if (node->flag == 0)
 		{

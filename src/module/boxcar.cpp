@@ -164,21 +164,21 @@ bool Boxcar::run(RealTime::SubbandDedispersion &dedisp, vector<int> &vwn, bool i
 #ifdef _OPENMP
 #pragma omp parallel for num_threads(num_threads)
 #endif
-    for (long int k=0; k<dedisp.ndm; k++)
-    {
-        if (!repeater)
+	for (long int k=0; k<dedisp.ndm; k++)
+	{
+		if (!repeater)
 			match(k, vwn, dedisp, iqr);
 		else
 			match2D(k, vwn, dedisp);
-    }
+	}
 
 	return true;
 }
 
 void Boxcar::match(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &dedisp, bool iqr)
 {
-    vector<float> tim;
-    dedisp.get_timdata(tim, idm, true);
+	vector<float> tim;
+	dedisp.get_timdata(tim, idm, true);
 
 	int n = vwn.size();
 
@@ -190,7 +190,7 @@ void Boxcar::match(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &ded
 
 	float mean = 0.;
 	float var = 0.;
-    
+	
 	if (!iqr)
 	{
 		for (long int i=0; i<nsamples; i++)
@@ -217,34 +217,34 @@ void Boxcar::match(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &ded
 	}
 
 	float *csump = (float *)_mm_malloc(sizeof(float)*nsamples, 32);
-    float csum = 0.;
-    for (long int i=0; i<nsamples; i++)
+	float csum = 0.;
+	for (long int i=0; i<nsamples; i++)
 	{
-        csum += tim[i] - mean;
-        csump[i] = csum;
-    }
+		csum += tim[i] - mean;
+		csump[i] = csum;
+	}
 
-    if (var > 0)
-    {
-        for (long int k=0; k<n; k++)
-        {
-            int wn = vwn[k];
-            int wl = wn/2+1;
-            int wh = (wn-1)/2;
-            
-            float temp = sqrt(1./(wn*var));	
+	if (var > 0)
+	{
+		for (long int k=0; k<n; k++)
+		{
+			int wn = vwn[k];
+			int wl = wn/2+1;
+			int wh = (wn-1)/2;
+			
+			float temp = sqrt(1./(wn*var));	
 
 #ifndef __AVX2__
-            for (long int i=wl; i<nsamples-wh; i++)
-            {
-                float boxsum = csump[i+wh]-csump[i-wl];
+			for (long int i=wl; i<nsamples-wh; i++)
+			{
+				float boxsum = csump[i+wh]-csump[i-wl];
 				float S = boxsum*temp;	
 				if (S>=vS[i])
-                {
-                    vS[i] = S;
-                    vwn_maxS[i] = wn;
-                }
-            }
+				{
+					vS[i] = S;
+					vwn_maxS[i] = wn;
+				}
+			}
 #else
 			int len = nsamples-wh-wl;
 			__m256 avx_temp = _mm256_set_ps(temp, temp, temp, temp, temp, temp, temp, temp);
@@ -263,8 +263,8 @@ void Boxcar::match(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &ded
 				_mm256_storeu_si256((__m256i *)(vwn_maxS+wl+i*8), _mm256_cvtps_epi32(avx_vwn_maxS));
 			}
 #endif
-        }
-    }
+		}
+	}
 
 	memcpy(mxS+idm*nsamples, vS, sizeof(float)*nsamples);
 	memcpy(mxwn+idm*nsamples, vwn_maxS, sizeof(int)*nsamples);
@@ -293,8 +293,8 @@ void Boxcar::match2D(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &d
 	memset(submean, 0, sizeof(double)*dedisp.sub.nchans);
 	memset(subvar, 0, sizeof(double)*dedisp.sub.nchans);
 
-    vector<float> sub;
-    dedisp.get_subdata(sub, idm);
+	vector<float> sub;
+	dedisp.get_subdata(sub, idm);
 	float *psd = &sub[0];
 	for (long int i=0; i<nsamples; i++)
 	{

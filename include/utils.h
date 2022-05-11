@@ -65,35 +65,35 @@ long double to_longdouble(double value1, double value2);
 template <typename T>
 inline T kadane (T *arr, long int n, long int *start, long int *end)
 {  
-    T sum = 0;
+	T sum = 0;
 	T maxSum = -std::numeric_limits<T>::infinity();
-    *end = -1;
+	*end = -1;
 
-    long int local_start = 0;  
+	long int local_start = 0;  
 
-    for (long int i = 0; i < n; ++i)  
-    {
-        sum += arr[i];
-        if (sum < 0)
-        {
-            sum = 0;
-            local_start = i + 1;
-        }
-        else if (sum > maxSum)
-        {
-            maxSum = sum;
-            *start = local_start;
-            *end = i;
-        }
-    }
+	for (long int i = 0; i < n; ++i)  
+	{
+		sum += arr[i];
+		if (sum < 0)
+		{
+			sum = 0;
+			local_start = i + 1;
+		}
+		else if (sum > maxSum)
+		{
+			maxSum = sum;
+			*start = local_start;
+			*end = i;
+		}
+	}
 
-    if (*end != -1)
-        return maxSum;
+	if (*end != -1)
+		return maxSum;
 
-    maxSum = arr[0];
-    *start = *end = 0;
+	maxSum = arr[0];
+	*start = *end = 0;
   
-    return maxSum;  
+	return maxSum;  
 }
 
 int gcd(int a, int b);
@@ -125,12 +125,12 @@ void cmul(vector<complex<float>> &x, vector<complex<float>> &y);
 template <typename T>
 inline void dump2bin(const string &fname, const vector<T> &data)
 {
-    ofstream outfile;
-    outfile.open(fname, ios::binary|ios::app);
+	ofstream outfile;
+	outfile.open(fname, ios::binary|ios::app);
 
-    outfile.write((char *)(&data[0]), sizeof(T)*data.size());
+	outfile.write((char *)(&data[0]), sizeof(T)*data.size());
 
-    outfile.close();
+	outfile.close();
 }
 
 /**
@@ -153,7 +153,7 @@ bool inverse_matrix4x4(const double m[16], double invOut[16]);
  */
 inline bool get_inverse_matrix4x4(const double m[4][4], double invOut[4][4])
 {
-    return inverse_matrix4x4((double *)m, (double *)invOut);
+	return inverse_matrix4x4((double *)m, (double *)invOut);
 }
 
 /**
@@ -193,67 +193,67 @@ bool get_error_from_chisq_matrix(T &xerr, vector<T> &x, vector<T> &vchisq);
 template <typename T>
 inline void format_val_err(std::string &s_val_err, T val, T err, const std::string &style="plain", int low=-5, int high=6)
 {
-    std::stringstream ss_val;
-    std::stringstream ss_err;
+	std::stringstream ss_val;
+	std::stringstream ss_err;
 
-    if (style == "sci" and (val<pow(10, low) or val>pow(10, high)))
-    {
-        int n = 0;
-        if (val != 0)
-        {
-            n = floor(log10(abs(val)));
-            val *= pow(10, -n);
-            err *= pow(10, -n);
-            
-            if (err>=1)
-            {
-                ss_val<<fixed<<setprecision(0)<<val;
-                ss_err<<fixed<<setprecision(0)<<err;
-            }
-            else
-            {
-                int n = -floor(log10(err))+1;
-                ss_val<<fixed<<setprecision(n)<<val;
-                ss_err<<fixed<<setprecision(0)<<err*pow(10, n);
-            }
-        }
-        else
-        {
-            n = floor(log10(abs(err)));
-            val *= pow(10, -n);
-            err *= pow(10, -n);
+	if (style == "sci" and (val<pow(10, low) or val>pow(10, high)))
+	{
+		int n = 0;
+		if (val != 0)
+		{
+			n = floor(log10(abs(val)));
+			val *= pow(10, -n);
+			err *= pow(10, -n);
+			
+			if (err>=1)
+			{
+				ss_val<<fixed<<setprecision(0)<<val;
+				ss_err<<fixed<<setprecision(0)<<err;
+			}
+			else
+			{
+				int n = -floor(log10(err))+1;
+				ss_val<<fixed<<setprecision(n)<<val;
+				ss_err<<fixed<<setprecision(0)<<err*pow(10, n);
+			}
+		}
+		else
+		{
+			n = floor(log10(abs(err)));
+			val *= pow(10, -n);
+			err *= pow(10, -n);
 
-            ss_val<<fixed<<setprecision(0)<<val;
-            ss_err<<fixed<<setprecision(0)<<err;
-        }
-        
-        s_val_err = ss_val.str() + "(" + ss_err.str() + ")" + "e"+to_string(n);
-    }
-    else
-    {
-        if (err>=1 or (val == 0 and err == 0))
-        {
-            ss_val<<fixed<<setprecision(0)<<val;
-            ss_err<<fixed<<setprecision(0)<<err;
-        }
-        else
-        {
-            if ((err < abs(val) and err != 0) or val==0)
-            {
-                int n = -floor(log10(err))+1;
-                ss_val<<fixed<<setprecision(n)<<val;
-                ss_err<<fixed<<setprecision(0)<<err*pow(10, n);
-            }
-            else
-            {
-                int n = -floor(log10(abs(val)))+1;
-                ss_val<<fixed<<setprecision(n)<<val;
-                ss_err<<fixed<<setprecision(0)<<err*pow(10, n);
-            }
-        }
+			ss_val<<fixed<<setprecision(0)<<val;
+			ss_err<<fixed<<setprecision(0)<<err;
+		}
+		
+		s_val_err = ss_val.str() + "(" + ss_err.str() + ")" + "e"+to_string(n);
+	}
+	else
+	{
+		if (err>=1 or (val == 0 and err == 0))
+		{
+			ss_val<<fixed<<setprecision(0)<<val;
+			ss_err<<fixed<<setprecision(0)<<err;
+		}
+		else
+		{
+			if ((err < abs(val) and err != 0) or val==0)
+			{
+				int n = -floor(log10(err))+1;
+				ss_val<<fixed<<setprecision(n)<<val;
+				ss_err<<fixed<<setprecision(0)<<err*pow(10, n);
+			}
+			else
+			{
+				int n = -floor(log10(abs(val)))+1;
+				ss_val<<fixed<<setprecision(n)<<val;
+				ss_err<<fixed<<setprecision(0)<<err*pow(10, n);
+			}
+		}
 
-        s_val_err = ss_val.str() + "(" + ss_err.str() + ")";
-    }    
+		s_val_err = ss_val.str() + "(" + ss_err.str() + ")";
+	}    
 }
 
 /**
@@ -266,32 +266,32 @@ inline void format_val_err(std::string &s_val_err, T val, T err, const std::stri
  */
 inline void get_rad_radec(const std::string &s_ra, const std::string &s_dec, double &ra, double &dec)
 {
-    std::vector<std::string> hhmmss;
-    boost::split(hhmmss, s_ra, boost::is_any_of(":"), boost::token_compress_on);
+	std::vector<std::string> hhmmss;
+	boost::split(hhmmss, s_ra, boost::is_any_of(":"), boost::token_compress_on);
 
-    std::vector<std::string> ddmmss;
-    boost::split(ddmmss, s_dec, boost::is_any_of(":"), boost::token_compress_on);
+	std::vector<std::string> ddmmss;
+	boost::split(ddmmss, s_dec, boost::is_any_of(":"), boost::token_compress_on);
 
-    for (long int i=hhmmss.size(); i<3; i++)
-    {
-        hhmmss.push_back("0");
-    }
-    for (long int i=ddmmss.size(); i<3; i++)
-    {
-        ddmmss.push_back("0");
-    }
+	for (long int i=hhmmss.size(); i<3; i++)
+	{
+		hhmmss.push_back("0");
+	}
+	for (long int i=ddmmss.size(); i<3; i++)
+	{
+		ddmmss.push_back("0");
+	}
 
-    double sign = std::signbit(stod(ddmmss[0])) ?  -1 : 1;
-    ra = (stod(hhmmss[0]) + stod(hhmmss[1])/60. + stod(hhmmss[2])/3600.)*15./180.*M_PI;
-    dec = sign*(sign*stod(ddmmss[0]) + stod(ddmmss[1])/60. + stod(ddmmss[2])/3600.)/180.*M_PI;
+	double sign = std::signbit(stod(ddmmss[0])) ?  -1 : 1;
+	ra = (stod(hhmmss[0]) + stod(hhmmss[1])/60. + stod(hhmmss[2])/3600.)*15./180.*M_PI;
+	dec = sign*(sign*stod(ddmmss[0]) + stod(ddmmss[1])/60. + stod(ddmmss[2])/3600.)/180.*M_PI;
 }
 
 template <typename T>
 T randnorm(const T &mean, const T &stddev)
 {
-    static thread_local std::mt19937 generator;
-    std::normal_distribution<T> distribution(mean, stddev);
-    return distribution(generator);
+	static thread_local std::mt19937 generator;
+	std::normal_distribution<T> distribution(mean, stddev);
+	return distribution(generator);
 }
 
 void get_gl_gb(double &gl, double &gb, const std::string &s_ra, const std::string &s_dec);
@@ -315,26 +315,26 @@ void get_mean_var(T profile, T profiles, int nsubint, int nchan, int nbin, doubl
 
 inline void get_bestfit(float &a, float &b, const std::vector<float> &data, const std::vector<float> &data_ref)
 {
-    assert(data.size() == data_ref.size());
-    int N = data.size();
+	assert(data.size() == data_ref.size());
+	int N = data.size();
 
-    double xe = 0.;
-    double ss = 0.;
-    double ee = N;
-    double se = 0.;
-    double xs = 0.;
+	double xe = 0.;
+	double ss = 0.;
+	double ee = N;
+	double se = 0.;
+	double xs = 0.;
 
-    for (long int i=0; i<N; i++)
-    {
-        xe += data[i];
-        se += data_ref[i];
-        ss += data_ref[i]*data_ref[i];
-        xs += data[i]*data_ref[i];
-    }
+	for (long int i=0; i<N; i++)
+	{
+		xe += data[i];
+		se += data_ref[i];
+		ss += data_ref[i]*data_ref[i];
+		xs += data[i]*data_ref[i];
+	}
 
-    double tmp = se*se-ss*ee;
-    a = (xe*se-xs*ee)/tmp;
-    b = (xs*se-xe*ss)/tmp;
+	double tmp = se*se-ss*ee;
+	a = (xe*se-xs*ee)/tmp;
+	b = (xs*se-xe*ss)/tmp;
 }
 
 #endif /* UTILS_H */

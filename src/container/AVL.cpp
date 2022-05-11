@@ -245,39 +245,39 @@ void AVLTree<T>::printValues(void)
 template <typename T>
 void AVLTree<T>::preOrder(AVLNode<T> * node)
 {
-    if(node != NULL)
-    {
-    	cout<<node->value<<" ";
-    	//cout<<node->getheight()<<" ";
-    	//cout<<node->getcount()<<" ";
-    	//cout<<endl;
-        preOrder(node->getleft());
-        preOrder(node->getright());
-    }
+	if(node != NULL)
+	{
+		cout<<node->value<<" ";
+		//cout<<node->getheight()<<" ";
+		//cout<<node->getcount()<<" ";
+		//cout<<endl;
+		preOrder(node->getleft());
+		preOrder(node->getright());
+	}
 }
 
 template <typename T>
 AVLNode<T> * AVLTree<T>::rightRotate(AVLNode<T> * node)
 {
-    AVLNode<T> * x = node->getleft();
-    AVLNode<T> * y = x->getright();
+	AVLNode<T> * x = node->getleft();
+	AVLNode<T> * y = x->getright();
 
-    node->setleft(y);
-    x->setright(node);
+	node->setleft(y);
+	x->setright(node);
 
-    return x;
+	return x;
 }
 
 template <typename T>
 AVLNode<T> * AVLTree<T>::leftRotate(AVLNode<T> * node)
 {
-    AVLNode<T> * x = node->getright();
-    AVLNode<T> * y = x->getleft();
+	AVLNode<T> * x = node->getright();
+	AVLNode<T> * y = x->getleft();
 
-    node->setright(y);
-    x->setleft(node);
+	node->setright(y);
+	x->setleft(node);
 
-    return x;
+	return x;
 }
 
 template <typename T>

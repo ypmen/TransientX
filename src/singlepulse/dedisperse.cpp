@@ -70,11 +70,11 @@ int main(int argc, const char *argv[])
 			("minpts", value<int>()->default_value(5), "Minimum points in one cluster")
 			("baseline", value<vector<float>>()->multitoken()->default_value(vector<float>{0.0, 0.1}, "0.0, 0.1"), "The scale of baseline remove (s)")
 			("rfi,z", value<vector<string>>()->multitoken()->zero_tokens()->composing(), "RFI mitigation [[mask tdRFI fdRFI] [kadaneF tdRFI fdRFI] [kadaneT tdRFI fdRFI] [zap fl fh] [zdot] [zero]]")
-            ("bandlimit", value<double>()->default_value(10), "Band limit of RFI mask (MHz)")
+			("bandlimit", value<double>()->default_value(10), "Band limit of RFI mask (MHz)")
 			("bandlimitKT", value<double>()->default_value(10), "Band limit of RFI kadaneT (MHz)")
 			("widthlimit", value<double>()->default_value(50e-3), "Width limit of RFI kadaneF (s)")
 			("threMask", value<float>()->default_value(10), "S/N threshold of Mask")
-            ("threKadaneF", value<float>()->default_value(7), "S/N threshold of KadaneF")
+			("threKadaneF", value<float>()->default_value(7), "S/N threshold of KadaneF")
 			("threKadaneT", value<float>()->default_value(7), "S/N threshold of KadaneT")
 			("fill", value<string>()->default_value("mean"), "Fill the zapped samples by [mean, rand]")
 			("source_name,s", value<string>()->default_value("J0000-00"), "Source name")
@@ -90,8 +90,8 @@ int main(int argc, const char *argv[])
 			("cont", "Input files are contiguous")
 			("input,f", value<vector<string>>()->multitoken()->composing(), "Input files");
 
-    positional_options_description pos_desc;
-    pos_desc.add("input", -1);
+	positional_options_description pos_desc;
+	pos_desc.add("input", -1);
 	command_line_parser parser{argc, argv};
 	parser.options(desc).style(command_line_style::default_style | command_line_style::allow_short);
 	parser.options(desc).positional(pos_desc);
@@ -223,8 +223,8 @@ int main(int argc, const char *argv[])
 	psf[0].subint.load_integration(psf[0].fptr, 0, it);
 
 	long int nchans = it.nchan;
-    double tsamp = psf[0].subint.tbin;
-    int nifs = it.npol;
+	double tsamp = psf[0].subint.tbin;
+	int nifs = it.npol;
 
 	float *buffer = new float [nchans];
 
@@ -257,7 +257,7 @@ int main(int argc, const char *argv[])
 
 	stringstream ss_ibeam;
 	if (vm.count("incoherent"))
-    	ss_ibeam << "ifbf" << setw(5) << setfill('0') << ibeam;
+		ss_ibeam << "ifbf" << setw(5) << setfill('0') << ibeam;
 	else
 		ss_ibeam << "cfbf" << setw(5) << setfill('0') << ibeam;
 	string s_ibeam = ss_ibeam.str();
@@ -294,8 +294,8 @@ int main(int argc, const char *argv[])
 	long int ntot = 0;
 	long int ntot2 = 0;
 	long int count = 0;
-    long int bcnt1 = 0;
-    long int bcnt2 = 0;
+	long int bcnt1 = 0;
+	long int bcnt2 = 0;
 	for (long int idxn=0; idxn<npsf; idxn++)
 	{
 		long int n = idx[idxn];
@@ -336,10 +336,10 @@ int main(int argc, const char *argv[])
 					}
 				}
 
-                memcpy(&databuf.buffer[0]+bcnt1*nchans, buffer, sizeof(float)*1*nchans);
+				memcpy(&databuf.buffer[0]+bcnt1*nchans, buffer, sizeof(float)*1*nchans);
 				databuf.counter++;
-                bcnt1++;
-                ntot++;
+				bcnt1++;
+				ntot++;
 
 				if (ntot%ndump == 0)
 				{
@@ -352,7 +352,7 @@ int main(int argc, const char *argv[])
 						(*sp).verbose = verbose;
 						(*sp).run(prep);
 					}
-                    bcnt1 = 0;
+					bcnt1 = 0;
 				}
 
 				pcur += it.npol*it.nchan;

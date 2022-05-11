@@ -26,34 +26,34 @@ template <typename T>
 class DataBuffer
 {
 public:
-    DataBuffer();
-    DataBuffer(const DataBuffer<T> &databuffer);
-    DataBuffer<T> & operator=(const DataBuffer<T> &databuffer);
-    DataBuffer(long int ns, int nc);
-    virtual ~DataBuffer();
-    virtual void prepare(DataBuffer<T> &databuffer);
-    virtual DataBuffer<T> * run(DataBuffer<T> &databuffer);
-    virtual DataBuffer<T> * get(){return this;}
-    void open();
-    void close();
-    void dump2txt(const string fname);
-    void dump2bin(const string fname);
-    void dump(const string fname);
-    void resize(long int ns, int nc);
-    void get_mean_rms(vector<T> &mean, vector<T> &var);
+	DataBuffer();
+	DataBuffer(const DataBuffer<T> &databuffer);
+	DataBuffer<T> & operator=(const DataBuffer<T> &databuffer);
+	DataBuffer(long int ns, int nc);
+	virtual ~DataBuffer();
+	virtual void prepare(DataBuffer<T> &databuffer);
+	virtual DataBuffer<T> * run(DataBuffer<T> &databuffer);
+	virtual DataBuffer<T> * get(){return this;}
+	void open();
+	void close();
+	void dump2txt(const string fname);
+	void dump2bin(const string fname);
+	void dump(const string fname);
+	void resize(long int ns, int nc);
+	void get_mean_rms(vector<T> &mean, vector<T> &var);
 public:
-    bool equalized;
-    bool isbusy;
-    bool closable;
-    long int counter;
-    long int nsamples;
-    double tsamp;
-    int nchans;
-    vector<double> frequencies;
+	bool equalized;
+	bool isbusy;
+	bool closable;
+	long int counter;
+	long int nsamples;
+	double tsamp;
+	int nchans;
+	vector<double> frequencies;
 #ifdef __AVX2__
-    vector<T, boost::alignment::aligned_allocator<T, 32>> buffer;
+	vector<T, boost::alignment::aligned_allocator<T, 32>> buffer;
 #else
-    vector<T> buffer;
+	vector<T> buffer;
 #endif
 };
 

@@ -76,10 +76,10 @@ bool Cluster<T>::run(Boxcar &boxcar, float threS, double radius_smearing, int kv
 	vector<int> leftwn;
 	vector<float> leftS;
 
-    candleft.reserve(8192);
+	candleft.reserve(8192);
 	candleft_smearing.reserve(8192);
-    leftwn.reserve(8192);
-    leftS.reserve(8192);
+	leftwn.reserve(8192);
+	leftS.reserve(8192);
 
 	//remove all points smaller than the threshold
 	vector<long int> pos;

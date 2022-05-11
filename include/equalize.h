@@ -13,16 +13,16 @@
 class Equalize : public DataBuffer<float>
 {
 public:
-    Equalize();
-    Equalize(const Equalize &equalize);
-    Equalize & operator=(const Equalize &equalize);
-    ~Equalize();
-    void prepare(DataBuffer<float> &databuffer);
-    DataBuffer<float> * run(DataBuffer<float> &databuffer);
-    DataBuffer<float> * get(){return this;}
+	Equalize();
+	Equalize(const Equalize &equalize);
+	Equalize & operator=(const Equalize &equalize);
+	~Equalize();
+	void prepare(DataBuffer<float> &databuffer);
+	DataBuffer<float> * run(DataBuffer<float> &databuffer);
+	DataBuffer<float> * get(){return this;}
 private:
-    vector<double> chmean;
-    vector<double> chstd;
+	vector<double> chmean;
+	vector<double> chstd;
 };
 
 #endif /* EQUALIZE_H_ */

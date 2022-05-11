@@ -26,24 +26,24 @@ Filterbank::Filterbank()
 	telescope_id = 0;
 	machine_id = 0;
 	data_type = 1;
-    barycentric = 0;
-    pulsarcentric = 0;
-    ibeam = 0;
-    nbeams = 0;
-    npuls = 0;
-    nbins = 0;
-    az_start = 0.;
-    za_start = 0.;
-    src_raj = 0.;
-    src_dej = 0.;
-    tstart = 0.;
-    tsamp = 0.;
-    nbits = 0;
-    nsamples = 0.;
-    nifs = 0;
+	barycentric = 0;
+	pulsarcentric = 0;
+	ibeam = 0;
+	nbeams = 0;
+	npuls = 0;
+	nbins = 0;
+	az_start = 0.;
+	za_start = 0.;
+	src_raj = 0.;
+	src_dej = 0.;
+	tstart = 0.;
+	tsamp = 0.;
+	nbits = 0;
+	nsamples = 0.;
+	nifs = 0;
 	nchans = 0;
-    fch1 = 0.;
-    foff = 0.;
+	fch1 = 0.;
+	foff = 0.;
 	refdm = 0.;
 	period = 0.;
 
@@ -62,24 +62,24 @@ Filterbank::Filterbank(const string fname)
 	telescope_id = 0;
 	machine_id = 0;
 	data_type = 1;
-    barycentric = 0;
-    pulsarcentric = 0;
-    ibeam = 0;
-    nbeams = 0;
-    npuls = 0;
-    nbins = 0;
-    az_start = 0.;
-    za_start = 0.;
-    src_raj = 0.;
-    src_dej = 0.;
-    tstart = 0.;
-    tsamp = 0.;
-    nbits = 0;
-    nsamples = 0.;
-    nifs = 0;
+	barycentric = 0;
+	pulsarcentric = 0;
+	ibeam = 0;
+	nbeams = 0;
+	npuls = 0;
+	nbins = 0;
+	az_start = 0.;
+	za_start = 0.;
+	src_raj = 0.;
+	src_dej = 0.;
+	tstart = 0.;
+	tsamp = 0.;
+	nbits = 0;
+	nsamples = 0.;
+	nifs = 0;
 	nchans = 0;
-    fch1 = 0.;
-    foff = 0.;
+	fch1 = 0.;
+	foff = 0.;
 	refdm = 0.;
 	period = 0.;
 
@@ -244,6 +244,8 @@ Filterbank::~Filterbank()
 		switch (nbits)
 		{
 		case 1: delete [] (unsigned char *)data; break;
+		case 2: delete [] (unsigned char *)data; break;
+		case 4: delete [] (unsigned char *)data; break;
 		case 8: delete [] (unsigned char *)data; break;
 		case 32: delete [] (float *)data; break;
 		default: cerr<<"Error: data type not support"<<endl; break;
@@ -503,47 +505,99 @@ bool Filterbank::read_data()
 	{
 	case 8:
 	{
-        long int nchr = nsamples*nifs*nchans;
-        unsigned char * chb = new unsigned char [nchr];
-        long int icnt = fread(chb, 1, nchr, fptr);
-        data = new unsigned char [icnt];
-        for (long int i=0; i<icnt; i++)
-        {
-                ((unsigned char *)data)[i] = chb[i];
-        }
-        delete [] chb;
-        if (icnt != nchr)
-        {
-                cerr<<"Data ends unexpected read to EOF"<<endl;
-        }
-        nsamples = icnt/nifs/nchans;
-        ndata = nsamples;
+		long int nchr = nsamples*nifs*nchans;
+		unsigned char * chb = new unsigned char [nchr];
+		long int icnt = fread(chb, 1, nchr, fptr);
+		data = new unsigned char [icnt];
+		for (long int i=0; i<icnt; i++)
+		{
+				((unsigned char *)data)[i] = chb[i];
+		}
+		delete [] chb;
+		if (icnt != nchr)
+		{
+				cerr<<"Data ends unexpected read to EOF"<<endl;
+		}
+		nsamples = icnt/nifs/nchans;
+		ndata = nsamples;
 	}; break;
 	case 1:
 	{
 		long int nchr = nsamples*nifs*nchans;
-        unsigned char * chb = new unsigned char [nchr];
-        long int icnt = fread(chb, 1, nchr/8, fptr);
-        if (icnt*8 > ndata)
-        {
-        	if (data != NULL) delete [] (unsigned char *)data;
-        	data = new unsigned char [icnt*8];
-        }
-        for (long int i=0; i<icnt; i++)
-        {
+		unsigned char * chb = new unsigned char [nchr];
+		long int icnt = fread(chb, 1, nchr/8, fptr);
+		if (icnt*8 > ndata)
+		{
+			if (data != NULL) delete [] (unsigned char *)data;
+			data = new unsigned char [icnt*8];
+		}
+		for (long int i=0; i<icnt; i++)
+		{
 			unsigned char tmp = chb[i];
 			for (long int k=0; k<8; k++)
 			{
-                ((unsigned char *)data)[i*8+k] = tmp & 1;
+				((unsigned char *)data)[i*8+k] = tmp & 1;
 				tmp >>= 1;
 			}
 		}
-        delete [] chb;
-        if (icnt*8 != nchr)
-        {
-                //cerr<<"Warning: Data ends unexpected read to EOF"<<endl;
-        }
-        ndata = icnt*8/nifs/nchans;
+		delete [] chb;
+		if (icnt*8 != nchr)
+		{
+				//cerr<<"Warning: Data ends unexpected read to EOF"<<endl;
+		}
+		ndata = icnt*8/nifs/nchans;
+	}; break;
+	case 2:
+	{
+		long int nchr = nsamples*nifs*nchans;
+		unsigned char * chb = new unsigned char [nchr];
+		long int icnt = fread(chb, 1, nchr/4, fptr);
+		if (icnt*4 > ndata)
+		{
+			if (data != NULL) delete [] (unsigned char *)data;
+			data = new unsigned char [icnt*4];
+		}
+		for (long int i=0; i<icnt; i++)
+		{
+			unsigned char tmp = chb[i];
+			for (long int k=0; k<4; k++)
+			{
+				((unsigned char *)data)[i*4+k] = (tmp & 0b11);
+				tmp >>= 2;
+			}
+		}
+		delete [] chb;
+		if (icnt*4 != nchr)
+		{
+				//cerr<<"Warning: Data ends unexpected read to EOF"<<endl;
+		}
+		ndata = icnt*4/nifs/nchans;
+	}; break;
+	case 4:
+	{
+		long int nchr = nsamples*nifs*nchans;
+		unsigned char * chb = new unsigned char [nchr];
+		long int icnt = fread(chb, 1, nchr/2, fptr);
+		if (icnt*2 > ndata)
+		{
+			if (data != NULL) delete [] (unsigned char *)data;
+			data = new unsigned char [icnt*2];
+		}
+		for (long int i=0; i<icnt; i++)
+		{
+			unsigned char tmp = chb[i];
+			for (long int k=0; k<2; k++)
+			{
+				((unsigned char *)data)[i*2+k] = (tmp & 0b1111);
+				tmp >>= 4;
+			}
+		}
+		delete [] chb;
+		if (icnt*2 != nchr)
+		{
+				//cerr<<"Warning: Data ends unexpected read to EOF"<<endl;
+		}
+		ndata = icnt*2/nifs/nchans;
 	}; break;
 	default:
 	{
@@ -557,9 +611,9 @@ bool Filterbank::read_data()
 
 bool Filterbank::read_data(long int nstart, long int ns)
 {
-    long int offset=(long int) (long double)nstart * (long double)nchans * (long double)nifs * ((long double)nbits / 8.0);
-    fseek(fptr, offset+header_size, SEEK_SET);
-    return read_data(ns);
+	long int offset=(long int) (long double)nstart * (long double)nchans * (long double)nifs * ((long double)nbits / 8.0);
+	fseek(fptr, offset+header_size, SEEK_SET);
+	return read_data(ns);
 }
 
 bool Filterbank::read_data(long int ns)
@@ -568,50 +622,102 @@ bool Filterbank::read_data(long int ns)
 	{
 	case 8:
 	{
-        long int nchr = ns*nifs*nchans;
-        unsigned char * chb = new unsigned char [nchr];
-        long int icnt = fread(chb, 1, nchr, fptr);
-        if (icnt > ndata)
-        {
-        	if (data != NULL) delete [] (unsigned char *)data;
-        	data = new unsigned char [icnt];
-        }
-        for (long int i=0; i<icnt; i++)
-        {
-                ((unsigned char *)data)[i] = chb[i];
-        }
-        delete [] chb;
-        if (icnt != nchr)
-        {
-                //cerr<<"Warning: Data ends unexpected read to EOF"<<endl;
-        }
-        ndata = icnt/nifs/nchans;
+		long int nchr = ns*nifs*nchans;
+		unsigned char * chb = new unsigned char [nchr];
+		long int icnt = fread(chb, 1, nchr, fptr);
+		if (icnt > ndata)
+		{
+			if (data != NULL) delete [] (unsigned char *)data;
+			data = new unsigned char [icnt];
+		}
+		for (long int i=0; i<icnt; i++)
+		{
+				((unsigned char *)data)[i] = chb[i];
+		}
+		delete [] chb;
+		if (icnt != nchr)
+		{
+				//cerr<<"Warning: Data ends unexpected read to EOF"<<endl;
+		}
+		ndata = icnt/nifs/nchans;
 	}; break;
 	case 1:
 	{
 		long int nchr = ns*nifs*nchans;
-        unsigned char * chb = new unsigned char [nchr];
-        long int icnt = fread(chb, 1, nchr/8, fptr);
-        if (icnt*8 > ndata)
-        {
-        	if (data != NULL) delete [] (unsigned char *)data;
-        	data = new unsigned char [icnt*8];
-        }
-        for (long int i=0; i<icnt; i++)
-        {
+		unsigned char * chb = new unsigned char [nchr];
+		long int icnt = fread(chb, 1, nchr/8, fptr);
+		if (icnt*8 > ndata)
+		{
+			if (data != NULL) delete [] (unsigned char *)data;
+			data = new unsigned char [icnt*8];
+		}
+		for (long int i=0; i<icnt; i++)
+		{
 			unsigned char tmp = chb[i];
 			for (long int k=0; k<8; k++)
 			{
-                ((unsigned char *)data)[i*8+k] = tmp & 1;
+				((unsigned char *)data)[i*8+k] = tmp & 1;
 				tmp >>= 1;
 			}
 		}
-        delete [] chb;
-        if (icnt*8 != nchr)
-        {
-                //cerr<<"Warning: Data ends unexpected read to EOF"<<endl;
-        }
-        ndata = icnt*8/nifs/nchans;
+		delete [] chb;
+		if (icnt*8 != nchr)
+		{
+				//cerr<<"Warning: Data ends unexpected read to EOF"<<endl;
+		}
+		ndata = icnt*8/nifs/nchans;
+	}; break;
+	case 2:
+	{
+		long int nchr = ns*nifs*nchans;
+		unsigned char * chb = new unsigned char [nchr];
+		long int icnt = fread(chb, 1, nchr/4, fptr);
+		if (icnt*4 > ndata)
+		{
+			if (data != NULL) delete [] (unsigned char *)data;
+			data = new unsigned char [icnt*4];
+		}
+		for (long int i=0; i<icnt; i++)
+		{
+			unsigned char tmp = chb[i];
+			for (long int k=0; k<4; k++)
+			{
+				((unsigned char *)data)[i*4+k] = (tmp & 0b11);
+				tmp >>= 2;
+			}
+		}
+		delete [] chb;
+		if (icnt*4 != nchr)
+		{
+				//cerr<<"Warning: Data ends unexpected read to EOF"<<endl;
+		}
+		ndata = icnt*4/nifs/nchans;
+	}; break;
+	case 4:
+	{
+		long int nchr = ns*nifs*nchans;
+		unsigned char * chb = new unsigned char [nchr];
+		long int icnt = fread(chb, 1, nchr/2, fptr);
+		if (icnt*2 > ndata)
+		{
+			if (data != NULL) delete [] (unsigned char *)data;
+			data = new unsigned char [icnt*2];
+		}
+		for (long int i=0; i<icnt; i++)
+		{
+			unsigned char tmp = chb[i];
+			for (long int k=0; k<2; k++)
+			{
+				((unsigned char *)data)[i*2+k] = (tmp & 0b1111);
+				tmp >>= 4;
+			}
+		}
+		delete [] chb;
+		if (icnt*2 != nchr)
+		{
+				//cerr<<"Warning: Data ends unexpected read to EOF"<<endl;
+		}
+		ndata = icnt*2/nifs/nchans;
 	}; break;
 	default:
 	{
@@ -629,19 +735,19 @@ bool Filterbank::set_data(unsigned char *dat, long int ns, int nif, int nchan)
 	{
 	case 8:
 	{
-        nifs = nif;
-        nchans = nchan;
-        long int nchr = ns*nifs*nchans*nbits/8;
-        if (ns > ndata)
-        {
-        	if (data != NULL) delete [] (unsigned char *)data;
-        	data = new unsigned char [nchr];
-        }
-        for (long int i=0; i<nchr; i++)
-        {
-                ((unsigned char *)data)[i] = dat[i];
-        }
-        ndata = ns;
+		nifs = nif;
+		nchans = nchan;
+		long int nchr = ns*nifs*nchans*nbits/8;
+		if (ns > ndata)
+		{
+			if (data != NULL) delete [] (unsigned char *)data;
+			data = new unsigned char [nchr];
+		}
+		for (long int i=0; i<nchr; i++)
+		{
+				((unsigned char *)data)[i] = dat[i];
+		}
+		ndata = ns;
 	}; break;
 	default:
 	{
@@ -655,100 +761,100 @@ bool Filterbank::set_data(unsigned char *dat, long int ns, int nif, int nchan)
 
 bool Filterbank::write_header()
 {
-    fptr = fopen(filename.c_str(), "wb");
-    if (fptr==NULL) return false;
+	fptr = fopen(filename.c_str(), "wb");
+	if (fptr==NULL) return false;
 
-    put_string(fptr, "HEADER_START");
-    put_string(fptr, "source_name");
-    put_string(fptr, source_name);
-    if (use_frequence_table || (fch1==0.0 && foff==0.0))
-    {
-            put_string(fptr,"FREQUENCY_START");
-            for (int channel_index=0; channel_index<nchans; channel_index++)
-            {
-                    put_string(fptr, "fchannel");
-                    fwrite (&frequency_table[channel_index], sizeof(double), 1, fptr);
-            }
-            put_string(fptr, "FREQUENCY_END");
-    }
-    put_string(fptr, "az_start");
-    fwrite(&az_start, sizeof(az_start), 1, fptr);
-    put_string(fptr, "za_start");
-    fwrite(&za_start, sizeof(za_start), 1, fptr);
-    put_string(fptr, "src_raj");
-    fwrite(&src_raj, sizeof(src_raj), 1, fptr);
-    put_string(fptr, "src_dej");
-    fwrite(&src_dej, sizeof(src_dej), 1, fptr);
-    put_string(fptr, "tstart");
-    fwrite(&tstart, sizeof(tstart), 1, fptr);
-    put_string(fptr, "tsamp");
-    fwrite(&tsamp, sizeof(tsamp), 1, fptr);
-    //put_string(fptr, "period");
-    //fwrite (&period, sizeof(period), 1, fptr);
-    put_string(fptr, "fch1");
-    fwrite(&fch1, sizeof(fch1), 1, fptr);
-    put_string(fptr, "foff");
-    fwrite(&foff, sizeof(foff), 1, fptr);
-    put_string(fptr, "nchans");
-    fwrite(&nchans, sizeof(nchans), 1, fptr);
-    put_string(fptr, "telescope_id");
-    fwrite(&telescope_id, sizeof(telescope_id), 1, fptr);
-    put_string(fptr, "machine_id");
-    fwrite(&machine_id, sizeof(machine_id), 1, fptr);
-    put_string(fptr, "data_type");
-    fwrite(&data_type, sizeof(data_type), 1, fptr);
-    put_string(fptr, "ibeam");
-    fwrite(&ibeam, sizeof(ibeam), 1, fptr);
-    put_string(fptr, "nbeams");
-    fwrite(&nbeams, sizeof(nbeams), 1, fptr);
-    put_string(fptr, "nbits");
-    fwrite(&nbits, sizeof(nbits), 1, fptr);
-    put_string(fptr, "barycentric");
-    fwrite(&barycentric, sizeof(barycentric), 1, fptr);
-    put_string(fptr, "pulsarcentric");
-    fwrite(&pulsarcentric, sizeof(pulsarcentric), 1, fptr);
-    //put_string(fptr, "nbins");
-    //fwrite (&nbins, sizeof(nbins), 1, fptr);
-    //put_string(fptr, "nsamples");
-    //fwrite (&nsamples, sizeof(nsamples), 1, fptr);
-    put_string(fptr, "nifs");
-    fwrite(&nifs, sizeof(nifs), 1, fptr);
-    //put_string(fptr, "npuls");
-    //fwrite (&npuls, sizeof(npuls), 1, fptr);
+	put_string(fptr, "HEADER_START");
+	put_string(fptr, "source_name");
+	put_string(fptr, source_name);
+	if (use_frequence_table || (fch1==0.0 && foff==0.0))
+	{
+			put_string(fptr,"FREQUENCY_START");
+			for (int channel_index=0; channel_index<nchans; channel_index++)
+			{
+					put_string(fptr, "fchannel");
+					fwrite (&frequency_table[channel_index], sizeof(double), 1, fptr);
+			}
+			put_string(fptr, "FREQUENCY_END");
+	}
+	put_string(fptr, "az_start");
+	fwrite(&az_start, sizeof(az_start), 1, fptr);
+	put_string(fptr, "za_start");
+	fwrite(&za_start, sizeof(za_start), 1, fptr);
+	put_string(fptr, "src_raj");
+	fwrite(&src_raj, sizeof(src_raj), 1, fptr);
+	put_string(fptr, "src_dej");
+	fwrite(&src_dej, sizeof(src_dej), 1, fptr);
+	put_string(fptr, "tstart");
+	fwrite(&tstart, sizeof(tstart), 1, fptr);
+	put_string(fptr, "tsamp");
+	fwrite(&tsamp, sizeof(tsamp), 1, fptr);
+	//put_string(fptr, "period");
+	//fwrite (&period, sizeof(period), 1, fptr);
+	put_string(fptr, "fch1");
+	fwrite(&fch1, sizeof(fch1), 1, fptr);
+	put_string(fptr, "foff");
+	fwrite(&foff, sizeof(foff), 1, fptr);
+	put_string(fptr, "nchans");
+	fwrite(&nchans, sizeof(nchans), 1, fptr);
+	put_string(fptr, "telescope_id");
+	fwrite(&telescope_id, sizeof(telescope_id), 1, fptr);
+	put_string(fptr, "machine_id");
+	fwrite(&machine_id, sizeof(machine_id), 1, fptr);
+	put_string(fptr, "data_type");
+	fwrite(&data_type, sizeof(data_type), 1, fptr);
+	put_string(fptr, "ibeam");
+	fwrite(&ibeam, sizeof(ibeam), 1, fptr);
+	put_string(fptr, "nbeams");
+	fwrite(&nbeams, sizeof(nbeams), 1, fptr);
+	put_string(fptr, "nbits");
+	fwrite(&nbits, sizeof(nbits), 1, fptr);
+	put_string(fptr, "barycentric");
+	fwrite(&barycentric, sizeof(barycentric), 1, fptr);
+	put_string(fptr, "pulsarcentric");
+	fwrite(&pulsarcentric, sizeof(pulsarcentric), 1, fptr);
+	//put_string(fptr, "nbins");
+	//fwrite (&nbins, sizeof(nbins), 1, fptr);
+	//put_string(fptr, "nsamples");
+	//fwrite (&nsamples, sizeof(nsamples), 1, fptr);
+	put_string(fptr, "nifs");
+	fwrite(&nifs, sizeof(nifs), 1, fptr);
+	//put_string(fptr, "npuls");
+	//fwrite (&npuls, sizeof(npuls), 1, fptr);
 	if (data_type == 2)
 	{
-    	put_string(fptr, "refdm");
-    	fwrite (&refdm, sizeof(refdm), 1, fptr);
+		put_string(fptr, "refdm");
+		fwrite (&refdm, sizeof(refdm), 1, fptr);
 	}
 	put_string(fptr, "HEADER_END");
-    return true;
+	return true;
 }
 
 bool Filterbank::write_data()
 {
-    switch (nbits)
-    {
-    case 8:
-    {
-    	long int nchr=ndata*nifs*nchans*nbits/8;
-    	fwrite(data, 1, nchr, fptr);
-    }; break;
-    case 32:
-    {
-    	long int nchr=ndata*nifs*nchans;
-    	fwrite(data, 4, nchr, fptr);
-    }; break;
-    default: cerr<<"Error: data type is not supported"<<endl;
-    }
+	switch (nbits)
+	{
+	case 8:
+	{
+		long int nchr=ndata*nifs*nchans*nbits/8;
+		fwrite(data, 1, nchr, fptr);
+	}; break;
+	case 32:
+	{
+		long int nchr=ndata*nifs*nchans;
+		fwrite(data, 4, nchr, fptr);
+	}; break;
+	default: cerr<<"Error: data type is not supported"<<endl;
+	}
 
-    return true;
+	return true;
 }
 
 void Filterbank::put_string (FILE * outputfile, const string & strtmp)
 {
-        int nchar = strtmp.length ();
-        fwrite (&nchar, sizeof (int), 1, outputfile);
-        fwrite (strtmp.c_str (), nchar, 1, outputfile);
+		int nchar = strtmp.length ();
+		fwrite (&nchar, sizeof (int), 1, outputfile);
+		fwrite (strtmp.c_str (), nchar, 1, outputfile);
 }
 
 void Filterbank::get_string (FILE * inputfile, string & strtmp)
@@ -775,7 +881,7 @@ int Filterbank::get_nsamples(const char *filename,int headersize, int nbits, int
 	int numsamps;
 	datasize=sizeof_file(filename)-headersize;
 	numsamps=(int) ((long double) (datasize)/ (((long double) nbits) / 8.0)
-	                /(long double) nifs/(long double) nchans);
+					/(long double) nifs/(long double) nchans);
 	return (numsamps);
 }
 
@@ -794,73 +900,73 @@ long long Filterbank::sizeof_file(const char name[]) /* includefile */
 //copy from presto
 void get_telescope_name(int telescope_id, std::string &s_telescope)
 {
-    switch (telescope_id) {
-    case 0:
-        s_telescope = "Fake";
-        break;
-    case 1:
-        s_telescope = "Arecibo";
-        break;
-    case 2:
-        s_telescope = "Ooty";
-        break;
-    case 3:
-        s_telescope = "Nancay";
-        break;
-    case 4:
-        s_telescope = "Parkes";
-        break;
-    case 5:
-        s_telescope = "Jodrell";
-        break;
-    case 6:
-        s_telescope = "GBT";
-        break;
-    case 7:
-        s_telescope = "GMRT";
-        break;
-    case 8:
-        s_telescope = "Effelsberg";
-        break;
-    case 9:
-        s_telescope = "ATA";
-        break;
-    case 10:
-        s_telescope = "SRT";
-        break;
-    case 11:
-        s_telescope = "LOFAR";
-        break;
-    case 12:
-        s_telescope = "VLA";
-        break;
-    case 20:  // May need to change....
-        s_telescope = "CHIME";
-        break;
-    case 21:  // May need to change....
-        s_telescope = "FAST";
-        break;
-    case 64:
-        s_telescope = "MeerKAT";
-        break;
-    case 65:
-        s_telescope = "KAT-7";
-        break;
-    default:
-        s_telescope = "Unknown";
-        break;
-    }
+	switch (telescope_id) {
+	case 0:
+		s_telescope = "Fake";
+		break;
+	case 1:
+		s_telescope = "Arecibo";
+		break;
+	case 2:
+		s_telescope = "Ooty";
+		break;
+	case 3:
+		s_telescope = "Nancay";
+		break;
+	case 4:
+		s_telescope = "Parkes";
+		break;
+	case 5:
+		s_telescope = "Jodrell";
+		break;
+	case 6:
+		s_telescope = "GBT";
+		break;
+	case 7:
+		s_telescope = "GMRT";
+		break;
+	case 8:
+		s_telescope = "Effelsberg";
+		break;
+	case 9:
+		s_telescope = "ATA";
+		break;
+	case 10:
+		s_telescope = "SRT";
+		break;
+	case 11:
+		s_telescope = "LOFAR";
+		break;
+	case 12:
+		s_telescope = "VLA";
+		break;
+	case 20:  // May need to change....
+		s_telescope = "CHIME";
+		break;
+	case 21:  // May need to change....
+		s_telescope = "FAST";
+		break;
+	case 64:
+		s_telescope = "MeerKAT";
+		break;
+	case 65:
+		s_telescope = "KAT-7";
+		break;
+	default:
+		s_telescope = "Unknown";
+		break;
+	}
 }
 
 bool iequals(const string& a, const string& b)
 {
-    unsigned int sz = a.size();
-    if (b.size() != sz)
-        return false;
-    for (unsigned int i = 0; i < sz; ++i)
-        if (tolower(a[i]) != tolower(b[i]))
-            return false;
-    return true;
+	unsigned int sz = a.size();
+	if (b.size() != sz)
+		return false;
+	for (unsigned int i = 0; i < sz; ++i)
+		if (tolower(a[i]) != tolower(b[i]))
+			return false;
+	return true;
 }
 
 int get_telescope_id(const std::string &s_telescope)

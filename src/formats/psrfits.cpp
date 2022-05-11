@@ -80,22 +80,22 @@ bool Psrfits::parse_template(const string temfile)
 
 	int status = 0;
 	fits_create_file (&fptr, (filename).c_str(), &status);
-    if (status)
-    {
-    	cerr<<"Error: can not open file "<<filename<<endl;
-    	fits_report_error(stderr, status);
-    	return false;
-    }
+	if (status)
+	{
+		cerr<<"Error: can not open file "<<filename<<endl;
+		fits_report_error(stderr, status);
+		return false;
+	}
 
-    fits_execute_template(fptr, const_cast<char*>(temfile.c_str()), &status);
-    if (status)
-    {
-    	cerr<<"Error: can not execute template file "<<temfile<<endl;
-    	fits_report_error(stderr, status);
-    	return false;
-    }
+	fits_execute_template(fptr, const_cast<char*>(temfile.c_str()), &status);
+	if (status)
+	{
+		cerr<<"Error: can not execute template file "<<temfile<<endl;
+		fits_report_error(stderr, status);
+		return false;
+	}
 
-    return true;
+	return true;
 }
 
 //from psrchive
@@ -116,62 +116,62 @@ bool Psrfits::check_template(const string temfile)
 	while (fgets (templt, FLEN_CARD*2, fptr))
 	{
 		// CFITSIO User's Reference Guide
-	    // 11.1 Detailed Template Line Format
+		// 11.1 Detailed Template Line Format
 
-	    /* "Any template line that begins with the pound '#' character is
-	       ignored by the template parser and may be use to insert
-	       comments into the template file itself." */
+		/* "Any template line that begins with the pound '#' character is
+		   ignored by the template parser and may be use to insert
+		   comments into the template file itself." */
 
-	    if (templt[0] == '#')
-	      continue;
+		if (templt[0] == '#')
+		  continue;
 
-	    char* newline = strchr (templt, '\n');
-	    if (newline)
-	      *newline = '\0';
+		char* newline = strchr (templt, '\n');
+		if (newline)
+		  *newline = '\0';
 
-	    int keytype = 0;
-	    fits_parse_template (templt, card, &keytype, &status);
-	    if (status)
-	    {
-	    	cerr<<"Error: template '"<<templt<<"'"<<endl;
-	    	fits_report_error(stderr, status);
-	    	return false;
-	    }
+		int keytype = 0;
+		fits_parse_template (templt, card, &keytype, &status);
+		if (status)
+		{
+			cerr<<"Error: template '"<<templt<<"'"<<endl;
+			fits_report_error(stderr, status);
+			return false;
+		}
 
-	    if (strlen(templt) >= FLEN_CARD)
-	    {
-	    	cerr<<"Error: card '"<<templt<<"' out of length"<<endl;
-	    	return false;
-	    }
+		if (strlen(templt) >= FLEN_CARD)
+		{
+			cerr<<"Error: card '"<<templt<<"' out of length"<<endl;
+			return false;
+		}
 
-	    fits_test_record (card, &status);
-	    if (status)
-	    {
-	    	cerr<<"Error: card '"<<card<<"'"<<endl;
-	    	fits_report_error(stderr, status);
-	    	return false;
-	    }
+		fits_test_record (card, &status);
+		if (status)
+		{
+			cerr<<"Error: card '"<<card<<"'"<<endl;
+			fits_report_error(stderr, status);
+			return false;
+		}
 
-	    char keyname[FLEN_CARD];
-	    int keylength = 0;
-	    fits_get_keyname (card, keyname, &keylength, &status);
-	    if (status)
-	    {
-	    	cerr<<"Error: card '"<<card<<"'"<<endl;
-	    	fits_report_error(stderr, status);
-	    	return false;
-	    }
+		char keyname[FLEN_CARD];
+		int keylength = 0;
+		fits_get_keyname (card, keyname, &keylength, &status);
+		if (status)
+		{
+			cerr<<"Error: card '"<<card<<"'"<<endl;
+			fits_report_error(stderr, status);
+			return false;
+		}
 
-	    if (keyname[strlen(keyname)-1]=='#')
-	      keyname[strlen(keyname)-1] = '\0'; // ignore auto-indexing marks
+		if (keyname[strlen(keyname)-1]=='#')
+		  keyname[strlen(keyname)-1] = '\0'; // ignore auto-indexing marks
 
-	    fits_test_keyword (keyname, &status);
-	    if (status)
-	    {
-	    	cerr<<"Error: keyname '"<<keyname<<"'"<<endl;
-	    	fits_report_error(stderr, status);
-	    	return false;
-	    }
+		fits_test_keyword (keyname, &status);
+		if (status)
+		{
+			cerr<<"Error: keyname '"<<keyname<<"'"<<endl;
+			fits_report_error(stderr, status);
+			return false;
+		}
 	  }
 
 	  fclose (fptr);
@@ -184,14 +184,14 @@ bool Psrfits::open(int iomode)
 	int status = 0;
 
 	fits_open_file(&fptr, filename.c_str(), iomode, &status);
-    if (status)
-    {
-    	cerr<<"Error: can not open file '"<<filename<<endl;
-    	fits_report_error(stderr, status);
-    	return false;
-    }
+	if (status)
+	{
+		cerr<<"Error: can not open file '"<<filename<<endl;
+		fits_report_error(stderr, status);
+		return false;
+	}
 
-    return true;
+	return true;
 }
 
 bool Psrfits::remove_hdu(const string hduname)
@@ -202,11 +202,11 @@ bool Psrfits::remove_hdu(const string hduname)
 	strcpy(extname, hduname.c_str());
 	fits_movnam_hdu(fptr, BINARY_TBL, extname, 0, &status);
 	if (status)
-    {
-    	cerr<<"Error: can not move to hdu "<<hduname<<endl;
-    	fits_report_error(stderr, status);
-    	return false;
-    }
+	{
+		cerr<<"Error: can not move to hdu "<<hduname<<endl;
+		fits_report_error(stderr, status);
+		return false;
+	}
 
 	fits_delete_hdu(fptr, NULL, &status);
 	if(status)

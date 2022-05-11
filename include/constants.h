@@ -13,12 +13,12 @@
 
 inline double fdot2acc(double fdot, double f)
 {
-    return -fdot/f*CONST_C;
+	return -fdot/f*CONST_C;
 }
 
 inline double acc2fdot(double acc, double f)
 {
-    return -f*acc/CONST_C;
+	return -f*acc/CONST_C;
 }
 
 #endif /* CONSTANTS */

@@ -14,22 +14,22 @@
 class PreprocessLite : public DataBuffer<float>
 {
 public:
-    PreprocessLite()
-    {
-        td = 1;
-        fd = 1;
-        thresig = 3.;
-        filltype = "mean";
-    }
-    ~PreprocessLite(){}
-    void prepare(DataBuffer<float> &databuffer);
-    DataBuffer<float> * run(DataBuffer<float> &databuffer);
-    DataBuffer<float> * get(){return this;}
+	PreprocessLite()
+	{
+		td = 1;
+		fd = 1;
+		thresig = 3.;
+		filltype = "mean";
+	}
+	~PreprocessLite(){}
+	void prepare(DataBuffer<float> &databuffer);
+	DataBuffer<float> * run(DataBuffer<float> &databuffer);
+	DataBuffer<float> * get(){return this;}
 public:
-    int td;
-    int fd;
-    float thresig;
-    string filltype;
+	int td;
+	int fd;
+	float thresig;
+	string filltype;
 };
 
 #endif /* PREPROCESSLITE_H */
