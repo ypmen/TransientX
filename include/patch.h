@@ -1,27 +1,28 @@
 /**
  * @author Yunpeng Men
  * @email ypmen@mpifr-bonn.mpg.de
- * @create date 2021-01-17 12:56:51
- * @modify date 2021-01-17 12:56:51
+ * @create date 2022-05-13 11:59:35
+ * @modify date 2022-05-13 11:59:35
  * @desc [description]
  */
 
-#ifndef BASELINE_H
-#define BASELINE_H
+#ifndef PATCH_H
+#define PATCH_H
 
 #include "databuffer.h"
 
-class BaseLine : public DataBuffer<float>
+class Patch : public DataBuffer<float>
 {
 public:
-	BaseLine();
-	~BaseLine();
+	Patch();
+	~Patch();
 	void prepare(DataBuffer<float> &databuffer);
-	DataBuffer<float> * run(DataBuffer<float> &databuffer);
 	DataBuffer<float> * filter(DataBuffer<float> &databuffer);
 	DataBuffer<float> * get(){return this;}
 public:
+	string filltype;
 	float width;
+	float threshold;
 };
 
-#endif /* BASELINE_H */
+#endif /* PATCH_H */

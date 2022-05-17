@@ -13,6 +13,10 @@
 #include "dedisperse.h"
 #include "logging.h"
 
+#ifdef __AVX2__
+#include "avx2.h"
+#endif
+
 void PreprocessLite::prepare(DataBuffer<float> &databuffer)
 {
 	nsamples = databuffer.nsamples/td;
@@ -50,10 +54,10 @@ DataBuffer<float> * PreprocessLite::run(DataBuffer<float> &databuffer)
 
 	if (closable) open();
 
-	std::vector<float> chkurtosis(databuffer.nchans, 0.), chskewness(databuffer.nchans, 0.), chmean(databuffer.nchans, 0.), chstd(databuffer.nchans, 0.), chcorr(databuffer.nchans, 0.);
-	std::vector<double> chmean1(databuffer.nchans, 0.), chmean2(databuffer.nchans, 0.), chmean3(databuffer.nchans, 0.), chmean4(databuffer.nchans, 0.);
+	std::vector<float> chkurtosis(databuffer.nchans, 0.), chskewness(databuffer.nchans, 0.), chmean(databuffer.nchans, 0.), chstd(databuffer.nchans, 0.);
 
-	std::vector<float> last_data(databuffer.nchans, 0.);
+#ifndef __AVX2__
+	std::vector<double> chmean1(databuffer.nchans, 0.), chmean2(databuffer.nchans, 0.), chmean3(databuffer.nchans, 0.), chmean4(databuffer.nchans, 0.), chcorr(databuffer.nchans, 0.), last_data(databuffer.nchans, 0.);
 	for (long int i=0; i<databuffer.nsamples; i++)
 	{
 		for (long int j=0; j<databuffer.nchans; j++)
@@ -71,6 +75,38 @@ DataBuffer<float> * PreprocessLite::run(DataBuffer<float> &databuffer)
 			last_data[j] = tmp1;
 		}
 	}
+#else
+	std::vector<double, boost::alignment::aligned_allocator<double, 32>> chmean1(databuffer.nchans, 0.), chmean2(databuffer.nchans, 0.), chmean3(databuffer.nchans, 0.), chmean4(databuffer.nchans, 0.), chcorr(databuffer.nchans, 0.), last_data(databuffer.nchans, 0.);
+
+	if (databuffer.nchans % 4 == 0)
+	{
+		for (long int i=0; i<databuffer.nsamples; i++)
+		{
+			PulsarX::accumulate_mean1_mean2_mean3_mean4_corr1(chmean1.data(), chmean2.data(), chmean3.data(), chmean4.data(), chcorr.data(), last_data.data(), databuffer.buffer.data()+i*nchans, nchans);
+		}
+	}
+	else
+	{
+		for (long int i=0; i<databuffer.nsamples; i++)
+		{
+			for (long int j=0; j<databuffer.nchans; j++)
+			{
+				double tmp1 = databuffer.buffer[i*databuffer.nchans+j];
+				double tmp2 = tmp1*tmp1;
+				double tmp3 = tmp2*tmp1;
+				double tmp4 = tmp2*tmp2;
+				chmean1[j] += tmp1;
+				chmean2[j] += tmp2;
+				chmean3[j] += tmp3;
+				chmean4[j] += tmp4;
+				
+				chcorr[j] += tmp1*last_data[j];
+				last_data[j] = tmp1;
+			}
+		}
+	}
+
+#endif
 
 	for (long int j=0; j<databuffer.nchans; j++)
 	{
@@ -126,7 +162,7 @@ DataBuffer<float> * PreprocessLite::run(DataBuffer<float> &databuffer)
 	float skewness_q3 =skewness_sort[skewness_sort.size()/4];
 	float skewness_R = skewness_q3-skewness_q1;
 
-	std::vector<float> corr_sort = chcorr;
+	std::vector<float> corr_sort(chcorr.begin(), chcorr.end());
 	std::nth_element(corr_sort.begin(), corr_sort.begin()+corr_sort.size()/4, corr_sort.end(), std::less<float>());
 	float corr_q1 = corr_sort[corr_sort.size()/4];
 	std::nth_element(corr_sort.begin(), corr_sort.begin()+corr_sort.size()/4, corr_sort.end(), std::greater<float>());

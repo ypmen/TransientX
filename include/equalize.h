@@ -18,11 +18,17 @@ public:
 	Equalize & operator=(const Equalize &equalize);
 	~Equalize();
 	void prepare(DataBuffer<float> &databuffer);
+	DataBuffer<float> * filter(DataBuffer<float> &databuffer);
 	DataBuffer<float> * run(DataBuffer<float> &databuffer);
 	DataBuffer<float> * get(){return this;}
 private:
+#ifndef __AVX2__
 	vector<double> chmean;
 	vector<double> chstd;
+#else
+	vector<double, boost::alignment::aligned_allocator<double, 32>> chmean;
+	vector<double, boost::alignment::aligned_allocator<double, 32>> chstd;
+#endif
 };
 
 #endif /* EQUALIZE_H_ */

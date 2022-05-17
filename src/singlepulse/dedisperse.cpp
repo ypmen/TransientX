@@ -20,6 +20,7 @@
 #include "mjd.h"
 #include "databuffer.h"
 #include "singlepulse.h"
+#include "patch.h"
 #include "preprocesslite.h"
 #include "logging.h"
 
@@ -76,6 +77,9 @@ int main(int argc, const char *argv[])
 			("threMask", value<float>()->default_value(10), "S/N threshold of Mask")
 			("threKadaneF", value<float>()->default_value(7), "S/N threshold of KadaneF")
 			("threKadaneT", value<float>()->default_value(7), "S/N threshold of KadaneT")
+			("threPatch", value<float>()->default_value(4), "IQR threshold of patch for bad data")
+			("widthPatch", value<float>()->default_value(0.4), "Width threshold (s) of patch for bad data")
+			("fillPatch", value<std::string>()->default_value("none"), "Fill the bad data by [none, mean, rand] in patch")
 			("fill", value<string>()->default_value("mean"), "Fill the zapped samples by [mean, rand]")
 			("source_name,s", value<string>()->default_value("J0000-00"), "Source name")
 			("rootname,o", value<string>()->default_value("J0000-00"), "Output rootname")
@@ -245,6 +249,13 @@ int main(int argc, const char *argv[])
 	databuf.tsamp = tsamp;
 	memcpy(&databuf.frequencies[0], it.frequencies, sizeof(double)*nchans);
 
+	Patch patch;
+	patch.filltype = vm["fillPatch"].as<string>();
+	patch.width = vm["widthPatch"].as<float>();
+	patch.threshold = vm["threPatch"].as<float>();
+	patch.prepare(databuf);
+	patch.close();
+
 	PreprocessLite prep;
 	prep.td = vm["td"].as<int>();
 	prep.fd = vm["fd"].as<int>();
@@ -343,6 +354,7 @@ int main(int argc, const char *argv[])
 
 				if (ntot%ndump == 0)
 				{
+					patch.filter(databuf);
 					prep.run(databuf);
 					for (auto sp=search1.begin(); sp!=search1.end(); ++sp)
 					{

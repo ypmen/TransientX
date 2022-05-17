@@ -100,6 +100,16 @@ DataBuffer<T> * DataBuffer<T>::run(DataBuffer<T> &databuffer)
 };
 
 template <typename T>
+DataBuffer<T> * DataBuffer<T>::filter(DataBuffer<T> &databuffer)
+{
+	counter += nsamples;
+
+	databuffer.isbusy = true;
+
+	return databuffer.get();
+};
+
+template <typename T>
 void DataBuffer<T>::open()
 {
 	buffer.clear();

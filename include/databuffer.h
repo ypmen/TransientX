@@ -33,6 +33,7 @@ public:
 	virtual ~DataBuffer();
 	virtual void prepare(DataBuffer<T> &databuffer);
 	virtual DataBuffer<T> * run(DataBuffer<T> &databuffer);
+	virtual DataBuffer<T> * filter(DataBuffer<T> &databuffer);
 	virtual DataBuffer<T> * get(){return this;}
 	void open();
 	void close();
