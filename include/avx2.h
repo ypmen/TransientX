@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits>
+#include <cmath>
 #include <immintrin.h>
 
 namespace PulsarX {
@@ -20,6 +21,7 @@ namespace PulsarX {
 typedef __attribute__(( aligned(32))) float aligned_float;
 typedef __attribute__(( aligned(32))) double aligned_double;
 typedef __attribute__(( aligned(32))) int aligned_int;
+typedef __attribute__(( aligned(32))) unsigned char aligned_uchar;
 
 inline void print(__m256 a)
 {
@@ -33,6 +35,12 @@ inline void print(__m256d a)
 	std::cout<<b[0]<<" "<<b[1]<<" "<<b[2]<<" "<<b[3]<<std::endl;
 }
 
+inline void print(__m256i a)
+{
+	int *b = (int *)&a;
+	std::cout<<b[0]<<" "<<b[1]<<" "<<b[2]<<" "<<b[3]<<" "<<b[4]<<" "<<b[5]<<" "<<b[6]<<" "<<b[7]<<std::endl;
+}
+
 inline float hadd(__m256 a)
 {
 	__m256 b = _mm256_set_ps(0., 0., 0., 0., 0., 0., 0., 0.);
@@ -40,6 +48,14 @@ inline float hadd(__m256 a)
 	a = _mm256_hadd_ps(b, a);
 
 	return ((float *)&a)[3] + ((float *)&a)[7];
+}
+
+inline double haddd(__m256d a)
+{
+	__m256d b = _mm256_set_pd(0., 0., 0., 0.);
+	a = _mm256_hadd_pd(a, b);
+
+	return ((double *)&a)[0] + ((double *)&a)[2];
 }
 
 inline float reduce(const aligned_float * const data, size_t size)
@@ -98,6 +114,27 @@ inline void accumulate_mean_var(
 		_mm256_store_pd(mean + i * 4, avx_mean);
 		_mm256_store_pd(var + i * 4, avx_var);
 	}
+}
+
+inline void accumulate_mean_var2(
+	double &mean,
+	double &var,
+	const aligned_float * const data,
+	size_t size
+)
+{
+	__m256d avx_mean = _mm256_set_pd(0., 0., 0., 0.);
+	__m256d avx_var = _mm256_set_pd(0., 0., 0., 0.);
+	for (size_t i=0; i<size/4; i++)
+	{
+		__m128 avx_tmp = _mm_load_ps(data + i * 4);
+		__m256d avx_data = _mm256_cvtps_pd(avx_tmp);
+		avx_mean = _mm256_add_pd(avx_data, avx_mean);
+		avx_var = _mm256_fmadd_pd(avx_data, avx_data, avx_var);
+	}
+
+	mean = haddd(avx_mean);
+	var = haddd(avx_var);
 }
 
 inline void accumulate_mean1_mean2_mean3_mean4_corr1(
@@ -284,6 +321,85 @@ inline void kadane2D (
 
 	free(sum);
 	free(local_start);
+}
+
+inline void scale(
+	aligned_uchar * const data_out,
+	const aligned_float * const data_in,
+	float scl,
+	float offs,
+	unsigned int nbits,
+	size_t size
+)
+{
+	__m256 avx_scl = _mm256_set_ps(scl, scl, scl, scl, scl, scl, scl, scl);
+	__m256 avx_offs = _mm256_set_ps(offs, offs, offs, offs, offs, offs, offs, offs);
+	float min = 0;
+	float max = std::pow(2, nbits) - 1.;
+	__m256 avx_min = _mm256_set_ps(min, min, min, min, min, min, min, min);
+	__m256 avx_max = _mm256_set_ps(max, max, max, max, max, max, max, max);
+
+	for (size_t i=0; i<size/8; i++)
+	{
+		__m256 avx_data = _mm256_load_ps(data_in + i * 8);
+		avx_data = _mm256_fmadd_ps(avx_data, avx_scl, avx_offs);
+		avx_data = _mm256_round_ps(avx_data, 0);
+		__m256 mask_min = _mm256_cmp_ps(avx_data, avx_min, 1);
+		__m256 mask_max = _mm256_cmp_ps(avx_data, avx_max, 14);
+		avx_data = _mm256_blendv_ps(avx_data, avx_min, mask_min);
+		avx_data = _mm256_blendv_ps(avx_data, avx_max, mask_max);
+		__m256i avx_data_out = _mm256_cvtps_epi32(avx_data);
+		switch (nbits)
+		{
+		case 8:
+		{
+			int *tmp = (int *)&avx_data_out;
+			data_out[i*8+0] = tmp[0];
+			data_out[i*8+1] = tmp[1];
+			data_out[i*8+2] = tmp[2];
+			data_out[i*8+3] = tmp[3];
+			data_out[i*8+4] = tmp[4];
+			data_out[i*8+5] = tmp[5];
+			data_out[i*8+6] = tmp[6];
+			data_out[i*8+7] = tmp[7];
+		};break;
+		case 4:
+		{
+			__m256i avx_count = _mm256_set_epi32(4, 0, 4, 0, 4, 0, 4, 0);
+			avx_data_out = _mm256_sllv_epi32(avx_data_out, avx_count);
+			avx_data_out = _mm256_hadd_epi32(avx_data_out, avx_data_out);
+			int *tmp = (int *)&avx_data_out;
+			data_out[i*4+0] = tmp[0];
+			data_out[i*4+1] = tmp[1];
+			data_out[i*4+2] = tmp[4];
+			data_out[i*4+3] = tmp[5];
+		};break;
+		case 2:
+		{
+			__m256i avx_count = _mm256_set_epi32(6, 4, 2, 0, 6, 4, 2, 0);
+			avx_data_out = _mm256_sllv_epi32(avx_data_out, avx_count);
+			avx_data_out = _mm256_hadd_epi32(avx_data_out, avx_data_out);
+			avx_data_out = _mm256_hadd_epi32(avx_data_out, avx_data_out);
+			int *tmp = (int *)&avx_data_out;
+			data_out[i*2+0] = tmp[0];
+			data_out[i*2+1] = tmp[4];
+		};break;
+		case 1:
+		{
+			__m256i avx_count = _mm256_set_epi32(7, 6, 5, 4, 3, 2, 1, 0);
+			avx_data_out = _mm256_sllv_epi32(avx_data_out, avx_count);
+			avx_data_out = _mm256_hadd_epi32(avx_data_out, avx_data_out);
+			avx_data_out = _mm256_hadd_epi32(avx_data_out, avx_data_out);
+			int *tmp = (int *)&avx_data_out;
+			data_out[i] = tmp[0] + tmp[4];
+		};break;
+		default:
+		{
+			std::cerr<<"Error: data type unsupported"<<std::endl;
+			exit(-1);
+		};break;
+		}
+	}
 }
 
 }
