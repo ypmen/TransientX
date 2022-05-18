@@ -116,6 +116,31 @@ inline void accumulate_mean_var(
 	}
 }
 
+inline void accumulate_mean_var_scale(
+	aligned_double * const mean,
+	aligned_double * const var,
+	const aligned_float * const data,
+	double scale,
+	size_t size
+)
+{
+	__m256d avx_scale = _mm256_set_pd(scale, scale, scale, scale);
+	for (size_t i=0; i<size/4; i++)
+	{
+		__m128 avx_tmp = _mm_load_ps(data + i * 4);
+		__m256d avx_data = _mm256_cvtps_pd(avx_tmp);
+		avx_data = _mm256_mul_pd(avx_data, avx_scale);
+		__m256d avx_mean = _mm256_load_pd(mean + i * 4);
+		__m256d avx_var = _mm256_load_pd(var + i * 4);
+
+		avx_mean = _mm256_add_pd(avx_mean, avx_data);
+		avx_var = _mm256_fmadd_pd(avx_data, avx_data, avx_var);
+
+		_mm256_store_pd(mean + i * 4, avx_mean);
+		_mm256_store_pd(var + i * 4, avx_var);
+	}
+}
+
 inline void accumulate_mean_var2(
 	double &mean,
 	double &var,
@@ -135,6 +160,26 @@ inline void accumulate_mean_var2(
 
 	mean = haddd(avx_mean);
 	var = haddd(avx_var);
+}
+
+inline void accumulate_mean_var3(
+	float &mean,
+	float &var,
+	const aligned_float * const data,
+	size_t size
+)
+{
+	__m256 avx_mean = _mm256_set_ps(0., 0., 0., 0., 0., 0., 0., 0.);
+	__m256 avx_var = _mm256_set_ps(0., 0., 0., 0., 0., 0., 0., 0.);
+	for (size_t i=0; i<size/8; i++)
+	{
+		__m256 avx_data = _mm256_load_ps(data + i * 8);
+		avx_mean = _mm256_add_ps(avx_data, avx_mean);
+		avx_var = _mm256_fmadd_ps(avx_data, avx_data, avx_var);
+	}
+
+	mean = hadd(avx_mean);
+	var = hadd(avx_var);
 }
 
 inline void accumulate_mean1_mean2_mean3_mean4_corr1(
@@ -238,6 +283,33 @@ inline void remove_baseline(
 
 		_mm256_store_ps(data_out + i * 8, avx_data_out);
 	}
+}
+
+inline float remove_baseline_reduce(
+	aligned_float * const data_out,
+	const aligned_float * const data_in,
+	const aligned_float * const a,
+	const aligned_float * const b,
+	float s,
+	size_t size
+)
+{
+	__m256 avx_acc = _mm256_set_ps(0., 0., 0., 0., 0., 0., 0., 0.);
+	__m256 avx_s = _mm256_set_ps(s, s, s, s, s, s, s, s);
+	for (size_t i=0; i<size/8; i++)
+	{
+		__m256 avx_data_in = _mm256_load_ps(data_in + i * 8);
+		__m256 avx_a = _mm256_load_ps(a + i * 8);
+		__m256 avx_b = _mm256_load_ps(b + i * 8);
+
+		__m256 avx_data_out = _mm256_sub_ps(avx_data_in, _mm256_add_ps(_mm256_mul_ps(avx_a, avx_s), avx_b));
+
+		_mm256_store_ps(data_out + i * 8, avx_data_out);
+
+		avx_acc = _mm256_fmadd_ps(avx_data_out, avx_data_out, avx_acc);
+	}
+
+	return hadd(avx_acc);
 }
 
 inline void kadane2D (
