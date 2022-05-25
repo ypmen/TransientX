@@ -169,6 +169,8 @@ DataBuffer<float> * PreprocessLite::run(DataBuffer<float> &databuffer)
 	float corr_q3 = corr_sort[corr_sort.size()/4];
 	float corr_R = corr_q3-corr_q1;
 
+	long int kill_count = 0;
+
 	std::vector<float> weights(databuffer.nchans, 0.);
 	for (long int j=0; j<databuffer.nchans; j++)
 	{
@@ -181,7 +183,13 @@ DataBuffer<float> * PreprocessLite::run(DataBuffer<float> &databuffer)
 		{
 			weights[j] = 1.;
 		}
+		else
+		{
+			kill_count++;
+		}
 	}
+
+	killrate = kill_count * 1. / databuffer.nchans;
 
 	if (td == 1 && fd == 1)
 	{
@@ -275,7 +283,7 @@ DataBuffer<float> * PreprocessLite::run(DataBuffer<float> &databuffer)
 
 	if (databuffer.closable) databuffer.close();
 
-	BOOST_LOG_TRIVIAL(debug)<<"finished";
+	BOOST_LOG_TRIVIAL(debug)<<"finished"<<"("<<"killrate = "<<killrate<<")";
 
 	return this;
 }

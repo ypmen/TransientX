@@ -18,11 +18,13 @@ public:
 	~Patch();
 	void prepare(DataBuffer<float> &databuffer);
 	DataBuffer<float> * filter(DataBuffer<float> &databuffer);
+	DataBuffer<float> * filter2(DataBuffer<float> &databuffer);
 	DataBuffer<float> * get(){return this;}
 public:
 	string filltype;
 	float width;
 	float threshold;
+	float killrate;
 };
 
 #endif /* PATCH_H */
