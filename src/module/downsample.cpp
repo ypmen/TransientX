@@ -85,7 +85,10 @@ DataBuffer<float> * Downsample::run(DataBuffer<float> &databuffer)
 
 	BOOST_LOG_TRIVIAL(debug)<<"perform downsampling width td="<<td<<" fd="<<fd;
 
-	if (closable) open();
+	if (closable)
+		open();
+	else
+		std::fill(buffer.begin(), buffer.end(), 0.);
 
 #ifdef _OPENMP
 #pragma omp parallel for num_threads(num_threads)
