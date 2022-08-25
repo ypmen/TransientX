@@ -16,6 +16,28 @@
 #include <cmath>
 #include <immintrin.h>
 
+#ifndef __FMA__
+inline __m256d mm256_fmadd_pd (__m256d __A, __m256d __B, __m256d __C)
+{
+	return _mm256_add_pd(_mm256_mul_pd(__A, __B), __C);
+}
+
+inline __m256 mm256_fmadd_ps (__m256 __A, __m256 __B, __m256 __C)
+{
+	return _mm256_add_ps(_mm256_mul_ps(__A, __B), __C);
+}
+#else
+inline __m256d mm256_fmadd_pd (__m256d __A, __m256d __B, __m256d __C)
+{
+	return _mm256_fmadd_pd (__A, __B, __C);
+}
+
+inline __m256 mm256_fmadd_ps (__m256 __A, __m256 __B, __m256 __C)
+{
+	return _mm256_fmadd_ps ( __A, __B, __C);
+}
+#endif
+
 namespace PulsarX {
 
 typedef __attribute__(( aligned(32))) float aligned_float;
@@ -87,7 +109,7 @@ inline void accumulate_mean(
 		__m256d avx_mean_scale = _mm256_load_pd(mean_scale + i * 4);
 
 		avx_mean = _mm256_add_pd(avx_data, avx_mean);
-		avx_mean_scale = _mm256_fmadd_pd(avx_data, avx_scale, avx_mean_scale);
+		avx_mean_scale = mm256_fmadd_pd(avx_data, avx_scale, avx_mean_scale);
 
 		_mm256_store_pd(mean + i * 4, avx_mean);
 		_mm256_store_pd(mean_scale + i * 4, avx_mean_scale);
@@ -109,7 +131,7 @@ inline void accumulate_mean_var(
 		__m256d avx_var = _mm256_load_pd(var + i * 4);
 
 		avx_mean = _mm256_add_pd(avx_mean, avx_data);
-		avx_var = _mm256_fmadd_pd(avx_data, avx_data, avx_var);
+		avx_var = mm256_fmadd_pd(avx_data, avx_data, avx_var);
 
 		_mm256_store_pd(mean + i * 4, avx_mean);
 		_mm256_store_pd(var + i * 4, avx_var);
@@ -134,7 +156,7 @@ inline void accumulate_mean_var_scale(
 		__m256d avx_var = _mm256_load_pd(var + i * 4);
 
 		avx_mean = _mm256_add_pd(avx_mean, avx_data);
-		avx_var = _mm256_fmadd_pd(avx_data, avx_data, avx_var);
+		avx_var = mm256_fmadd_pd(avx_data, avx_data, avx_var);
 
 		_mm256_store_pd(mean + i * 4, avx_mean);
 		_mm256_store_pd(var + i * 4, avx_var);
@@ -155,7 +177,7 @@ inline void accumulate_mean_var2(
 		__m128 avx_tmp = _mm_load_ps(data + i * 4);
 		__m256d avx_data = _mm256_cvtps_pd(avx_tmp);
 		avx_mean = _mm256_add_pd(avx_data, avx_mean);
-		avx_var = _mm256_fmadd_pd(avx_data, avx_data, avx_var);
+		avx_var = mm256_fmadd_pd(avx_data, avx_data, avx_var);
 	}
 
 	mean = haddd(avx_mean);
@@ -175,7 +197,7 @@ inline void accumulate_mean_var3(
 	{
 		__m256 avx_data = _mm256_load_ps(data + i * 8);
 		avx_mean = _mm256_add_ps(avx_data, avx_mean);
-		avx_var = _mm256_fmadd_ps(avx_data, avx_data, avx_var);
+		avx_var = mm256_fmadd_ps(avx_data, avx_data, avx_var);
 	}
 
 	mean = hadd(avx_mean);
@@ -208,10 +230,10 @@ inline void accumulate_mean1_mean2_mean3_mean4_corr1(
 		__m256d avx_data2 = _mm256_mul_pd(avx_data, avx_data);
 
 		avx_mean1 = _mm256_add_pd(avx_data, avx_mean1);
-		avx_mean2 = _mm256_fmadd_pd(avx_data, avx_data, avx_mean2);
-		avx_mean3 = _mm256_fmadd_pd(avx_data, avx_data2, avx_mean3);
-		avx_mean4 = _mm256_fmadd_pd(avx_data2, avx_data2, avx_mean4);
-		avx_corr1 = _mm256_fmadd_pd(avx_data, avx_last_data, avx_corr1);
+		avx_mean2 = mm256_fmadd_pd(avx_data, avx_data, avx_mean2);
+		avx_mean3 = mm256_fmadd_pd(avx_data, avx_data2, avx_mean3);
+		avx_mean4 = mm256_fmadd_pd(avx_data2, avx_data2, avx_mean4);
+		avx_corr1 = mm256_fmadd_pd(avx_data, avx_last_data, avx_corr1);
 
 		_mm256_store_pd(mean1 + i * 4, avx_mean1);
 		_mm256_store_pd(mean2 + i * 4, avx_mean2);
@@ -306,7 +328,7 @@ inline float remove_baseline_reduce(
 
 		_mm256_store_ps(data_out + i * 8, avx_data_out);
 
-		avx_acc = _mm256_fmadd_ps(avx_data_out, avx_data_out, avx_acc);
+		avx_acc = mm256_fmadd_ps(avx_data_out, avx_data_out, avx_acc);
 	}
 
 	return hadd(avx_acc);
@@ -414,7 +436,7 @@ inline void scale(
 	for (size_t i=0; i<size/8; i++)
 	{
 		__m256 avx_data = _mm256_load_ps(data_in + i * 8);
-		avx_data = _mm256_fmadd_ps(avx_data, avx_scl, avx_offs);
+		avx_data = mm256_fmadd_ps(avx_data, avx_scl, avx_offs);
 		avx_data = _mm256_round_ps(avx_data, 0);
 		__m256 mask_min = _mm256_cmp_ps(avx_data, avx_min, 1);
 		__m256 mask_max = _mm256_cmp_ps(avx_data, avx_max, 14);
