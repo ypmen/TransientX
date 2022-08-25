@@ -108,6 +108,7 @@ public:
 
 	int nsamples;
 
+	double zero_off;
 	double dm;
 	double rm;
 

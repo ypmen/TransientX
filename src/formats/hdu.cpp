@@ -646,6 +646,7 @@ SubintHDU::SubintHDU()
 
 	nsamples = 0;
 
+	zero_off = 0.;
 	dm = 0.;
 	rm = 0.;
 
@@ -854,6 +855,13 @@ bool SubintHDU::load_header(fitsfile *fptr)
 	if (status)
 	{
 		cerr<<"Warning: can not read TBIN"<<endl;
+		status = 0;
+	}
+
+	fits_read_key(fptr, TDOUBLE, "ZERO_OFF", &zero_off, NULL, &status);
+	if (status)
+	{
+		cerr<<"Warning: can not read ZERO_OFF"<<endl;
 		status = 0;
 	}
 
