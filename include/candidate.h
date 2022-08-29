@@ -45,7 +45,7 @@ public:
 		nchan = nc;
 		nbin = nb;
 
-		data.resize(npol*nchan*nbin, 0);
+		data.resize((long int)npol*(long int)nchan*(long int)nbin, 0);
 	}
 
 	/* perform dedispersion */
