@@ -248,6 +248,8 @@ void CandPlot::plot(const Cluster<double> &cluster, const Boxcar &boxcar, const 
 		vp_down_std /= nsamples/tds;
 		vp_down_std -= vp_down_mean*vp_down_mean;
 		vp_down_std = std::sqrt(vp_down_std);
+		vp_down_mean = vp_down_mean == 0. ? 1. : vp_down_mean;
+		vp_down_std = vp_down_std == 0. ? 1. : vp_down_std;
 		for (long int i=0; i<nsamples/tds; i++)
 		{
 			vp_down[i] -= vp_down_mean;
