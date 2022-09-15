@@ -92,6 +92,9 @@ public:
 	/* boxcar filter */
 	void matched_filter(float snrloss=0.);
 
+	/* boxcar filter in profile */
+	void peak_search(float snrloss=0.);
+
 	/* save data to archive */
 	void save2ar(const std::string &template_file);
 
@@ -116,6 +119,7 @@ public:
 	long double mjd;
 	double dm;
 	float width;
+	float width_orig;
 	float snr;
 	double fl;
 	double fh;
@@ -128,7 +132,7 @@ public:
 	double tbin;
 	int npol;
 	int nchan;
-	int nbin;
+	long int nbin;
 	std::vector<double> frequencies;
 	std::vector<float> data;
 public:

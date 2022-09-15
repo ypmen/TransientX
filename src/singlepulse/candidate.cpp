@@ -27,6 +27,7 @@ Candidate::Candidate()
 	mjd = 0.;
 	dm = 0.;
 	width = 0.;
+	width_orig = 0.;
 	snr = 0.;
 	fl = 0.;
 	fh = 0.;
@@ -227,7 +228,7 @@ void Candidate::dededisperse(bool coherent)
 
 void Candidate::shrink_to_fit(int nwidth, int factor)
 {
-	int nbin_new = nwidth*width/tbin;
+	long int nbin_new = nwidth*width/tbin;
 
 	nbin_new = std::ceil(nbin_new/factor)*factor;
 
@@ -1021,6 +1022,121 @@ void Candidate::matched_filter(float snrloss)
 	std::copy(dmtmap.begin()+maxdmid*nbin, dmtmap.begin()+(maxdmid+1)*nbin, profile.begin());
 }
 
+void Candidate::peak_search(float snrloss)
+{
+	// calculate boxcar width series
+	float wfactor = 1./((1.-snrloss)*(1.-snrloss));
+	std::vector<float> vwn;
+	vwn.push_back(1);
+	while (true)
+	{
+		int tmp_wn1 = vwn.back();
+		int tmp_wn2 = tmp_wn1*wfactor;
+		tmp_wn2 = tmp_wn2<tmp_wn1+1 ? tmp_wn1+1:tmp_wn2;
+		if (tmp_wn2 > nbin/2) break;
+		vwn.push_back(tmp_wn2);
+	}
+	int nbox = vwn.size();
+
+	// boxcar filter
+	dmtsnrmap.resize(nbin, 0.);
+	dmtwidmap.resize(nbin, 0.);
+	profile.resize(nbin, 0.);
+
+	if (!isdedispersed)
+		dedisperse();
+
+	int nifs = std::min(npol, 2);
+	for (long int k=0; k<nifs; k++)
+	{
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(num_threads)
+#endif
+		for (long int j=0; j<nchan; j++)
+		{
+			for (long int i=0; i<nbin; i++)
+			{
+				profile[i] += data[k*nchan*nbin+j*nbin+i];
+			}
+		}
+	}
+
+	std::vector<float> tim(profile.begin(), profile.end());
+
+	double tmpmean = 0.;
+	double tmpvar = 0.;
+
+	get_mean_var<std::vector<float>::iterator>(tim.begin(), tim.size(), tmpmean, tmpvar);
+
+	std::vector<float> csump(2*nbin, 0.);
+	float csum = 0.;
+	for (long int i=0; i<nbin; i++)
+	{
+		csum += tim[i] - tmpmean;
+		csump[i] = csum;
+	}
+	for (long int i=nbin; i<2*nbin; i++)
+	{
+		csum += tim[i-nbin] - tmpmean;
+		csump[i] = csum;
+	}
+
+	std::vector<float> vS(nbin, 0.);
+	std::vector<int> vwn_maxS(nbin, 0.);
+
+	if (tmpvar > 0)
+	{
+		for (long int k=0; k<nbox; k++)
+		{
+			int wn = vwn[k];
+			int wl = wn/2+1;
+			int wh = (wn-1)/2;
+
+			float temp = sqrt(1./(wn*tmpvar));
+
+			for (long int i=wl; i<nbin; i++)
+			{
+				float boxsum = csump[i+wh]-csump[i-wl];
+				float S = boxsum*temp;
+				if (S>=vS[i])
+				{
+					vS[i] = S;
+					vwn_maxS[i] = wn;
+				}
+			}
+			for (long int i=nbin; i<nbin+wl; i++)
+			{
+				float boxsum = csump[i+wh]-csump[i-wl];
+				float S = boxsum*temp;
+				if (S>=vS[i-nbin])
+				{
+					vS[i-nbin] = S;
+					vwn_maxS[i-nbin] = wn;
+				}
+			}
+		}
+	}
+
+	std::copy(vS.begin(), vS.end(), dmtsnrmap.begin());
+	std::copy(vwn_maxS.begin(), vwn_maxS.end(), dmtwidmap.begin());
+
+	maxtid = 0;
+	snr = dmtsnrmap[0];
+	for (long int i=0; i<nbin; i++)
+	{
+		if (dmtsnrmap[i] > snr)
+		{
+			snr = dmtsnrmap[i];
+			maxtid = i;
+		}
+	}
+
+	snr = dmtsnrmap[maxtid];
+	width = dmtwidmap[maxtid]*tbin;
+	dm_maxsnr = dm;
+	mjd = mjd_start+(maxtid*tbin)/86400.;
+}
+
 void Candidate::save2png(const std::string &rootname, float threS)
 {
 	std::string basename = pngname;
@@ -1225,60 +1341,69 @@ void Candidate::save2png(const std::string &rootname, float threS)
 		vp_down[i] /= vp_down_std;
 	}
 
-	std::vector<float> mxdmt(ndm*nsamples, 0.);
-	std::vector<float> vdm(ndm, 0.);
-	std::vector<float> vSdm(ndm, 0.);
-	for (long int j=0; j<ndm; j++)
+	std::vector<float> mxdmt_down;
+	std::vector<float> vdm_down;
+	std::vector<float> vSdm_down;
+	std::vector<float> vdm;
+
+	if (ndm > 1)
 	{
-		vdm[j] = dms+j*ddm;
-		vSdm[j] = 0.;
-	}
-	for (long int j=0; j<ndm; j++)
-	{
-		for (long int i=0; i<nsamples; i++)
+		std::vector<float> mxdmt(ndm*nsamples, 0.);
+		vdm.resize(ndm, 0.);
+		std::vector<float> vSdm(ndm, 0.);
+	
+		for (long int j=0; j<ndm; j++)
 		{
-			mxdmt[j*nsamples+i] = dmtsnrmap[j*nsamples+i];
-			vSdm[j] = mxdmt[j*nsamples+i]>vSdm[j] ? mxdmt[j*nsamples+i]:vSdm[j];
+			vdm[j] = dms+j*ddm;
+			vSdm[j] = 0.;
 		}
-	}
-
-	int dmds = ndm/64;
-	dmds = dmds<1 ? 1:dmds;
-	dmds = dmds>ndm ? ndm:dmds;
-
-	std::vector<float> mxdmt_down((ndm/dmds)*(nsamples/tds), 0.);
-	for (long int j=0; j<ndm/dmds; j++)
-	{
-		for (long int jj=0; jj<dmds; jj++)
+		for (long int j=0; j<ndm; j++)
 		{
-			for (long int i=0; i<nsamples/tds; i++)
+			for (long int i=0; i<nsamples; i++)
 			{
-				for (long int ii=0; ii<tds; ii++)
+				mxdmt[j*nsamples+i] = dmtsnrmap[j*nsamples+i];
+				vSdm[j] = mxdmt[j*nsamples+i]>vSdm[j] ? mxdmt[j*nsamples+i]:vSdm[j];
+			}
+		}
+
+		int dmds = ndm/64;
+		dmds = dmds<1 ? 1:dmds;
+		dmds = dmds>ndm ? ndm:dmds;
+
+		mxdmt_down.resize((ndm/dmds)*(nsamples/tds), 0.);
+		for (long int j=0; j<ndm/dmds; j++)
+		{
+			for (long int jj=0; jj<dmds; jj++)
+			{
+				for (long int i=0; i<nsamples/tds; i++)
 				{
-					mxdmt_down[j*(nsamples/tds)+i] += mxdmt[(j*dmds+jj)*nsamples+i*tds+ii];
+					for (long int ii=0; ii<tds; ii++)
+					{
+						mxdmt_down[j*(nsamples/tds)+i] += mxdmt[(j*dmds+jj)*nsamples+i*tds+ii];
+					}
 				}
 			}
 		}
-	}
-	for (long int j=0; j<ndm/dmds; j++)
-	{
-		for (long int i=0; i<nsamples/tds; i++)
+		for (long int j=0; j<ndm/dmds; j++)
 		{
-			mxdmt_down[j*(nsamples/tds)+i] /= tds*dmds;
+			for (long int i=0; i<nsamples/tds; i++)
+			{
+				mxdmt_down[j*(nsamples/tds)+i] /= tds*dmds;
+			}
 		}
-	}
 
-	std::vector<float> vdm_down(ndm/dmds, 0.);
-	std::vector<float> vSdm_down(ndm/dmds, 0.);
-	for (long int j=0; j<ndm/dmds; j++)
-	{
-		for (long int jj=0; jj<dmds; jj++)
+		vdm_down.resize(ndm/dmds, 0.);
+		vSdm_down.resize(ndm/dmds, 0.);
+		for (long int j=0; j<ndm/dmds; j++)
 		{
-			vdm_down[j] += vdm[j*dmds+jj];
-			vSdm_down[j] += vSdm[j*dmds+jj];
+			for (long int jj=0; jj<dmds; jj++)
+			{
+				vdm_down[j] += vdm[j*dmds+jj];
+				vSdm_down[j] += vSdm[j*dmds+jj];
+			}
+			vdm_down[j] /= dmds;
+			vSdm_down[j] /= dmds;
 		}
-		vdm_down[j] /= dmds;
-		vSdm_down[j] /= dmds;
 	}
 
 	/** plot */
@@ -1316,31 +1441,34 @@ void Candidate::save2png(const std::string &rootname, float threS)
 	ax_powf.label(false, false, false, true);
 	fig.push(ax_powf);
 
-	/* dm-t */
-	float xpos = vt[maxtid];
-	float ypos = vdm[maxdmid];
-	float dmpos = dm_maxsnr;
+	if (ndm > 1)
+	{
+		/* dm-t */
+		float xpos = vt[maxtid];
+		float ypos = vdm[maxdmid];
+		float dmpos = dm_maxsnr;
 
-	plt::Axes ax_dmt(0.1+adjustx, 0.75+adjustx, 0.05+adjusty, 0.35+adjusty);
-	ax_dmt.pcolor(vt_down, vdm_down, mxdmt_down, "viridis");
-	ax_dmt.circle(xpos, ypos, 5.);
-	ax_dmt.set_xlabel("Time (s)");
-	ax_dmt.set_ylabel("DM (cm\\u-3\\dpc)");
-	fig.push(ax_dmt);
+		plt::Axes ax_dmt(0.1+adjustx, 0.75+adjustx, 0.05+adjusty, 0.35+adjusty);
+		ax_dmt.pcolor(vt_down, vdm_down, mxdmt_down, "viridis");
+		ax_dmt.circle(xpos, ypos, 5.);
+		ax_dmt.set_xlabel("Time (s)");
+		ax_dmt.set_ylabel("DM (cm\\u-3\\dpc)");
+		fig.push(ax_dmt);
 
-	/* dm-S */
-	plt::Axes ax_dmS(0.75+adjustx, 0.95+adjustx, 0.05+adjusty, 0.35+adjusty);
-	ax_dmS.plot(vSdm_down, vdm_down);
-	float vSdm_down_min = *std::min_element(vSdm_down.begin(), vSdm_down.end());
-	float vSdm_down_max = *std::max_element(vSdm_down.begin(), vSdm_down.end());
-	float vdm_down_min = *std::min_element(vdm_down.begin(), vdm_down.end());
-	ax_dmS.annotate("DM = "+s_dm+" cm\\u-3\\dpc", std::min(vSdm_down_min, threS)+0.75*(vSdm_down_max-std::min(vSdm_down_min, threS)), std::min(vdm_down_min, dmpos), {{"xycoords", "data"}, {"rotation", "270"}, {"refpos", "right"}});
-	ax_dmS.axhline(dmpos, 0., 1., {{"color", "red"}});
-	ax_dmS.axvline(threS, 0., 1., {{"color", "red"}});
-	ax_dmS.set_xlabel("S/N");
-	ax_dmS.label(false, false, true, false);
-	ax_dmS.autoscale(true, "y", true);
-	fig.push(ax_dmS);
+		/* dm-S */
+		plt::Axes ax_dmS(0.75+adjustx, 0.95+adjustx, 0.05+adjusty, 0.35+adjusty);
+		ax_dmS.plot(vSdm_down, vdm_down);
+		float vSdm_down_min = *std::min_element(vSdm_down.begin(), vSdm_down.end());
+		float vSdm_down_max = *std::max_element(vSdm_down.begin(), vSdm_down.end());
+		float vdm_down_min = *std::min_element(vdm_down.begin(), vdm_down.end());
+		ax_dmS.annotate("DM = "+s_dm+" cm\\u-3\\dpc", std::min(vSdm_down_min, threS)+0.75*(vSdm_down_max-std::min(vSdm_down_min, threS)), std::min(vdm_down_min, dmpos), {{"xycoords", "data"}, {"rotation", "270"}, {"refpos", "right"}});
+		ax_dmS.axhline(dmpos, 0., 1., {{"color", "red"}});
+		ax_dmS.axvline(threS, 0., 1., {{"color", "red"}});
+		ax_dmS.set_xlabel("S/N");
+		ax_dmS.label(false, false, true, false);
+		ax_dmS.autoscale(true, "y", true);
+		fig.push(ax_dmS);
+	}
 
 	/* metadata */
 	plt::Axes ax_meta(0.1+adjustx, 0.95+adjustx, 0.81+adjusty, 0.99);

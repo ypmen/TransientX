@@ -10,6 +10,7 @@
 #define RINGBUFFER_H
 
 #include <vector>
+#include <iterator>
 
 class RingBuffer
 {
@@ -35,6 +36,15 @@ public:
 		if (++writep >= nsamples) writep = 0;
 		endsample++;
 	}
+
+	template<typename Iterator>
+	void append(Iterator begin, Iterator end)
+	{
+		std::copy(begin, end, data.begin()+writep*nchans);
+		if (++writep >= nsamples) writep = 0;
+		endsample++;
+	}
+
 	void append()
 	{
 		if (++writep >= nsamples) writep = 0;
