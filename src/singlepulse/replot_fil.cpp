@@ -435,7 +435,6 @@ int main(int argc, char *argv[])
 								cands[k].peak_search(vm["snrloss"].as<float>());
 							}
 
-							std::cout<<closestdist(candsmjd.begin(), candsmjd.end(), cands[k].mjd)*86400.<<std::endl;
 							if (vm.count("clean") && (cands[k].snr<snr_threhold || closestdist(candsmjd.begin(), candsmjd.end(), cands[k].mjd)*86400. < cands[k].width || cands[k].dm_maxsnr < vm["dmcutoff"].as<float>() || cands[k].width > vm["widthcutoff"].as<float>() || std::abs(cands[k].dm_maxsnr-cands[k].dm)*dm1delay > vm["ddmcutoff"].as<float>()*cands[k].width))
 							{
 								BOOST_LOG_TRIVIAL(info)<<"candidate removed id="<<cands[k].id;
