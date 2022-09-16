@@ -26,6 +26,7 @@ public:
 	size_t get_count(){return count;}
 	size_t get_ifile(){return ifile_cur;}
 	size_t get_ifile_ordered(){return idmap[ifile_cur];}
+	void get_filterbank_template(Filterbank &filtem);
 
 private:
 	size_t ntot;

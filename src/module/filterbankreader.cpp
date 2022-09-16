@@ -217,8 +217,6 @@ size_t FilterbankReader::read_data(DataBuffer<float> &databuffer, size_t ndump, 
 
 				if (count == nsamples - skip_end)
 				{
-					if (bcnt1 == ndump) bcnt1 = 0;
-
 					if (ns_filn == fil[n].nsamples)
 					{
 						fil[n].free();
@@ -259,8 +257,7 @@ size_t FilterbankReader::read_data(DataBuffer<float> &databuffer, size_t ndump, 
 						update_subint = true;
 					}
 
-					bcnt1 = 0;
-					return ndump;
+					return bcnt1;
 				}
 
 				if (ns_filn == fil[n].nsamples)
@@ -286,4 +283,9 @@ size_t FilterbankReader::read_data(DataBuffer<float> &databuffer, size_t ndump, 
 		cerr<<"("<<100.*count/nsamples<<"%)";
 	}
 	return bcnt1;
+}
+
+void FilterbankReader::get_filterbank_template(Filterbank &filtem)
+{
+	filtem = fil[idmap[0]];
 }

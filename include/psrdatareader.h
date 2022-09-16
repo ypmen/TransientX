@@ -12,6 +12,7 @@
 #include <vector>
 #include <string>
 
+#include "filterbank.h"
 #include "databuffer.h"
 #include "mjd.h"
 
@@ -48,6 +49,7 @@ public:
 	virtual size_t get_count() = 0;
 	virtual size_t get_ifile() = 0;
 	virtual size_t get_ifile_ordered() = 0;
+	virtual void get_filterbank_template(Filterbank &fil) = 0;
 
 public:
 	void get_fmin_fmax(double &fmin, double &fmax)
@@ -68,6 +70,12 @@ public:
 
 		bw = fmax - fmin;
 		fc = 0.5 * (fmin + fmax);
+	}
+
+	void get_fch1_foff(double &fch1, double &foff)
+	{
+		fch1 = frequencies.front();
+		foff = (frequencies.back() - frequencies.front()) / (nchans - 1);
 	}
 
 	double get_chbw()
