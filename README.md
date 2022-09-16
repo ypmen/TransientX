@@ -1,6 +1,6 @@
 # TransientX
 
-TransientX is a one command line high performance transient search software.
+TransientX is a one command line high performance transient search software (filtterbank and psrfits (--psrfits) are both supported).
 
 ## Dependencies
 
@@ -21,7 +21,7 @@ docker pull ypmen/pulsarx
 
 ## Example usage (**please let me know if you meet any problems!**)
 - export YMW16_DIR=/install_path/src/ymw16
-- transientx/transientx_fil -h for help
+- transientx_fil -h for help
 
 ### transientx_fil: search for single pulse
 ```
