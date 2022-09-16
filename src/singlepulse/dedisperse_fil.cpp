@@ -14,6 +14,7 @@
 #include <utility>
 #include <iomanip>
 #include <boost/program_options.hpp>
+#include <random>
 
 #include "dedisperse.h"
 #include "psrfits.h"
@@ -287,7 +288,11 @@ int main(int argc, const char *argv[])
 		}
 	}
 
-	std::fill(prep.buffer.begin(), prep.buffer.end(), 0.);
+	std::random_device rd{};
+    std::mt19937 gen{rd()};
+	std::normal_distribution<> distribution{0, 1};
+	std::generate(prep.buffer.begin(), prep.buffer.end(), [&distribution, &gen](){return distribution(gen);});
+
 	for (auto sp=search1.begin(); sp!=search1.end(); ++sp)
 	{
 		int nleft = sp->dedisp.offset/sp->dedisp.ndump+1;
