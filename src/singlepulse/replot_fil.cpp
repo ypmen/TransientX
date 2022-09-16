@@ -232,9 +232,9 @@ int main(int argc, char *argv[])
 	cand.obsinfo["Date"] = std::to_string(start_mjd);
 	stringstream ss_ibeam;
 	if (vm.count("incoherent"))
-		ss_ibeam << "ifbf" << setw(5) << setfill('0') << std::stoi(reader->beam);
+		ss_ibeam << "ifbf" << setw(5) << setfill('0') << reader->beam;
 	else
-		ss_ibeam << "cfbf" << setw(5) << setfill('0') << std::stoi(reader->beam);
+		ss_ibeam << "cfbf" << setw(5) << setfill('0') << reader->beam;
 	std::string s_ibeam = ss_ibeam.str();
 	cand.obsinfo["Beam"] = s_ibeam;
 	cand.obsinfo["Source_name"] = reader->source_name;
