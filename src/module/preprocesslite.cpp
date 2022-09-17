@@ -162,12 +162,12 @@ DataBuffer<float> * PreprocessLite::run(DataBuffer<float> &databuffer)
 	float skewness_q3 =skewness_sort[skewness_sort.size()/4];
 	float skewness_R = skewness_q3-skewness_q1;
 
-	std::vector<float> corr_sort(chcorr.begin(), chcorr.end());
+	std::vector<double> corr_sort(chcorr.begin(), chcorr.end());
 	std::nth_element(corr_sort.begin(), corr_sort.begin()+corr_sort.size()/4, corr_sort.end(), std::less<float>());
-	float corr_q1 = corr_sort[corr_sort.size()/4];
+	double corr_q1 = corr_sort[corr_sort.size()/4];
 	std::nth_element(corr_sort.begin(), corr_sort.begin()+corr_sort.size()/4, corr_sort.end(), std::greater<float>());
-	float corr_q3 = corr_sort[corr_sort.size()/4];
-	float corr_R = corr_q3-corr_q1;
+	double corr_q3 = corr_sort[corr_sort.size()/4];
+	double corr_R = corr_q3-corr_q1;
 
 	long int kill_count = 0;
 
