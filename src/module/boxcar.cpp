@@ -8,7 +8,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <cmath>
-#include <immintrin.h>
+#ifdef __AVX2__
+	#include <immintrin.h>
+#endif
 
 #include "boxcar.h"
 
@@ -182,10 +184,18 @@ void Boxcar::match(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &ded
 
 	int n = vwn.size();
 
+#ifdef __AVX2__
 	float *vS = (float *)_mm_malloc(sizeof(float)*nsamples, 32);
+#else
+	float *vS = (float *)malloc(sizeof(float)*nsamples);
+#endif
 	memset(vS, 0, sizeof(float)*nsamples);
 
+#ifdef __AVX2__
 	int *vwn_maxS = (int *)_mm_malloc(sizeof(float)*nsamples, 32);
+#else
+	int *vwn_maxS = (int *)malloc(sizeof(float)*nsamples);
+#endif
 	memset(vwn_maxS, 0, sizeof(int)*nsamples);
 
 	float mean = 0.;
@@ -216,7 +226,12 @@ void Boxcar::match(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &ded
 		var = ((Q3-Q1)/1.349)*((Q3-Q1)/1.349);
 	}
 
+#ifdef __AVX2__
 	float *csump = (float *)_mm_malloc(sizeof(float)*nsamples, 32);
+#else
+	float *csump = (float *)malloc(sizeof(float)*nsamples);
+#endif
+
 	float csum = 0.;
 	for (long int i=0; i<nsamples; i++)
 	{
@@ -269,9 +284,15 @@ void Boxcar::match(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &ded
 	memcpy(mxS+idm*nsamples, vS, sizeof(float)*nsamples);
 	memcpy(mxwn+idm*nsamples, vwn_maxS, sizeof(int)*nsamples);
 
+#ifdef __AVX2__
 	_mm_free(csump);
 	_mm_free(vS);
 	_mm_free(vwn_maxS);
+#else
+	free(csump);
+	free(vS);
+	free(vwn_maxS);
+#endif
 }
 
 //not work

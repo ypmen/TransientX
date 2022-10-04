@@ -16,7 +16,9 @@
 #include <vector>
 #include <tuple>
 #include <set>
-#include <immintrin.h>
+#ifdef __AVX2__
+	#include <immintrin.h>
+#endif
 #include <numeric>
 #include <iomanip>
 #include <algorithm>
