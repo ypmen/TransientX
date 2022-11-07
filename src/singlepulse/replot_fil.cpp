@@ -69,6 +69,7 @@ int main(int argc, char *argv[])
 			("dec", value<std::string>(), "DEC (ddmmss.s)")
 			("incoherent", "The beam is incoherent (ifbf). Coherent beam by default (cfbf)")
 			("arch,a", "Generate archive file")
+			("pow2bin", "choose nbin of power 2")
 			("nopt", "Don't perform optimization")
 			("dmcutoff", value<float>()->default_value(0), "DM cutoff")
 			("ddmcutoff", value<float>()->default_value(5), "DM change cutoff (unit of pulse width)")
@@ -300,6 +301,8 @@ int main(int argc, char *argv[])
 
 		double dmdelay = std::abs(Candidate::dmdelay(cand.dm, cand.frequencies.front(), cand.frequencies.back()));
 		int nbin = (dmdelay+2*nwidth*cand.width)/tsamp;
+		if (vm.count("pow2bin"))
+			nbin = std::pow(2, std::ceil(std::log2(nbin)));
 		cand.npol = nifs;
 		cand.nchan = nchans;
 		cand.nbin = nbin;
