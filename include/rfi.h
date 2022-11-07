@@ -5,14 +5,15 @@
  *      Author: ypmen
  */
 
-#ifndef RFI_H_
-#define RFI_H_
+#ifndef RFI_H
+#define RFI_H
 
 #include <string>
 #include <vector>
 #include <utility>
 
 #include "databuffer.h"
+#include "equalize.h"
 
 using namespace std;
 
@@ -23,7 +24,7 @@ public:
 	RFI(const RFI &rfi);
 	RFI & operator=(const RFI &rfi);
 	~RFI();
-	void prepare(const DataBuffer<float> &databuffer);
+	void prepare(DataBuffer<float> &databuffer);
 	DataBuffer<float> * zap(DataBuffer<float> &databuffer, const vector<pair<double, double>> &zaplist);
 	DataBuffer<float> * zdot(DataBuffer<float> &databuffer);
 	DataBuffer<float> * zero(DataBuffer<float> &databuffer);
@@ -34,7 +35,9 @@ public:
 public:
 	vector<int> weights;
 	string filltype;
+private:
+	Equalize equalize;
 };
 
 
-#endif /* RFI_H_ */
+#endif /* RFI_H */

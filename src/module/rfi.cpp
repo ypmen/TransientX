@@ -42,8 +42,11 @@ RFI & RFI::operator=(const RFI &rfi)
 
 RFI::~RFI(){}
 
-void RFI::prepare(const DataBuffer<float> &databuffer)
+void RFI::prepare(DataBuffer<float> &databuffer)
 {
+	equalize.prepare(databuffer);
+	equalize.close();
+
 	nsamples = databuffer.nsamples;
 	nchans = databuffer.nchans;
 
@@ -352,6 +355,8 @@ DataBuffer<float> * RFI::mask(DataBuffer<float> &databuffer, float threRFI2, int
 
 DataBuffer<float> * RFI::kadaneF(DataBuffer<float> &databuffer, float threRFI2, double widthlimit, int td, int fd)
 {
+	equalize.filter(databuffer);
+
 #ifndef __AVX2__
 	if (!databuffer.equalized)
 	{
