@@ -171,6 +171,12 @@ void PsrfitsReader::read_header()
 
 	psf[0].subint.load_integration(psf[0].fptr, 0, it);
 
+	it8 = it;
+	it8.dtype = Integration::UINT8;
+	it8.nbits = 8;
+	delete [] (unsigned char *)(it8.data);
+	it8.data = new unsigned char [it.nsblk * it.npol * it.nchan];
+
 	nchans = it.nchan;
 	tsamp = psf[0].subint.tbin;
 	nifs = it.npol;
@@ -226,6 +232,9 @@ size_t PsrfitsReader::read_data(DataBuffer<float> &databuffer, size_t ndump, boo
 						psf[n].subint.load_integration(psf[n].fptr, s, it);
 					else
 						psf[n].subint.load_integration_data(psf[n].fptr, s, it);
+
+					if (it.dtype != Integration::FLOAT and it.dtype != Integration::UINT8)
+						it.to_char(it8);
 				}
 				update_subint = false;
 			}
@@ -321,6 +330,190 @@ size_t PsrfitsReader::read_data(DataBuffer<float> &databuffer, size_t ndump, boo
 										float yy = ((unsigned char *)(it.data))[i*nifs*nchans+1*nchans+j] - zero_off;
 
 										databuffer.buffer[bcnt1*nchans+j] = xx + yy;
+									}
+								}
+							}
+						}
+					}
+					else if (it.dtype == Integration::UINT1 or it.dtype == Integration::UINT2 or it.dtype == Integration::UINT4)
+					{
+						if (!sumif or nifs == 1)
+						{
+							for (size_t k=0; k<nifs; k++)
+							{
+								if (apply_wts)
+								{
+									if (apply_scloffs)
+									{
+										for (size_t j=0; j<nchans; j++)
+										{
+											databuffer.buffer[bcnt1*nifs*nchans+k*nchans+j] = it8.weights[j] * ((((unsigned char *)(it8.data))[i*nifs*nchans+k*nchans+j] - zero_off) * it8.scales[k*nchans+j] + it8.offsets[k*nchans+j]);
+										}
+									}
+									else
+									{
+										for (size_t j=0; j<nchans; j++)
+										{
+											databuffer.buffer[bcnt1*nifs*nchans+k*nchans+j] = it8.weights[j] * (((unsigned char *)(it8.data))[i*nifs*nchans+k*nchans+j] - zero_off);
+										}
+									}
+								}
+								else
+								{
+									if (apply_scloffs)
+									{
+										for (size_t j=0; j<nchans; j++)
+										{
+											databuffer.buffer[bcnt1*nifs*nchans+k*nchans+j] = (((unsigned char *)(it8.data))[i*nifs*nchans+k*nchans+j] - zero_off) * it8.scales[k*nchans+j] + it8.offsets[k*nchans+j];
+										}
+									}
+									else
+									{
+										for (size_t j=0; j<nchans; j++)
+										{
+											databuffer.buffer[bcnt1*nifs*nchans+k*nchans+j] = ((unsigned char *)(it8.data))[i*nifs*nchans+k*nchans+j] - zero_off;
+										}
+									}
+								}
+							}
+						}
+						else
+						{
+							if (apply_wts)
+							{
+								if (apply_scloffs)
+								{
+									for (size_t j=0; j<nchans; j++)
+									{
+										float xx = it8.weights[j] * ((((unsigned char *)(it8.data))[i*nifs*nchans+0*nchans+j] - zero_off) * it8.scales[0*nchans+j] + it8.offsets[0*nchans+j]);
+										float yy = it8.weights[j] * ((((unsigned char *)(it8.data))[i*nifs*nchans+1*nchans+j] - zero_off) * it8.scales[1*nchans+j] + it8.offsets[1*nchans+j]);
+										
+										databuffer.buffer[bcnt1*nchans+j] = xx + yy;
+									}
+								}
+								else
+								{
+									for (size_t j=0; j<nchans; j++)
+									{
+										float xx = it8.weights[j] * (((unsigned char *)(it8.data))[i*nifs*nchans+0*nchans+j] - zero_off);
+										float yy = it8.weights[j] * (((unsigned char *)(it8.data))[i*nifs*nchans+1*nchans+j] - zero_off);
+
+										databuffer.buffer[bcnt1*nchans+j] = xx + yy;
+									}
+								}
+							}
+							else
+							{
+								if (apply_scloffs)
+								{
+									for (size_t j=0; j<nchans; j++)
+									{
+										float xx = (((unsigned char *)(it8.data))[i*nifs*nchans+0*nchans+j] - zero_off) * it8.scales[0*nchans+j] + it8.offsets[0*nchans+j];
+										float yy = (((unsigned char *)(it8.data))[i*nifs*nchans+1*nchans+j] - zero_off) * it8.scales[1*nchans+j] + it8.offsets[1*nchans+j];
+
+										databuffer.buffer[bcnt1*nchans+j] = xx + yy;
+									}
+								}
+								else
+								{
+									for (size_t j=0; j<nchans; j++)
+									{
+										float xx = ((unsigned char *)(it8.data))[i*nifs*nchans+0*nchans+j] - zero_off;
+										float yy = ((unsigned char *)(it8.data))[i*nifs*nchans+1*nchans+j] - zero_off;
+
+										databuffer.buffer[bcnt1*nchans+j] = xx + yy;
+									}
+								}
+							}
+						}
+					}
+					else if (it.dtype == Integration::FLOAT) //for float IQUV data
+					{
+						if (!sumif or nifs == 1)
+						{
+							for (size_t k=0; k<nifs; k++)
+							{
+								if (apply_wts)
+								{
+									if (apply_scloffs)
+									{
+										for (size_t j=0; j<nchans; j++)
+										{
+											databuffer.buffer[bcnt1*nifs*nchans+k*nchans+j] = it.weights[j] * ((((float *)(it.data))[i*nifs*nchans+k*nchans+j] - zero_off) * it.scales[k*nchans+j] + it.offsets[k*nchans+j]);
+										}
+									}
+									else
+									{
+										for (size_t j=0; j<nchans; j++)
+										{
+											databuffer.buffer[bcnt1*nifs*nchans+k*nchans+j] = it.weights[j] * (((float *)(it.data))[i*nifs*nchans+k*nchans+j] - zero_off);
+										}
+									}
+								}
+								else
+								{
+									if (apply_scloffs)
+									{
+										for (size_t j=0; j<nchans; j++)
+										{
+											databuffer.buffer[bcnt1*nifs*nchans+k*nchans+j] = (((float *)(it.data))[i*nifs*nchans+k*nchans+j] - zero_off) * it.scales[k*nchans+j] + it.offsets[k*nchans+j];
+										}
+									}
+									else
+									{
+										for (size_t j=0; j<nchans; j++)
+										{
+											databuffer.buffer[bcnt1*nifs*nchans+k*nchans+j] = ((float *)(it.data))[i*nifs*nchans+k*nchans+j] - zero_off;
+										}
+									}
+								}
+							}
+						}
+						else
+						{
+							if (apply_wts)
+							{
+								if (apply_scloffs)
+								{
+									for (size_t j=0; j<nchans; j++)
+									{
+										float xx = it.weights[j] * ((((float *)(it.data))[i*nifs*nchans+0*nchans+j] - zero_off) * it.scales[0*nchans+j] + it.offsets[0*nchans+j]);
+										float yy = it.weights[j] * ((((float *)(it.data))[i*nifs*nchans+1*nchans+j] - zero_off) * it.scales[1*nchans+j] + it.offsets[1*nchans+j]);
+										
+										databuffer.buffer[bcnt1*nchans+j] = xx;// + yy;
+									}
+								}
+								else
+								{
+									for (size_t j=0; j<nchans; j++)
+									{
+										float xx = it.weights[j] * (((float *)(it.data))[i*nifs*nchans+0*nchans+j] - zero_off);
+										float yy = it.weights[j] * (((float *)(it.data))[i*nifs*nchans+1*nchans+j] - zero_off);
+
+										databuffer.buffer[bcnt1*nchans+j] = xx;// + yy;
+									}
+								}
+							}
+							else
+							{
+								if (apply_scloffs)
+								{
+									for (size_t j=0; j<nchans; j++)
+									{
+										float xx = (((float *)(it.data))[i*nifs*nchans+0*nchans+j] - zero_off) * it.scales[0*nchans+j] + it.offsets[0*nchans+j];
+										float yy = (((float *)(it.data))[i*nifs*nchans+1*nchans+j] - zero_off) * it.scales[1*nchans+j] + it.offsets[1*nchans+j];
+
+										databuffer.buffer[bcnt1*nchans+j] = xx;// + yy;
+									}
+								}
+								else
+								{
+									for (size_t j=0; j<nchans; j++)
+									{
+										float xx = ((float *)(it.data))[i*nifs*nchans+0*nchans+j] - zero_off;
+										float yy = ((float *)(it.data))[i*nifs*nchans+1*nchans+j] - zero_off;
+
+										databuffer.buffer[bcnt1*nchans+j] = xx;// + yy;
 									}
 								}
 							}

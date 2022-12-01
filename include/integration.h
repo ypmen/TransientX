@@ -15,12 +15,15 @@ public:
 	enum DataType{USHORT, SHORT, UINT1, UINT2, UINT4, UINT8, FLOAT};
 public:
 	Integration();
+	Integration(const Integration &it);
+	Integration & operator=(const Integration &it);
 	~Integration();
 	void free();
 	void load_data(void *dat, int np, int nc, int nb);
 	void load_frequencies(double *freq, int nc);
 	void load_weights(float *wts, int nc);
 	void resize(int np, int nc, int nb);
+	bool to_char(Integration &it);
 public:
 	enum Mode mode;
 	enum DataType dtype;

@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <cstring>
+#include <assert.h>
 
 #include "psrfits.h"
 #include "hdu.h"
@@ -48,6 +49,206 @@ Integration::Integration()
 	offsets = NULL;
 	scales = NULL;
 	data = NULL;
+}
+
+Integration::Integration(const Integration &it)
+{
+	mode = it.mode;
+	dtype = it.dtype;
+
+	indexval = it.indexval;
+	folding_period = it.folding_period;
+	tsubint = it.tsubint;
+	offs_sub =it. offs_sub;
+	lst_sub = it.lst_sub;
+	ra_sub = it.ra_sub;
+	dec_sub = it.dec_sub;
+	glon_sub = it.glon_sub;
+	glat_sub = it.glat_sub;
+	fd_ang = it.fd_ang;
+	pos_ang = it.pos_ang;
+	par_ang = it.par_ang;
+	tel_az = it.tel_az;
+	tel_zen = it.tel_zen;
+	aux_dm = it.aux_dm;
+	aux_rm = it.aux_rm;
+
+	npol = it.npol;
+	nchan = it.nchan;
+	nbin = it.nbin;
+	nsblk = it.nsblk;
+	nbits = it.nbits;
+
+	if (it.frequencies != NULL)
+	{
+		if (frequencies != NULL) delete [] frequencies;
+		frequencies = new double [nchan];
+		std::memcpy(frequencies, it.frequencies, sizeof(double) * nchan);
+	}
+	else
+	{
+		frequencies = NULL;
+	}
+
+	if (it.weights != NULL)
+	{
+		if (weights != NULL) delete [] weights;
+		weights = new float [nchan];
+		std::memcpy(weights, it.weights, sizeof(float) * nchan);
+	}
+	else
+	{
+		weights = NULL;
+	}
+
+	if (it.offsets != NULL)
+	{
+		if (offsets != NULL) delete [] offsets;
+		offsets = new float [npol * nchan];
+		std::memcpy(offsets, it.offsets, sizeof(float) * npol * nchan);
+	}
+	else
+	{
+		offsets = NULL;
+	}
+
+	if (it.scales != NULL)
+	{
+		if (scales != NULL) delete [] scales;
+		scales = new float [npol * nchan];
+		std::memcpy(scales, it.scales, sizeof(float) * npol * nchan);
+	}
+	else
+	{
+		scales = NULL;
+	}
+
+	if (it.data != NULL)
+	{
+		if (data != NULL) delete [] data;
+		if (mode == FOLD)
+		{
+			data = new short [npol * nchan * nbin];
+			std::memcpy(data, it.data, sizeof(short) * npol * nchan * nbin);
+		}
+		else if (mode == SEARCH)
+		{
+			switch (dtype)
+			{
+			case UINT1: data = new unsigned char [nsblk * npol * nchan * nbits / 8]; std::memcpy(data, it.data, sizeof(unsigned char) * nsblk * npol * nchan * nbits / 8); break;
+			case UINT2: data = new unsigned char [nsblk * npol * nchan * nbits / 8]; std::memcpy(data, it.data, sizeof(unsigned char) * nsblk * npol * nchan * nbits / 8); break;
+			case UINT4: data = new unsigned char [nsblk * npol * nchan * nbits / 8]; std::memcpy(data, it.data, sizeof(unsigned char) * nsblk * npol * nchan * nbits / 8); break;
+			case UINT8: data = new unsigned char [nsblk * npol * nchan * nbits / 8]; std::memcpy(data, it.data, sizeof(unsigned char) * nsblk * npol * nchan * nbits / 8); break;
+			case FLOAT: data = new float [nsblk * npol * nchan]; std::memcpy(data, it.data, sizeof(float) * nsblk * npol * nchan); break;
+			default: cerr<<"Error: data type not support"<<endl; break;
+			}
+		}
+	}
+	else
+	{
+		data = NULL;
+	}
+}
+
+Integration & Integration::operator=(const Integration &it)
+{
+	mode = it.mode;
+	dtype = it.dtype;
+
+	indexval = it.indexval;
+	folding_period = it.folding_period;
+	tsubint = it.tsubint;
+	offs_sub =it. offs_sub;
+	lst_sub = it.lst_sub;
+	ra_sub = it.ra_sub;
+	dec_sub = it.dec_sub;
+	glon_sub = it.glon_sub;
+	glat_sub = it.glat_sub;
+	fd_ang = it.fd_ang;
+	pos_ang = it.pos_ang;
+	par_ang = it.par_ang;
+	tel_az = it.tel_az;
+	tel_zen = it.tel_zen;
+	aux_dm = it.aux_dm;
+	aux_rm = it.aux_rm;
+
+	npol = it.npol;
+	nchan = it.nchan;
+	nbin = it.nbin;
+	nsblk = it.nsblk;
+	nbits = it.nbits;
+
+	if (it.frequencies != NULL)
+	{
+		if (frequencies != NULL) delete [] frequencies;
+		frequencies = new double [nchan];
+		std::memcpy(frequencies, it.frequencies, sizeof(double) * nchan);
+	}
+	else
+	{
+		frequencies = NULL;
+	}
+
+	if (it.weights != NULL)
+	{
+		if (weights != NULL) delete [] weights;
+		weights = new float [nchan];
+		std::memcpy(weights, it.weights, sizeof(float) * nchan);
+	}
+	else
+	{
+		weights = NULL;
+	}
+
+	if (it.offsets != NULL)
+	{
+		if (offsets != NULL) delete [] offsets;
+		offsets = new float [npol * nchan];
+		std::memcpy(offsets, it.offsets, sizeof(float) * npol * nchan);
+	}
+	else
+	{
+		offsets = NULL;
+	}
+
+	if (it.scales != NULL)
+	{
+		if (scales != NULL) delete [] scales;
+		scales = new float [npol * nchan];
+		std::memcpy(scales, it.scales, sizeof(float) * npol * nchan);
+	}
+	else
+	{
+		scales = NULL;
+	}
+
+	if (it.data != NULL)
+	{
+		if (data != NULL) delete [] data;
+		if (mode == FOLD)
+		{
+			data = new short [npol * nchan * nbin];
+			std::memcpy(data, it.data, sizeof(short) * npol * nchan * nbin);
+		}
+		else if (mode == SEARCH)
+		{
+			switch (dtype)
+			{
+			case UINT1: data = new unsigned char [nsblk * npol * nchan * nbits / 8]; std::memcpy(data, it.data, sizeof(unsigned char) * nsblk * npol * nchan * nbits / 8); break;
+			case UINT2: data = new unsigned char [nsblk * npol * nchan * nbits / 8]; std::memcpy(data, it.data, sizeof(unsigned char) * nsblk * npol * nchan * nbits / 8); break;
+			case UINT4: data = new unsigned char [nsblk * npol * nchan * nbits / 8]; std::memcpy(data, it.data, sizeof(unsigned char) * nsblk * npol * nchan * nbits / 8); break;
+			case UINT8: data = new unsigned char [nsblk * npol * nchan * nbits / 8]; std::memcpy(data, it.data, sizeof(unsigned char) * nsblk * npol * nchan * nbits / 8); break;
+			case FLOAT: data = new float [nsblk * npol * nchan]; std::memcpy(data, it.data, sizeof(float) * nsblk * npol * nchan); break;
+			default: cerr<<"Error: data type not support"<<endl; break;
+			}
+		}
+	}
+	else
+	{
+		data = NULL;
+	}
+
+	return *this;
 }
 
 Integration::~Integration()
@@ -297,4 +498,82 @@ void Integration::load_weights(float *wts, int nc)
 	{
 		weights[j] = wts[j];
 	}
+}
+
+bool Integration::to_char(Integration &it)
+{
+	assert(it.mode == SEARCH);
+	assert(it.dtype == UINT8);
+	assert(it.nbits == 8);
+	assert(it.nsblk == nsblk);
+	assert(it.npol == npol);
+	assert(it.nchan == nchan);
+	assert(it.data != NULL);
+
+	switch (nbits)
+	{
+	case 8:
+	{
+		long int nchr = nsblk*npol*nchan;
+		for (long int i=0; i<nchr; i++)
+		{
+			((unsigned char *)(it.data))[i] = ((unsigned char *)data)[i];
+		}
+	}
+	break;
+
+	case 4:
+	{
+		long int nchr = nsblk*npol*nchan;
+		for (long int i=0; i<nchr/2; i++)
+		{
+			unsigned char tmp = ((unsigned char *)data)[i];
+			for (long int k=0; k<2; k++)
+			{
+				((unsigned char *)(it.data))[i*2+k] = (tmp & 0b1111);
+				tmp >>= 4;
+			}
+		}
+	}
+	break;
+	
+	case 2:
+	{
+		long int nchr = nsblk*npol*nchan;
+		for (long int i=0; i<nchr/4; i++)
+		{
+			unsigned char tmp = ((unsigned char *)data)[i];
+			for (long int k=0; k<4; k++)
+			{
+				((unsigned char *)(it.data))[i*4+k] = (tmp & 0b11);
+				tmp >>= 2;
+			}
+		}
+	}
+	break;
+
+	case 1:
+	{
+		long int nchr = nsblk*npol*nchan;
+		for (long int i=0; i<nchr/8; i++)
+		{
+			unsigned char tmp = ((unsigned char *)data)[i];
+			for (long int k=0; k<8; k++)
+			{
+				((unsigned char *)(it.data))[i*8+k] = tmp & 1;
+				tmp >>= 1;
+			}
+		}
+	}
+	break;
+	
+	default:
+	{
+		std::cerr<<"Warning: data type unsupported"<<endl;
+		return false;
+	}
+	break;
+	}
+
+	return true;
 }

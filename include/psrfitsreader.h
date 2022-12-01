@@ -30,6 +30,7 @@ public:
 
 private:
 	Integration it;
+	Integration it8;
 	size_t ntot;
 	size_t count;
 	size_t ns_psfn;

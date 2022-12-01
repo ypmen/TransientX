@@ -273,6 +273,8 @@ void Filterbank::free()
 		switch (nbits)
 		{
 		case 1: delete [] (unsigned char *)data; break;
+		case 2: delete [] (unsigned char *)data; break;
+		case 4: delete [] (unsigned char *)data; break;
 		case 8: delete [] (unsigned char *)data; break;
 		case 32: delete [] (float *)data; break;
 		default: cerr<<"Error: data type not support"<<endl; break;
