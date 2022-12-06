@@ -301,6 +301,9 @@ int main(int argc, char *argv[])
 
 		double dmdelay = std::abs(Candidate::dmdelay(cand.dm, cand.frequencies.front(), cand.frequencies.back()));
 		int nbin = (dmdelay+2*nwidth*cand.width)/tsamp;
+		if (vm.count("pow2bin"))
+			nbin = std::pow(2, std::ceil(std::log2(nbin)));
+		
 		cand.npol = nifs;
 		cand.nchan = nchans;
 		cand.nbin = nbin;
