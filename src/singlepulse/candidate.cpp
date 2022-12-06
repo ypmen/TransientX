@@ -226,9 +226,14 @@ void Candidate::dededisperse(bool coherent)
 	isdedispersed = false;
 }
 
-void Candidate::shrink_to_fit(int nwidth, int factor)
+void Candidate::shrink_to_fit(int nwidth, bool pow2bin, int factor)
 {
 	long int nbin_new = nwidth*width/tbin;
+
+	if (pow2bin)
+	{
+		nbin_new = std::pow(2, std::ceil(std::log2(nbin_new)));
+	}
 
 	nbin_new = std::ceil(nbin_new/factor)*factor;
 

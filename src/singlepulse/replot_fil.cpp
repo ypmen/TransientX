@@ -301,8 +301,6 @@ int main(int argc, char *argv[])
 
 		double dmdelay = std::abs(Candidate::dmdelay(cand.dm, cand.frequencies.front(), cand.frequencies.back()));
 		int nbin = (dmdelay+2*nwidth*cand.width)/tsamp;
-		if (vm.count("pow2bin"))
-			nbin = std::pow(2, std::ceil(std::log2(nbin)));
 		cand.npol = nifs;
 		cand.nchan = nchans;
 		cand.nbin = nbin;
@@ -393,9 +391,9 @@ int main(int argc, char *argv[])
 							BOOST_LOG_TRIVIAL(debug)<<"dedisperse at DM="<<cands[k].dm<<"...";
 							cands[k].dedisperse(vm.count("coherent"));
 							if (vm.count("kadane"))
-								cands[k].shrink_to_fit(2*nwidth, vm["kadane"].as<std::vector<int>>()[0]);
+								cands[k].shrink_to_fit(2*nwidth, vm.count("pow2bin"), vm["kadane"].as<std::vector<int>>()[0]);
 							else
-								cands[k].shrink_to_fit(2*nwidth);
+								cands[k].shrink_to_fit(2*nwidth, vm.count("pow2bin"));
 
 							BOOST_LOG_TRIVIAL(debug)<<"remove rfi...";
 							cands[k].azap(vm["zapthre"].as<float>());
