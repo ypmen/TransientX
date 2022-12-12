@@ -56,7 +56,7 @@ USER root
 WORKDIR $HOME/software
 RUN git clone https://github.com/JohannesBuchner/MultiNest.git
 WORKDIR $HOME/software/MultiNest/build
-RUN cmake ..
+RUN cmake -DCMAKE_PREFIX_PATH=$HOME/software ..
 RUN make && make install
 
 RUN pip3 install mpi4py
@@ -131,8 +131,8 @@ RUN make clean
 
 USER root
 
-WORKDIR $HOME/software/PulsarX/python
-RUN python3 setup.py install
+#WORKDIR $HOME/software/PulsarX/python
+#RUN python3 setup.py install
 
 USER pulsarx
 
