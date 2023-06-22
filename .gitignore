@@ -1,3 +1,6 @@
+confdefs.h
+conftest.cpp
+conftest.err
 *.lo
 *.o
 config.h

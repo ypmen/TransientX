@@ -11,7 +11,7 @@ ENV HOME /home/pulsarx
 
 ENV LD_LIBRARY_PATH=$HOME/software/lib:/usr/local/lib:$LD_LIBRARY_PATH
 ENV YMW16_DIR=$HOME/software/PulsarX/src/ymw16
-ENV PATH=$PATH:$HOME/software/bin
+ENV PATH=$PATH:$HOME/software/bin:$HOME/.local/bin
 ENV OMP_NUM_THREADS=1
 ENV PSRCAT_FILE=/home/pulsarx/software/psrcat_tar/psrcat.db
 ENV TEMPO2=/home/pulsarx/software/tempo2/T2runtime
@@ -131,8 +131,8 @@ RUN make clean
 
 USER root
 
-#WORKDIR $HOME/software/PulsarX/python
-#RUN python3 setup.py install
+WORKDIR $HOME/software/PulsarX/python
+RUN python3 setup.py install
 
 USER pulsarx
 
