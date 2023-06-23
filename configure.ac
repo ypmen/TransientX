@@ -4,7 +4,7 @@
 AC_PREREQ([2.69])
 AC_INIT([TransientX], [0.0], [ypmen@mpifr-bonn.mpg.de])
 AC_CONFIG_AUX_DIR([config])
-AC_CONFIG_SRCDIR([include/AVL.h])
+AC_CONFIG_SRCDIR([include/candplot.h])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([foreign])
 
@@ -58,10 +58,5 @@ AC_CHECK_FUNCS([floor memset pow sqrt strchr])
 
 AC_CONFIG_FILES([Makefile
 		 src/Makefile
-                 src/container/Makefile
-                 src/formats/Makefile
-                 src/module/Makefile
-                 src/singlepulse/Makefile
-                 src/utils/Makefile
-                 src/ymw16/Makefile])
+                 src/singlepulse/Makefile])
 AC_OUTPUT
