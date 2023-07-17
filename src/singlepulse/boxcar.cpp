@@ -200,30 +200,37 @@ void Boxcar::match(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &ded
 
 	float mean = 0.;
 	float var = 0.;
-	
-	if (!iqr)
+	if (dedisp.mean_var_ready)
 	{
-		for (long int i=0; i<nsamples; i++)
-		{
-			mean += tim[i];
-			var += tim[i]*tim[i];
-		}
-		mean /= nsamples;
-		var /= nsamples;
-		var -= mean*mean;
+		mean = dedisp.mean;
+		var = dedisp.var;
 	}
 	else
 	{
-		vector<float> timcopy = tim;
-		std::nth_element(timcopy.begin(), timcopy.begin()+nsamples/4, timcopy.end(), std::less<float>());
-		float Q1 = timcopy[nsamples/4];
-		std::nth_element(timcopy.begin(), timcopy.begin()+nsamples/2, timcopy.end(), std::less<float>());
-		float Q2 = timcopy[nsamples/2];
-		std::nth_element(timcopy.begin(), timcopy.begin()+nsamples/4, timcopy.end(), std::greater<float>());
-		float Q3 = timcopy[nsamples/4];
+		if (!iqr)
+		{
+			for (long int i=0; i<nsamples; i++)
+			{
+				mean += tim[i];
+				var += tim[i]*tim[i];
+			}
+			mean /= nsamples;
+			var /= nsamples;
+			var -= mean*mean;
+		}
+		else
+		{
+			vector<float> timcopy = tim;
+			std::nth_element(timcopy.begin(), timcopy.begin()+nsamples/4, timcopy.end(), std::less<float>());
+			float Q1 = timcopy[nsamples/4];
+			std::nth_element(timcopy.begin(), timcopy.begin()+nsamples/2, timcopy.end(), std::less<float>());
+			float Q2 = timcopy[nsamples/2];
+			std::nth_element(timcopy.begin(), timcopy.begin()+nsamples/4, timcopy.end(), std::greater<float>());
+			float Q3 = timcopy[nsamples/4];
 
-		mean = Q2;
-		var = ((Q3-Q1)/1.349)*((Q3-Q1)/1.349);
+			mean = Q2;
+			var = ((Q3-Q1)/1.349)*((Q3-Q1)/1.349);
+		}
 	}
 
 #ifdef __AVX2__

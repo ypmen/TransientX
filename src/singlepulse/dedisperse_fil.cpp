@@ -235,6 +235,10 @@ int main(int argc, const char *argv[])
 	long int nstart = jump[0]/tsamp;
 	long int nend = ntotal-jump[1]/tsamp;
 
+	reader->skip_start = nstart;
+	reader->skip_end = nend;
+	reader->skip_head();
+
 	stringstream ss_ibeam;
 	if (vm.count("incoherent"))
 		ss_ibeam << "ifbf" << setw(5) << setfill('0') << ibeam;
@@ -318,6 +322,8 @@ int main(int argc, const char *argv[])
 			(*sp).dedisp.modifynblock();
 		}
 	}
+
+	delete [] reader;
 
 	return 0;
 }
