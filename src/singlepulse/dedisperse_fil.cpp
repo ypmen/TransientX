@@ -73,7 +73,8 @@ int main(int argc, const char *argv[])
 			("neighbors,k", value<unsigned int>()->default_value(2), "DBSCAN k")
 			("maxncand", value<int>()->default_value(100), "Maximum number of candidates in one data block")
 			("minpts", value<int>()->default_value(5), "Minimum points in one cluster")
-			("baseline", value<vector<float>>()->multitoken()->default_value(vector<float>{0.0, 0.1}, "0.0, 0.1"), "The scale of baseline remove (s)")
+			("outref", value<std::string>(), "Reference baseline data")
+			("baseline", value<vector<float>>()->multitoken()->default_value(vector<float>{0.0, 0.0}, "0.0, 0.1"), "The scale of baseline remove (s)")
 			("rfi,z", value<vector<string>>()->multitoken()->zero_tokens()->composing(), "RFI mitigation [[mask tdRFI fdRFI] [kadaneF tdRFI fdRFI] [kadaneT tdRFI fdRFI] [zap fl fh] [zdot] [zero]]")
 			("bandlimit", value<double>()->default_value(10), "Band limit of RFI mask (MHz)")
 			("bandlimitKT", value<double>()->default_value(10), "Band limit of RFI kadaneT (MHz)")
@@ -214,6 +215,30 @@ int main(int argc, const char *argv[])
 
 	long int ndump = (int)(vm["seglen"].as<float>()/tsamp)/td_lcm*td_lcm;
 
+	// read zero dm data
+	std::vector<float> outref;
+	long double tstart_zero = 0.;
+	if (vm.count("outref"))
+	{
+		Filterbank fil(vm["outref"].as<std::string>());
+		fil.read_header();
+		fil.read_data();
+
+		assert(fil.nchans == 1);
+
+		double tsamp_zero = fil.tsamp;
+		tstart_zero = fil.tstart;
+		outref.resize(fil.nsamples, 0.);
+		for (size_t i=0; i<outref.size(); i++)
+		{
+			outref[i] = ((float *)fil.data)[i];
+		}
+
+		fil.close();
+
+		assert(tsamp_zero == tsamp);
+	}
+
 	DataBuffer<float> databuf(ndump, nchans);
 	databuf.tsamp = tsamp;
 	memcpy(&databuf.frequencies[0], reader->frequencies.data(), sizeof(double)*nchans);
@@ -233,11 +258,44 @@ int main(int argc, const char *argv[])
 	prep.prepare(databuf);
 
 	long int nstart = jump[0]/tsamp;
-	long int nend = ntotal-jump[1]/tsamp;
+	long int nend = jump[1]/tsamp;
 
 	reader->skip_start = nstart;
 	reader->skip_end = nend;
 	reader->skip_head();
+
+	std::vector<float> outref_ds(outref.size()/prep.td, 0.); 
+	if (vm.count("outref"))
+	{
+		// align start sample
+		if (tstart_zero > tstart + nstart * tsamp / 86400.)
+		{
+			reader->skip_start = std::round((tstart_zero - tstart) * 86400. / tsamp);
+			reader->skip_head();
+		}
+		else
+		{
+			size_t zero_offset = std::round((tstart + nstart * tsamp / 86400. - tstart_zero) * 86400. / tsamp);
+			for (size_t i=zero_offset; i<outref.size(); i++)
+			{
+				outref[i-zero_offset] = outref[i];
+			}
+		}
+
+		// align end sample
+		if (tstart_zero + outref.size() * tsamp / 86400. < tstart + ntotal * tsamp / 86400.)
+		{
+			reader->skip_end = std::round(((tstart + ntotal * tsamp / 86400.) - (tstart_zero + outref.size() * tsamp / 86400.)) * 86400. / tsamp);
+		}
+
+		for (size_t k=0; k<prep.td; k++)
+		{
+			for (size_t i=0; i<outref.size()/prep.td; i++)
+			{
+				outref_ds[i] += outref[i * prep.td + k];
+			}
+		}
+	}
 
 	stringstream ss_ibeam;
 	if (vm.count("incoherent"))
@@ -245,6 +303,8 @@ int main(int argc, const char *argv[])
 	else
 		ss_ibeam << "cfbf" << setw(5) << setfill('0') << ibeam;
 	string s_ibeam = ss_ibeam.str();
+
+	std::vector<float> bswidth = vm["baseline"].as<std::vector<float>>();
 
 	long int nsearch = search1.size();
 	for (long int k=0; k<nsearch; k++)
@@ -256,6 +316,13 @@ int main(int argc, const char *argv[])
 		search1[k].ibeam = ibeam;
 		search1[k].src_raj = src_raj;
 		search1[k].src_dej = src_dej;
+
+		search1[k].bswidth = bswidth[1];
+
+		if (vm.count("outref"))
+		{
+			search1[k].outref = outref_ds;
+		}
 
 		search1[k].fildedisp.tstart = tstart;
 		search1[k].fildedisp.ibeam = ibeam;
@@ -322,8 +389,6 @@ int main(int argc, const char *argv[])
 			(*sp).dedisp.modifynblock();
 		}
 	}
-
-	delete [] reader;
 
 	return 0;
 }

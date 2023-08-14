@@ -53,6 +53,7 @@ public:
 
 	//baseline
 	float bswidth;
+	std::vector<float> outref;
 
 	//rfi
 	vector<pair<double, double>> zaplist;
