@@ -769,7 +769,7 @@ void Candidate::kadaneF(int td, int fd, float threshold, int nwidth)
 	}
 }
 
-void Candidate::zdot()
+void Candidate::zdot(const std::vector<float> &outref)
 {
 	if (npol != 1) return;
 
@@ -802,6 +802,11 @@ void Candidate::zdot()
 	for (long int i=0; i<nbin; i++)
 	{
 		s[i] /= nchan;
+	}
+
+	if (!outref.empty())
+	{
+		std::copy(outref.begin(), outref.end(), s.begin());
 	}
 
 #ifdef _OPENMP

@@ -73,7 +73,7 @@ public:
 	void clip(int td, int fd, float threshold=10.);
 
 	/* zero-DM matched filter */
-	void zdot();
+	void zdot(const std::vector<float> &outref);
 
 	/* calculate mean,var,skewness,kurtosis */
 	void get_stats();

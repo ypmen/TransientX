@@ -16,6 +16,7 @@
 #include "logging.h"
 #include "dedisperse.h"
 #include "downsample.h"
+#include "patch.h"
 #include "candidate.h"
 #include "psrfits.h"
 #include "psrfitsreader.h"
@@ -55,9 +56,11 @@ int main(int argc, char *argv[])
 			("snrloss", value<float>()->default_value(1e-1), "S/N loss")
 			("dm", value<double>(), "Update dm")
 			("coherent", "Apply coherent dedispersion")
+			("patch", "patch zero data with random value")
 			("zapthre", value<float>()->default_value(3), "Threshold in IQR for zapping channels")
 			("zap", value<std::vector<double>>()->multitoken()->zero_tokens()->composing(), "Zap channels, e.g. --zap 1000 1100 1200 1300")
 			("zdot", "Perform zero-DM matched filter")
+			("outref", value<std::string>(), "Reference baseline data")
 			("clip", value<std::vector<int>>()->multitoken(), "Perform clip filter [td, fd, threshold]")
 			("kadane", value<std::vector<int>>()->multitoken(), "Perform kadane filter [td, fd, threshold]")
 			("candfile", value<std::string>(), "Input cand file")
@@ -210,6 +213,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	long int ntotal = reader->nsamples;
 	long int nchans = reader->nchans;
 	double tsamp = reader->tsamp * td;
 	int nifs = reader->sumif ? 1 : reader->nifs;
@@ -218,6 +222,30 @@ int main(int argc, char *argv[])
 	long double start_mjd = reader->start_mjd.to_day();
 
 	int nwidth = vm["nw"].as<int>()/2;
+
+	// read zero dm data
+	std::vector<float> outref;
+	long double tstart_zero = 0.;
+	if (vm.count("outref"))
+	{
+		Filterbank fil(vm["outref"].as<std::string>());
+		fil.read_header();
+		fil.read_data();
+
+		assert(fil.nchans == 1);
+
+		double tsamp_zero = fil.tsamp;
+		tstart_zero = fil.tstart;
+		outref.resize(fil.nsamples, 0.);
+		for (size_t i=0; i<outref.size(); i++)
+		{
+			outref[i] = ((float *)fil.data)[i];
+		}
+
+		fil.close();
+
+		assert(tsamp_zero == reader->tsamp);
+	}
 
 	/* read candidates from  */
 	std::vector<Candidate> cands;
@@ -332,8 +360,45 @@ int main(int argc, char *argv[])
 	BOOST_LOG_TRIVIAL(info)<<"start processing... ";
 
 	DataBuffer<float> databuffer(nsblk, nifs*nchans);
+	Patch patch;
+	patch.filltype = "rand";
+	patch.prepare(databuffer);
+
 	Downsample downsample(td, 1);
 	downsample.prepare(databuffer);
+
+	std::vector<float> outref_ds(outref.size()/td, 0.);
+	if (vm.count("outref"))
+	{
+		// align start sample
+		if (tstart_zero > start_mjd)
+		{
+			reader->skip_start = std::round((tstart_zero - start_mjd) * 86400. / reader->tsamp);
+			reader->skip_head();
+		}
+		else
+		{
+			size_t zero_offset = std::round((start_mjd - tstart_zero) * 86400. / reader->tsamp);
+			for (size_t i=zero_offset; i<outref.size(); i++)
+			{
+				outref[i-zero_offset] = outref[i];
+			}
+		}
+
+		// align end sample
+		if (tstart_zero + outref.size() * reader->tsamp / 86400. < start_mjd + ntotal * reader->tsamp / 86400.)
+		{
+			reader->skip_end = std::round(((start_mjd + ntotal * reader->tsamp / 86400.) - (tstart_zero + outref.size() * reader->tsamp / 86400.)) * 86400. / reader->tsamp);
+		}
+
+		for (size_t k=0; k<td; k++)
+		{
+			for (size_t i=0; i<outref.size()/td; i++)
+			{
+				outref_ds[i] += outref[i * td + k];
+			}
+		}
+	}
 
 	while (!reader->is_end)
 	{
@@ -349,7 +414,12 @@ int main(int argc, char *argv[])
 		if (hit)
 		{
 			reader->read_data(databuffer, nsblk);
-			DataBuffer<float> *data = downsample.run(databuffer);
+			DataBuffer<float> *data;
+			if (vm.count("patch"))
+				data = patch.filter(databuffer);
+			else
+				data = &databuffer;
+			data = downsample.run(*data);
 			
 			for (long int i=0; i<nsblk/td; i++)
 			{
@@ -385,7 +455,9 @@ int main(int argc, char *argv[])
 							if (vm.count("zdot"))
 							{
 								BOOST_LOG_TRIVIAL(debug)<<"zero-DM matched filter...";
-								cands[k].zdot();
+
+								std::vector<float> tem(outref_ds.begin()+count-cands[k].nbin-1, outref_ds.begin()+count-1);
+								cands[k].zdot(tem);
 							}
 
 							BOOST_LOG_TRIVIAL(debug)<<"calculate spectra stats...";
