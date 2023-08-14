@@ -212,6 +212,34 @@ void SinglePulse::prepare(DataBuffer<float> &databuffer)
 	equalize.close();
 	equalize.closable = true;
 
+	if (outref.size())
+	{
+		baseline.outref.resize(outref.size()/td, 0.);
+
+		double mean = 0.;
+		double var = 0;
+
+		for (size_t i=0; i<outref.size()/td; i++)
+		{
+			for (size_t k=0; k<td; k++)
+			{
+				baseline.outref[i] += outref[i * td + k];
+			}
+			mean += baseline.outref[i];
+			var += baseline.outref[i] * baseline.outref[i];
+		}
+
+		mean /= baseline.outref.size();
+		var /= baseline.outref.size();
+		var -= mean * mean;
+		var = std::sqrt(var);
+
+		for (size_t i=0; i<baseline.outref.size(); i++)
+		{
+			baseline.outref[i] = (baseline.outref[i] - mean) / var;
+		}
+	}
+
 	baseline.width = bswidth;
 	baseline.prepare(equalize);
 	baseline.close();
