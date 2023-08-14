@@ -1,1 +1,1 @@
-SUBDIRS=singlepulse
+SUBDIRS=singlepulse slow_transient
