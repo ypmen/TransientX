@@ -35,7 +35,11 @@ int main(int argc, const char *argv[])
 			("verbose,v", "Print debug information")
 			("threads,t", value<unsigned int>()->default_value(1), "Number of threads")
 			("stats", value<std::vector<std::string>>()->multitoken()->composing(), "histo list")
+			("statsf", value<std::vector<std::string>>()->multitoken()->composing(), "stat list")
 			("cont", "Input files are contiguous")
+			("wts", "Apply DAT_WTS")
+			("scloffs", "Apply DAT_SCL and DAT_OFFS")
+			("zero_off", "Apply ZERO_OFF")
 			("psrfits", "Input psrfits format data")
 			("output,o", value<std::string>()->default_value("baseline"), "Output rootname")
 			("list,l", value<std::string>(), "Input list file");
@@ -68,27 +72,20 @@ int main(int argc, const char *argv[])
 
 	bool contiguous = vm.count("cont");
 
+	bool apply_wts = false;
+	bool apply_scloffs = false;
+	bool apply_zero_off = false;
+
+	if (vm.count("wts"))
+		apply_wts = true;
+	if (vm.count("scloffs"))
+		apply_scloffs = true;
+	if (vm.count("zero_off"))
+		apply_zero_off = true;
+
 	num_threads = vm["threads"].as<unsigned int>();
 
 	std::string rootname = vm["output"].as<std::string>();
-
-	// read stats
-	
-	std::vector<HistogramAnalyzer> has;
-
-	if (vm.count("stats"))
-	{
-		std::vector<std::string> stats = vm["stats"].as<std::vector<std::string>>();
-
-		for (auto stat=stats.begin(); stat!=stats.end(); ++stat)
-		{
-			HistogramAnalyzer ha;
-			ha.read(*stat);
-			ha.get_statitstics();
-
-			has.push_back(ha);
-		}
-	}
 
 	// read data files
 	std::string input_list = vm["list"].as<std::string>();
@@ -110,9 +107,9 @@ int main(int argc, const char *argv[])
 			reader->sumif = true;
 			reader->contiguous = contiguous;
 			reader->verbose = verbose;
-			reader->apply_scloffs = false;
-			reader->apply_wts = false;
-			reader->apply_zero_off = false;
+			reader->apply_scloffs = apply_scloffs;
+			reader->apply_wts = apply_wts;
+			reader->apply_zero_off = apply_zero_off;
 			reader->check();
 			reader->read_header();
 
@@ -125,9 +122,9 @@ int main(int argc, const char *argv[])
 			reader->sumif = true;
 			reader->contiguous = contiguous;
 			reader->verbose = verbose;
-			reader->apply_scloffs = false;
-			reader->apply_wts = false;
-			reader->apply_zero_off = false;
+			reader->apply_scloffs = apply_scloffs;
+			reader->apply_wts = apply_wts;
+			reader->apply_zero_off = apply_zero_off;
 			reader->check();
 			reader->read_header();
 
@@ -164,6 +161,48 @@ int main(int argc, const char *argv[])
 
 	int ndump = 1024;
 
+	// read stats
+	
+	std::vector<HistogramAnalyzer> has;
+
+	std::vector<float> chmean;
+	std::vector<float> chstd;
+	std::vector<float> chweight;
+
+	if (vm.count("stats"))
+	{
+		std::vector<std::string> stats = vm["stats"].as<std::vector<std::string>>();
+
+		for (auto stat=stats.begin(); stat!=stats.end(); ++stat)
+		{
+			HistogramAnalyzer ha;
+			ha.read(*stat);
+			ha.get_statitstics();
+
+			has.push_back(ha);
+		}
+	}
+	else if (vm.count("statsf"))
+	{
+		std::vector<std::string> stats = vm["statsf"].as<std::vector<std::string>>();
+
+		int nfile = stats.size();
+
+		chweight.resize(nfile * nchans, 0.);
+		chmean.resize(nfile * nchans, 0.);
+		chstd.resize(nfile * nchans, 0.);
+
+		for (auto stat=stats.begin(); stat!=stats.end(); ++stat)
+		{
+			std::ifstream fstat(*stat, std::ios::binary);
+
+			fstat.read((char *)chweight.data(), chweight.size() * sizeof(float));
+			fstat.read((char *)chmean.data(), chmean.size() * sizeof(float));
+			fstat.read((char *)chstd.data(), chstd.size() * sizeof(float));
+			fstat.close();
+		}
+	}
+
 	std::vector<float> zerodm(ndump, 0.);
 	DataBuffer<float> databuf(ndump, nchans);
 
@@ -197,6 +236,16 @@ int main(int argc, const char *argv[])
 			if (vm.count("stats"))
 			{
 				has[id].filter(databuf);
+			}
+			else if (vm.count("statsf"))
+			{
+				for (long int i=0; i<databuf.nsamples; i++)
+				{
+					for (long int j=0; j<databuf.nchans; j++)
+					{
+						databuf.buffer[i*databuf.nchans+j] = chweight[id * nchans + j]*(databuf.buffer[i*databuf.nchans+j]-chmean[id * nchans + j])/chstd[id * nchans + j];
+					}
+				}
 			}
 
 			for (size_t i=0; i<ndump; i++)
