@@ -226,6 +226,7 @@ int main(int argc, char *argv[])
 	// read zero dm data
 	std::vector<float> outref;
 	long double tstart_zero = 0.;
+	double tsamp_zero = reader->tsamp;
 	if (vm.count("outref"))
 	{
 		Filterbank fil(vm["outref"].as<std::string>());
@@ -234,7 +235,7 @@ int main(int argc, char *argv[])
 
 		assert(fil.nchans == 1);
 
-		double tsamp_zero = fil.tsamp;
+		tsamp_zero = fil.tsamp;
 		tstart_zero = fil.tstart;
 		outref.resize(fil.nsamples, 0.);
 		for (size_t i=0; i<outref.size(); i++)
@@ -244,7 +245,7 @@ int main(int argc, char *argv[])
 
 		fil.close();
 
-		assert(tsamp_zero == reader->tsamp);
+		//assert(tsamp_zero == reader->tsamp);
 	}
 
 	/* read candidates from  */
@@ -367,7 +368,13 @@ int main(int argc, char *argv[])
 	Downsample downsample(td, 1);
 	downsample.prepare(databuffer);
 
-	std::vector<float> outref_ds(outref.size()/td, 0.);
+	float ndiv = reader->tsamp / tsamp_zero;
+
+	int td_ref = std::round(td * reader->tsamp / tsamp_zero);
+
+	assert(td_ref > 0);
+
+	std::vector<float> outref_ds(outref.size()/td_ref, 0.);
 	if (vm.count("outref"))
 	{
 		// align start sample
@@ -378,7 +385,7 @@ int main(int argc, char *argv[])
 		}
 		else
 		{
-			size_t zero_offset = std::round((start_mjd - tstart_zero) * 86400. / reader->tsamp);
+			size_t zero_offset = std::round((start_mjd - tstart_zero) * 86400. / tsamp_zero);
 			for (size_t i=zero_offset; i<outref.size(); i++)
 			{
 				outref[i-zero_offset] = outref[i];
@@ -391,11 +398,11 @@ int main(int argc, char *argv[])
 			reader->skip_end = std::round(((start_mjd + ntotal * reader->tsamp / 86400.) - (tstart_zero + outref.size() * reader->tsamp / 86400.)) * 86400. / reader->tsamp);
 		}
 
-		for (size_t k=0; k<td; k++)
+		for (size_t k=0; k<td_ref; k++)
 		{
-			for (size_t i=0; i<outref.size()/td; i++)
+			for (size_t i=0; i<outref.size()/td_ref; i++)
 			{
-				outref_ds[i] += outref[i * td + k];
+				outref_ds[i] += outref[i * td_ref + k];
 			}
 		}
 	}
