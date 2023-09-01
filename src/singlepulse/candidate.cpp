@@ -771,8 +771,6 @@ void Candidate::kadaneF(int td, int fd, float threshold, int nwidth)
 
 void Candidate::zdot(const std::vector<float> &outref)
 {
-	if (npol != 1) return;
-
 	std::vector<double> s(nbin, 0.);
 	// normalize
 	for (long int j=0; j<nchan; j++)
@@ -838,6 +836,76 @@ void Candidate::zdot(const std::vector<float> &outref)
 		for (long int i=0; i<nbin; i++)
 		{
 			data[j*nbin+i] -= alpha*s[i]+beta;
+		}
+	}
+
+	if (npol < 2) return;
+
+	std::fill(s.begin(), s.end(), 0.);
+	// normalize
+	for (long int j=0; j<nchan; j++)
+	{
+		double tmpmean=0., tmpstd=0.;
+		for (long int i=0; i<nbin; i++)
+		{
+			tmpmean += data[nchan*nbin+j*nbin+i];
+			tmpstd += data[nchan*nbin+j*nbin+i]*data[nchan*nbin+j*nbin+i];
+		}
+
+		tmpmean /= nbin;
+		tmpstd /= nbin;
+		tmpstd -= tmpmean*tmpmean;
+		tmpstd = std::sqrt(tmpstd);
+		if (tmpstd == 0.) tmpstd = 1.;
+
+		for (long int i=0; i<nbin; i++)
+		{
+			data[nchan*nbin+j*nbin+i] -= tmpmean;
+			data[nchan*nbin+j*nbin+i] /= tmpstd;
+
+			s[i] += data[nchan*nbin+j*nbin+i];
+		}
+	}
+
+	for (long int i=0; i<nbin; i++)
+	{
+		s[i] /= nchan;
+	}
+
+	if (!outref.empty())
+	{
+		std::copy(outref.begin(), outref.end(), s.begin());
+	}
+
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(num_threads)
+#endif
+	for (long int j=0; j<nchan; j++)
+	{
+		double xe = 0.;
+		double xs = 0.;
+		double se = 0.;
+		double ss = 0.;
+		double alpha = 0.;
+		double beta = 0.;
+		for (long int i=0; i<nbin; i++)
+		{
+			xe += data[nchan*nbin+j*nbin+i];
+			xs += data[nchan*nbin+j*nbin+i]*s[i];
+			se += s[i];
+			ss += s[i]*s[i];
+		}
+
+		double tmp = se*se-ss*nbin;
+		if (tmp != 0)
+		{
+			alpha = (xe*se-xs*nbin)/tmp;
+			beta = (xs*se-xe*ss)/tmp;
+		}
+
+		for (long int i=0; i<nbin; i++)
+		{
+			data[nchan*nbin+j*nbin+i] -= alpha*s[i]+beta;
 		}
 	}
 }
