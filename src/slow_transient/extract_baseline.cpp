@@ -19,6 +19,8 @@ using namespace boost::program_options;
 #include "psrfitsreader.h"
 #include "filterbankreader.h"
 #include "histogram_analyzer.h"
+#include "rescale.h"
+#include "databuffer.h"
 
 unsigned int num_threads;
 
@@ -104,7 +106,7 @@ int main(int argc, const char *argv[])
 		{
 			auto reader = std::unique_ptr<PsrfitsReader>(new PsrfitsReader);
 			reader->fnames = fnames;
-			reader->sumif = true;
+			reader->sumif = false;
 			reader->contiguous = contiguous;
 			reader->verbose = verbose;
 			reader->apply_scloffs = apply_scloffs;
@@ -119,7 +121,7 @@ int main(int argc, const char *argv[])
 		{
 			auto reader = std::unique_ptr<FilterbankReader>(new FilterbankReader);
 			reader->fnames = fnames;
-			reader->sumif = true;
+			reader->sumif = false;
 			reader->contiguous = contiguous;
 			reader->verbose = verbose;
 			reader->apply_scloffs = apply_scloffs;
@@ -188,9 +190,9 @@ int main(int argc, const char *argv[])
 
 		int nfile = stats.size();
 
-		chweight.resize(nfile * nchans, 0.);
-		chmean.resize(nfile * nchans, 0.);
-		chstd.resize(nfile * nchans, 0.);
+		chweight.resize(nfile * nifs * nchans, 0.);
+		chmean.resize(nfile * nifs * nchans, 0.);
+		chstd.resize(nfile * nifs * nchans, 0.);
 
 		for (auto stat=stats.begin(); stat!=stats.end(); ++stat)
 		{
@@ -203,28 +205,101 @@ int main(int argc, const char *argv[])
 		}
 	}
 
-	std::vector<float> zerodm(ndump, 0.);
-	DataBuffer<float> databuf(ndump, nchans);
+	std::vector<float> zerodm_x;
+	std::vector<float> zerodm_y;
+	if (nifs == 1)
+	{
+		zerodm_x.resize(ndump, 0.);
+	}
+	else
+	{
+		zerodm_x.resize(ndump, 0.);
+		zerodm_y.resize(ndump, 0.);
+	}
 
-	Filterbank fil;
-	fil.filename = rootname + ".fil";
-	std::strcpy(fil.source_name, source_name.c_str());
-	fil.tstart = tstart;
-	fil.tsamp = tsamp;
-	fil.nchans = 1;
-	fil.nbits = 32;
-	fil.nifs = nifs;
-	fil.fch1 = fch1;
-	fil.foff = foff;
-	fil.data_type = 2;
-	fil.refdm = 0.;
+	DataBuffer<float> databuf(ndump, nifs * nchans);
+	databuf.tsamp = tsamp;
+	databuf.frequencies = readers[0]->frequencies;
 
-	if (!fil.write_header())
+	std::vector<Rescale> rescales;
+	for (size_t k=0; k<readers.size(); k++)
+	{
+		Rescale rescale;
+		rescale.prepare(databuf);
+
+		std::copy(chmean.begin(), chmean.begin() + (k + 1) * nifs * nchans, rescale.chmean.begin());
+		std::copy(chstd.begin(), chstd.begin() + (k + 1) * nifs * nchans, rescale.chstd.begin());
+		std::copy(chweight.begin(), chweight.begin() + (k + 1) * nifs * nchans, rescale.chweight.begin());
+
+		rescales.push_back(rescale);
+	}
+
+	Filterbank fil_x, fil_y;
+	
+	if (nifs == 1)
+	{
+		fil_x.filename = rootname + "_0.fil";
+		std::strcpy(fil_x.source_name, source_name.c_str());
+		fil_x.tstart = tstart;
+		fil_x.tsamp = tsamp;
+		fil_x.nchans = 1;
+		fil_x.nbits = 32;
+		fil_x.nifs = nifs;
+		fil_x.fch1 = fch1;
+		fil_x.foff = foff;
+		fil_x.data_type = 2;
+		fil_x.refdm = 0.;
+		fil_x.refrm = 0.;
+
+		if (!fil_x.write_header())
+		BOOST_LOG_TRIVIAL(error)<<"Error: Can not write filterbank header";
+	}
+	else
+	{
+		fil_x.filename = rootname + "_0.fil";
+		std::strcpy(fil_x.source_name, source_name.c_str());
+		fil_x.tstart = tstart;
+		fil_x.tsamp = tsamp;
+		fil_x.nchans = 1;
+		fil_x.nbits = 32;
+		fil_x.nifs = 1;
+		fil_x.fch1 = fch1;
+		fil_x.foff = foff;
+		fil_x.data_type = 2;
+		fil_x.refdm = 0.;
+		fil_x.refrm = 0.;
+
+		fil_y.filename = rootname + "_1.fil";
+		std::strcpy(fil_y.source_name, source_name.c_str());
+		fil_y.tstart = tstart;
+		fil_y.tsamp = tsamp;
+		fil_y.nchans = 1;
+		fil_y.nbits = 32;
+		fil_y.nifs = 1;
+		fil_y.fch1 = fch1;
+		fil_y.foff = foff;
+		fil_y.data_type = 2;
+		fil_y.refdm = 0.;
+		fil_y.refrm = 0.;
+
+		if (!fil_x.write_header())
 		BOOST_LOG_TRIVIAL(error)<<"Error: Can not write filterbank header";
 
+		if (!fil_y.write_header())
+		BOOST_LOG_TRIVIAL(error)<<"Error: Can not write filterbank header";
+	}
+	
 	while (true)
 	{
-		std::fill(zerodm.begin(), zerodm.end(), 0.);
+		if (nifs == 1)
+		{
+			std::fill(zerodm_x.begin(), zerodm_x.end(), 0.);
+		}
+		else
+		{
+			std::fill(zerodm_x.begin(), zerodm_x.end(), 0.);
+			std::fill(zerodm_y.begin(), zerodm_y.end(), 0.);
+		}
 
 		int id = 0;
 		for (auto reader=readers.begin(); reader!=readers.end(); ++reader)
@@ -233,35 +308,67 @@ int main(int argc, const char *argv[])
 
 			if ((*reader)->read_data(databuf, ndump) != ndump) goto end;
 
+			DataBuffer<float> *data = NULL;
+
 			if (vm.count("stats"))
 			{
 				has[id].filter(databuf);
+
+				data = databuf.get();
 			}
 			else if (vm.count("statsf"))
 			{
-				for (long int i=0; i<databuf.nsamples; i++)
+				data = rescales[id].filter(databuf);
+			}
+			else
+			{
+				data = databuf.get();
+			}
+
+			if (nifs == 1)
+			{
+				for (size_t i=0; i<ndump; i++)
 				{
-					for (long int j=0; j<databuf.nchans; j++)
+					for (size_t j=0; j<nchans; j++)
 					{
-						databuf.buffer[i*databuf.nchans+j] = chweight[id * nchans + j]*(databuf.buffer[i*databuf.nchans+j]-chmean[id * nchans + j])/chstd[id * nchans + j];
+						zerodm_x[i] += data->buffer[i * nchans + j];
 					}
 				}
 			}
-
-			for (size_t i=0; i<ndump; i++)
+			else
 			{
-				for (size_t j=0; j<nchans; j++)
+				for (size_t i=0; i<ndump; i++)
 				{
-					zerodm[i] += databuf.buffer[i * nchans + j];
+					for (size_t j=0; j<nchans; j++)
+					{
+						zerodm_x[i] += data->buffer[i * nifs* nchans + 0 * nchans + j];
+						zerodm_y[i] += data->buffer[i * nifs* nchans + 1 * nchans + j];
+					}
 				}
 			}
 
 			id++;
 		}
 
-		fwrite(zerodm.data(), 1, sizeof(float) * ndump, fil.fptr);
+		if (nifs == 1)
+		{
+			fwrite(zerodm_x.data(), 1, sizeof(float) * ndump, fil_x.fptr);
+		}
+		else
+		{
+			fwrite(zerodm_x.data(), 1, sizeof(float) * ndump, fil_x.fptr);
+			fwrite(zerodm_y.data(), 1, sizeof(float) * ndump, fil_y.fptr);
+		}
 	}
 	end:
 
-	fil.close();
+	if (nifs == 1)
+	{
+		fil_x.close();
+	}
+	else
+	{
+		fil_x.close();
+		fil_y.close();
+	}
 }
