@@ -17,6 +17,7 @@ src/singlepulse/replot_fil
 src/slow_transient/extract_baseline
 src/slow_transient/histo
 src/slow_transient/histof
+src/slow_transient/extract_source
 src/test
 .vscode
 
