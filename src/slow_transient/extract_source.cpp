@@ -23,6 +23,7 @@ using namespace boost::program_options;
 #include "rescale.h"
 #include "defaraday.h"
 #include "dedispersion.h"
+#include "downsample.h"
 
 unsigned int num_threads;
 
@@ -40,10 +41,10 @@ int main(int argc, const char *argv[])
 			("threads,t", value<unsigned int>()->default_value(1), "Number of threads")
 			("stat", value<std::string>()->multitoken()->composing(), "histo list")
 			("statf", value<std::string>()->multitoken()->composing(), "stat list")
-			("td", value<int>()->default_value(1), "Time downsample")
-			("fd", value<int>()->default_value(1), "Frequency downsample")
-			("DMs", value<std::vector<double>>()->multitoken()->composing(), "Dedispersion measure")
-			("RMs", value<std::vector<double>>()->multitoken()->composing(), "Rotation measure")
+			("tds", value<std::vector<int>>()->multitoken()->composing(), "Time downsamples")
+			("fds", value<std::vector<int>>()->multitoken()->composing(), "Frequency downsamples")
+			("DMs", value<std::vector<double>>()->multitoken()->composing(), "Dedispersion measures")
+			("RMs", value<std::vector<double>>()->multitoken()->composing(), "Rotation measures")
 			("cont", "Input files are contiguous")
 			("wts", "Apply DAT_WTS")
 			("scloffs", "Apply DAT_SCL and DAT_OFFS")
@@ -100,6 +101,26 @@ int main(int argc, const char *argv[])
 		RMs.push_back(0.);
 	}
 
+	std::vector<int> tds;
+	if (vm.count("tds"))
+	{
+		tds = vm["tds"].as<std::vector<int>>();
+	}
+	else
+	{
+		tds.push_back(1);
+	}
+
+	std::vector<int> fds;
+	if (vm.count("fds"))
+	{
+		fds = vm["fds"].as<std::vector<int>>();
+	}
+	else
+	{
+		fds.push_back(1);
+	}
+
 	assert(DMs.size() == RMs.size());
 
 	bool apply_wts = false;
@@ -114,9 +135,6 @@ int main(int argc, const char *argv[])
 		apply_zero_off = true;
 
 	num_threads = vm["threads"].as<unsigned int>();
-
-	int td = vm["td"].as<int>();
-	int fd = vm["fd"].as<int>();
 
 	std::string rootname = vm["output"].as<std::string>();
 
@@ -150,9 +168,6 @@ int main(int argc, const char *argv[])
 	std::string source_name = reader->source_name;
 
 	int ndump = 4096;
-
-	assert(ndump % td == 0);
-	assert(nchans % fd == 0);
 
 	// read stats
 	
@@ -192,6 +207,9 @@ int main(int argc, const char *argv[])
 	databuf.resize(ndump, nifs * nchans);
 	databuf.tsamp = tsamp;
 	databuf.frequencies = reader->frequencies;
+	databuf.means.resize(nifs * nchans, 0.);
+	databuf.vars.resize(nifs * nchans, 0.);
+	databuf.weights.resize(nifs * nchans, 0.);
 
 	Rescale rescale;
 	rescale.prepare(databuf);
@@ -199,21 +217,38 @@ int main(int argc, const char *argv[])
 	std::copy(chstd.begin(), chstd.end(), rescale.chstd.begin());
 	std::copy(chweight.begin(), chweight.end(), rescale.chweight.begin());
 
+	std::vector<Downsample> tdownsamples;
 	std::vector<Defaraday> defaradays;
 	std::vector<Dedispersion> dedispersions;
+	std::vector<Downsample> fdownsamples;
 
 	for (size_t k=0; k<DMs.size(); k++)
 	{
+		assert(ndump % tds[k] == 0);
+		assert(nchans % fds[k] == 0);
+
+		Downsample tdownsample;
+		tdownsample.td = tds[k];
+		tdownsample.fd = 1;
+		tdownsample.prepare(rescale);
+
 		Defaraday defaraday;
 		defaraday.rm = RMs[k];
-		defaraday.prepare(rescale);
+		defaraday.prepare(tdownsample);
 
 		Dedispersion dedispersion;
 		dedispersion.dm = DMs[k];
 		dedispersion.prepare(defaraday);
 
+		Downsample fdownsample;
+		fdownsample.td = 1;
+		fdownsample.fd = fds[k];
+		fdownsample.prepare(dedispersion);
+
+		tdownsamples.push_back(tdownsample);
 		defaradays.push_back(defaraday);
 		dedispersions.push_back(dedispersion);
+		fdownsamples.push_back(fdownsample);	
 	}
 
 	std::vector<Filterbank> fils;
@@ -231,12 +266,12 @@ int main(int argc, const char *argv[])
 		fils[k].filename = rootname + "_" + s_dm + "_" + s_rm  + ".fil";
 		std::strcpy(fils[k].source_name, source_name.c_str());
 		fils[k].tstart = tstart;
-		fils[k].tsamp = tsamp * td;
-		fils[k].nchans = nchans / fd;
+		fils[k].tsamp = tsamp * tds[k];
+		fils[k].nchans = nchans / fds[k];
 		fils[k].nbits = 32;
 		fils[k].nifs = nifs;
-		fils[k].fch1 = fch1;
-		fils[k].foff = foff;
+		fils[k].fch1 = fch1 + (fds[k] - 1) * foff * 0.5;
+		fils[k].foff = foff * fds[k];
 		fils[k].data_type = 1;
 		fils[k].refdm = DMs[k];
 		fils[k].refrm = RMs[k];
@@ -261,35 +296,17 @@ int main(int argc, const char *argv[])
 
 		for (size_t k=0; k<DMs.size(); k++)
 		{
-			DataBuffer<float> *data = defaradays[k].run(databuf);
+			DataBuffer<float> *data = tdownsamples[k].run(databuf);
+
+			data = defaradays[k].run(*data);
 
 			data = dedispersions[k].run(*data);
 
-			std::vector<float> temp((ndump / td) * nifs * (nchans / fd), 0.);
-
-			size_t ndump_td = ndump / td;
-			size_t nchans_fd = nchans / fd;
+			data = fdownsamples[k].run(*data);
 
 			if (data->counter > dedispersions[k].offset)
 			{
-				for (size_t i=0; i<ndump_td; i++)
-				{
-					for (size_t n=0; n<td; n++)
-					{
-						for (size_t l=0; l<nifs; l++)
-						{
-							for (size_t j=0; j<nchans_fd; j++)
-							{
-								for (size_t m=0; m<fd; m++)
-								{
-									temp[i * nifs * nchans_fd + l * nchans_fd + j] += data->buffer[(i * td + n) * nifs * nchans + l * nchans + (j * fd + m)];
-								}
-							}
-						}
-					}
-				}
-
-				fwrite(temp.data(), 1, sizeof(float) * temp.size(), fils[k].fptr);
+				fwrite(data->buffer.data(), 1, sizeof(float) * data->buffer.size(), fils[k].fptr);
 			}
 		}
 	}
