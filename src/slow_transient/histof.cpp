@@ -32,6 +32,7 @@ int main(int argc, const char *argv[])
 			("help,h", "Help")
 			("verbose,v", "Print debug information")
 			("threads,t", value<unsigned int>()->default_value(1), "Number of threads")
+			("jump,j", value<vector<double>>()->multitoken()->default_value(vector<double>{0, 0}, "0, 0"), "Time jump at the beginning and end (s)")
 			("zapthre", value<float>()->default_value(3), "Threshold in IQR for zapping channels")
 			("nosumif", "Keep polarization")
 			("cont", "Input files are contiguous")
@@ -89,6 +90,8 @@ int main(int argc, const char *argv[])
 
 	bool nosumif = vm.count("nosumif");
 
+	std::vector<double> jump = vm["jump"].as<std::vector<double>>();
+
 	PSRDataReader * reader;
 
 	if (vm.count("psrfits"))
@@ -111,6 +114,15 @@ int main(int argc, const char *argv[])
 	double tsamp = reader->tsamp;
 	int nifs = reader->nifs;
 	long int ntotal = reader->nsamples;
+
+	long int nstart = jump[0]/tsamp;
+	long int nend = jump[1]/tsamp;
+
+	reader->skip_start = nstart;
+	reader->skip_end = nend;
+	reader->skip_head();
+
+	tstart += (nstart * tsamp) / 86400.;
 
 	int ndump = 1024;
 

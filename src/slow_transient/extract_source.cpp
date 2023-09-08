@@ -39,6 +39,7 @@ int main(int argc, const char *argv[])
 			("help,h", "Help")
 			("verbose,v", "Print debug information")
 			("threads,t", value<unsigned int>()->default_value(1), "Number of threads")
+			("jump,j", value<vector<double>>()->multitoken()->default_value(vector<double>{0, 0}, "0, 0"), "Time jump at the beginning and end (s)")
 			("stat", value<std::string>()->multitoken()->composing(), "histo list")
 			("statf", value<std::string>()->multitoken()->composing(), "stat list")
 			("tds", value<std::vector<int>>()->multitoken()->composing(), "Time downsamples")
@@ -138,6 +139,8 @@ int main(int argc, const char *argv[])
 
 	std::string rootname = vm["output"].as<std::string>();
 
+	std::vector<double> jump = vm["jump"].as<std::vector<double>>();
+
 	// read data files
 	vector<std::string> fnames = vm["input"].as<std::vector<std::string>>();
 
@@ -166,6 +169,15 @@ int main(int argc, const char *argv[])
 	double foff = 0.;
 	reader->get_fch1_foff(fch1, foff);
 	std::string source_name = reader->source_name;
+
+	long int nstart = jump[0]/tsamp;
+	long int nend = jump[1]/tsamp;
+
+	reader->skip_start = nstart;
+	reader->skip_end = nend;
+	reader->skip_head();
+
+	tstart += (nstart * tsamp) / 86400.;
 
 	int ndump = 4096;
 
