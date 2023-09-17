@@ -40,6 +40,7 @@ int main(int argc, const char *argv[])
 			("verbose,v", "Print debug information")
 			("threads,t", value<unsigned int>()->default_value(1), "Number of threads")
 			("jump,j", value<vector<double>>()->multitoken()->default_value(vector<double>{0, 0}, "0, 0"), "Time jump at the beginning and end (s)")
+			("range", value<vector<double>>()->multitoken(), "start and end time (s)")
 			("stat", value<std::string>()->multitoken()->composing(), "histo list")
 			("statf", value<std::string>()->multitoken()->composing(), "stat list")
 			("tds", value<std::vector<int>>()->multitoken()->composing(), "Time downsamples")
@@ -172,6 +173,14 @@ int main(int argc, const char *argv[])
 
 	long int nstart = jump[0]/tsamp;
 	long int nend = jump[1]/tsamp;
+	
+	if (vm.count("range"))
+	{
+		std::vector<double> range = vm["range"].as<std::vector<double>>();
+		nstart = range[0] / tsamp;
+		nend = reader->nsamples - (int)(range[1] / tsamp);
+		std::cout<<nstart<<" "<<nend<<std::endl;
+	}
 
 	reader->skip_start = nstart;
 	reader->skip_end = nend;
