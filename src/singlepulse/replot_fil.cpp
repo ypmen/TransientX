@@ -460,11 +460,25 @@ int main(int argc, char *argv[])
 							temp.clear();
 							temp.shrink_to_fit();
 
+							if (vm.count("zdot"))
+							{
+								BOOST_LOG_TRIVIAL(debug)<<"zero-DM matched filter...";
+
+								std::vector<float> tem(outref_ds.begin()+count-cands[k].nbin-1, outref_ds.begin()+count-1);
+								cands[k].zdot(tem);
+							}
+
 							if (vm.count("raw"))
 							{
 								BOOST_LOG_TRIVIAL(debug)<<"dedisperse at DM="<<cands[k].dm<<"...";
 								cands[k].dedisperse(vm.count("coherent"));
 								cands[k].shrink_to_fit(2*nwidth, vm.count("pow2bin"));
+
+								BOOST_LOG_TRIVIAL(debug)<<"calculate spectra stats...";
+								cands[k].get_stats();
+
+								BOOST_LOG_TRIVIAL(debug)<<"normalize...";
+								cands[k].normalize();
 
 								BOOST_LOG_TRIVIAL(debug)<<"downsample...";
 								cands[k].downsample(1, vm["fd"].as<int>());
@@ -480,14 +494,6 @@ int main(int argc, char *argv[])
 								cands[k].captured = true;
 
 								continue;
-							}
-
-							if (vm.count("zdot"))
-							{
-								BOOST_LOG_TRIVIAL(debug)<<"zero-DM matched filter...";
-
-								std::vector<float> tem(outref_ds.begin()+count-cands[k].nbin-1, outref_ds.begin()+count-1);
-								cands[k].zdot(tem);
 							}
 
 							BOOST_LOG_TRIVIAL(debug)<<"calculate spectra stats...";
