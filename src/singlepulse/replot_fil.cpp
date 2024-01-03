@@ -80,6 +80,7 @@ int main(int argc, char *argv[])
 			("snrcutoff", value<float>()->default_value(7), "S/N cutoff")
 			("clean,c", "Remove candidates by dm width snr cutoff")
 			("nosumif", "Do not sum polarizations")
+			("raw", "Extract the raw archives")
 			("cont", "Input files are contiguous")
 			("wts", "Apply DAT_WTS")
 			("scloffs", "Apply DAT_SCL and DAT_OFFS")
@@ -109,7 +110,7 @@ int main(int argc, char *argv[])
 		verbose = 1;
 	}
 
-	if (vm.count("arch") != 0)
+	if (vm.count("arch") != 0 or vm.count("raw") != 0)
 	{
 		if (vm.count("template") == 0)
 		{
@@ -458,6 +459,28 @@ int main(int argc, char *argv[])
 
 							temp.clear();
 							temp.shrink_to_fit();
+
+							if (vm.count("raw"))
+							{
+								BOOST_LOG_TRIVIAL(debug)<<"dedisperse at DM="<<cands[k].dm<<"...";
+								cands[k].dedisperse(vm.count("coherent"));
+								cands[k].shrink_to_fit(2*nwidth, vm.count("pow2bin"));
+
+								BOOST_LOG_TRIVIAL(debug)<<"downsample...";
+								cands[k].downsample(1, vm["fd"].as<int>());
+
+								BOOST_LOG_TRIVIAL(debug)<<"de-dedisperse...";
+								cands[k].dededisperse(vm.count("coherent"));
+
+								BOOST_LOG_TRIVIAL(debug)<<"save to archive...";
+								cands[k].save2ar(vm["template"].as<std::string>());
+
+								cands[k].close();
+
+								cands[k].captured = true;
+
+								continue;
+							}
 
 							if (vm.count("zdot"))
 							{
