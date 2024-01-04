@@ -342,6 +342,8 @@ void Candidate::AABBCRCI2IQUV()
 				data[3*nchan*nbin+j*nbin+i] = V;
 			}
 		}
+
+		poltype == PolType::IQUV;
 	}
 }
 	
@@ -367,6 +369,8 @@ void Candidate::IQUV2AABBCRCI()
 				data[3*nchan*nbin+j*nbin+i] = yx;
 			}
 		}
+
+		poltype == PolType::AABBCRCI;
 	}
 }
 
