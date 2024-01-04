@@ -474,6 +474,9 @@ int main(int argc, char *argv[])
 								cands[k].dedisperse(vm.count("coherent"));
 								cands[k].shrink_to_fit(2*nwidth, vm.count("pow2bin"));
 
+								BOOST_LOG_TRIVIAL(debug)<<"transform polarization AABBCRCI to IQUV";
+								cands[k].AABBCRCI2IQUV();
+
 								BOOST_LOG_TRIVIAL(debug)<<"calculate spectra stats...";
 								cands[k].get_stats();
 
@@ -482,6 +485,9 @@ int main(int argc, char *argv[])
 
 								BOOST_LOG_TRIVIAL(debug)<<"downsample...";
 								cands[k].downsample(1, vm["fd"].as<int>());
+
+								BOOST_LOG_TRIVIAL(debug)<<"transform polarization IQUV to AABBCRCI";
+								cands[k].IQUV2AABBCRCI();
 
 								BOOST_LOG_TRIVIAL(debug)<<"de-dedisperse...";
 								cands[k].dededisperse(vm.count("coherent"));
