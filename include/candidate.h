@@ -17,6 +17,8 @@
 class Candidate
 {
 public:
+	enum PolType {AABBCRCI, IQUV};
+public:
 	Candidate();
 	~Candidate();
 	void close()
@@ -81,6 +83,12 @@ public:
 	/* sum polarizations */
 	void sumif();
 
+	/* tranform polarization type from AABBCRCI to IQUV */
+	void AABBCRCI2IQUV();
+	
+	/* tranform polarization type from AABBCRCI to IQUV */
+	void IQUV2AABBCRCI();
+
 	/* time and channel downsample */
 	void downsample(int td, int fd);
 
@@ -129,6 +137,7 @@ public:
 public:
 	double dm_maxsnr;
 public:
+	enum PolType poltype;
 	double tbin;
 	int npol;
 	int nchan;
