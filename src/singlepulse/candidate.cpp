@@ -343,7 +343,7 @@ void Candidate::AABBCRCI2IQUV()
 			}
 		}
 
-		poltype == PolType::IQUV;
+		poltype = PolType::IQUV;
 	}
 }
 	
@@ -370,7 +370,7 @@ void Candidate::IQUV2AABBCRCI()
 			}
 		}
 
-		poltype == PolType::AABBCRCI;
+		poltype = PolType::AABBCRCI;
 	}
 }
 
