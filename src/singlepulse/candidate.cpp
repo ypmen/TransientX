@@ -35,6 +35,7 @@ Candidate::Candidate()
 
 	dm_maxsnr = 0.;
 
+	poltype = AABBCRCI;
 	tbin = 0.;
 	npol = 0;
 	nchan = 0;
@@ -317,6 +318,56 @@ void Candidate::sumif()
 
 	std::swap(data_new, data);
 	npol = 1;
+}
+
+void Candidate::AABBCRCI2IQUV()
+{
+	if (poltype == PolType::AABBCRCI)
+	{
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(num_threads)
+#endif
+		for (long int j=0; j<nchan; j++)
+		{
+			for (long int i=0; i<nbin; i++)
+			{
+				float I = data[0*nchan*nbin+j*nbin+i] + data[1*nchan*nbin+j*nbin+i];
+				float Q = data[0*nchan*nbin+j*nbin+i] - data[1*nchan*nbin+j*nbin+i];
+				float U = 2. * data[2*nchan*nbin+j*nbin+i];
+				float V = 2. * data[3*nchan*nbin+j*nbin+i];
+
+				data[0*nchan*nbin+j*nbin+i] = I;
+				data[1*nchan*nbin+j*nbin+i] = Q;
+				data[2*nchan*nbin+j*nbin+i] = U;
+				data[3*nchan*nbin+j*nbin+i] = V;
+			}
+		}
+	}
+}
+	
+void Candidate::IQUV2AABBCRCI()
+{
+	if (poltype == PolType::IQUV)
+	{
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(num_threads)
+#endif
+		for (long int j=0; j<nchan; j++)
+		{
+			for (long int i=0; i<nbin; i++)
+			{
+				float xx = 0.5 * (data[0*nchan*nbin+j*nbin+i] + data[1*nchan*nbin+j*nbin+i]);
+				float yy = 0.5 * (data[0*nchan*nbin+j*nbin+i] - data[1*nchan*nbin+j*nbin+i]);
+				float xy = 0.5 * data[2*nchan*nbin+j*nbin+i];
+				float yx = 0.5 * data[3*nchan*nbin+j*nbin+i];
+				
+				data[0*nchan*nbin+j*nbin+i] = xx;
+				data[1*nchan*nbin+j*nbin+i] = yy;
+				data[2*nchan*nbin+j*nbin+i] = xy;
+				data[3*nchan*nbin+j*nbin+i] = yx;
+			}
+		}
+	}
 }
 
 void Candidate::downsample(int td, int fd)
