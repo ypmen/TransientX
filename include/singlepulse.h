@@ -96,6 +96,7 @@ public:
 	string rootname;
 	int id;
 	string telescope;
+	bool saveimage;
 
 	int fileid;
 	string fname;

@@ -48,6 +48,8 @@ SinglePulse::SinglePulse()
 	ibeam = 1;
 	src_raj = 0.;
 	src_dej = 0.;
+	
+	saveimage = false;
 
 	id = 1;
 	fileid = 1;
@@ -328,7 +330,7 @@ void SinglePulse::run(DataBuffer<float> &databuffer)
 	{
 		if (cluster.run(boxcar, thre, radius_smearing, kvalue, maxncand, minpts, remove_cand_with_maxwidth))
 		{
-			candplot.plot(cluster, boxcar, dedisp, tstart, thre, rootname, id, fileid, fname, obsinfo);
+			candplot.plot(cluster, boxcar, dedisp, tstart, thre, rootname, id, fileid, fname, obsinfo, saveimage);
 		}
 	}
 	
