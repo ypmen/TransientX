@@ -27,10 +27,12 @@ docker pull ypmen/pulsarx
 ```
 transientx_fil -v -o test -t 4 --zapthre 3.0 --fd 1 --overlap 0.1 --ddplan ddplan.txt --thre 7 --maxw 0.1 --snrloss 0.1 -l 2.0 --drop -z kadaneF 8 4 zdot -f *.fil
 ```
+- --saveimage (save image for AI classifier)
 ### replot_fil: filter out the bad candidates
 ```
 replot_fil -v -t 4 --zapthre 3.0 --td 1 --fd 1 --dmcutoff 3 --widthcutoff 0.1 --snrcutoff 7 --snrloss 0.1 --zap --zdot --kadane 8 4 7 --candfile test.cands --clean -f *.fil
 ```
+
 ### example ddplan
 [ddplan.txt](examples/ddplan.txt)
 ### example candidate
