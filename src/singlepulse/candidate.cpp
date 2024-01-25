@@ -72,6 +72,8 @@ void Candidate::dedisperse(bool coherent)
 		fftwf_plan plan_r2c = fftwf_plan_dft_r2c_1d(nbin, data.data(), reinterpret_cast<fftwf_complex *>(temp.data()), FFTW_ESTIMATE);
 		fftwf_plan plan_c2r = fftwf_plan_dft_c2r_1d(nbin, reinterpret_cast<fftwf_complex *>(temp.data()), data.data(), FFTW_ESTIMATE);
 
+		float norm = 1. / nbin;
+
 		for (long int k=0; k<npol; k++)
 		{
 			for (long int j=0; j<nchan; j++)
@@ -79,7 +81,7 @@ void Candidate::dedisperse(bool coherent)
 				fftwf_execute_dft_r2c(plan_r2c, data.data()+k*nchan*nbin+j*nbin, reinterpret_cast<fftwf_complex *>(temp.data()+k*nchan*nbin+j*nbin));
 				for (long int i=0; i<nbin/2+1; i++)
 				{
-					temp[k*nchan*nbin+j*nbin+i] *= std::complex<float>(std::cos(2.*M_PI/nbin*i*delays[j]/tbin), std::sin(2.*M_PI/nbin*i*delays[j]/tbin));
+					temp[k*nchan*nbin+j*nbin+i] *= norm * std::complex<float>(std::cos(2.*M_PI/nbin*i*delays[j]/tbin), std::sin(2.*M_PI/nbin*i*delays[j]/tbin));
 				}
 
 				for (long int i=nbin/2+1; i<nbin; i++)
@@ -159,6 +161,8 @@ void Candidate::dededisperse(bool coherent)
 		fftwf_plan plan_r2c = fftwf_plan_dft_r2c_1d(nbin, data.data(), reinterpret_cast<fftwf_complex *>(temp.data()), FFTW_ESTIMATE);
 		fftwf_plan plan_c2r = fftwf_plan_dft_c2r_1d(nbin, reinterpret_cast<fftwf_complex *>(temp.data()), data.data(), FFTW_ESTIMATE);
 
+		float norm = 1. / nbin;
+
 		for (long int k=0; k<npol; k++)
 		{
 			for (long int j=0; j<nchan; j++)
@@ -166,7 +170,7 @@ void Candidate::dededisperse(bool coherent)
 				fftwf_execute_dft_r2c(plan_r2c, data.data()+k*nchan*nbin+j*nbin, reinterpret_cast<fftwf_complex *>(temp.data()+k*nchan*nbin+j*nbin));
 				for (long int i=0; i<nbin/2+1; i++)
 				{
-					temp[k*nchan*nbin+j*nbin+i] *= std::complex<float>(std::cos(2.*M_PI/nbin*i*delays[j]/tbin), std::sin(2.*M_PI/nbin*i*delays[j]/tbin));
+					temp[k*nchan*nbin+j*nbin+i] *= norm * std::complex<float>(std::cos(2.*M_PI/nbin*i*delays[j]/tbin), std::sin(2.*M_PI/nbin*i*delays[j]/tbin));
 				}
 
 				for (long int i=nbin/2+1; i<nbin; i++)
