@@ -394,9 +394,9 @@ int main(int argc, char *argv[])
 		}
 
 		// align end sample
-		if (tstart_zero + outref.size() * reader->tsamp / 86400. < start_mjd + ntotal * reader->tsamp / 86400.)
+		if (tstart_zero + outref.size() * tsamp_zero / 86400. < start_mjd + ntotal * reader->tsamp / 86400.)
 		{
-			reader->skip_end = std::round(((start_mjd + ntotal * reader->tsamp / 86400.) - (tstart_zero + outref.size() * reader->tsamp / 86400.)) * 86400. / reader->tsamp);
+			reader->skip_end = std::round(((start_mjd + ntotal * reader->tsamp / 86400.) - (tstart_zero + outref.size() * tsamp_zero / 86400.)) * 86400. / reader->tsamp);
 		}
 
 		for (size_t k=0; k<td_ref; k++)
