@@ -39,6 +39,10 @@ replot_fil -v -t 4 --zapthre 3.0 --td 1 --fd 1 --dmcutoff 3 --widthcutoff 0.1 --
 
 ![exmaple](examples/example.png)
 
+## Citation
+
+Please cite [https://arxiv.org/abs/2401.13834](https://arxiv.org/abs/2401.13834), if you are using TransientX.
+
 ## Acknowledgement
 Thanks for very helpful suggestions and bug reports from Guðjón Henning Hilmarsson, Emma Carli and PKU pulsar group.
 
