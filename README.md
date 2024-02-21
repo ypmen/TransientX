@@ -39,6 +39,9 @@ replot_fil -v -t 4 --zapthre 3.0 --td 1 --fd 1 --dmcutoff 3 --widthcutoff 0.1 --
 
 ![exmaple](examples/example.png)
 
+### Skills
+- When searching in high-resolution data (e.g., <50us), please apply multiple search strategies to detect bursts with various timescales: (1) For microsecond bursts, use a smaller data block size (-l), a smaller DBSCAN radius (-r), a smaller maximum search pulse width (--maxw), etc;(2) For millisecond bursts, you can use larger values for the above parameters. This approach can help avoid slowing down the clustering process, as discussed in the Benchmark Section of the TransientX paper [TransientX](https://arxiv.org/abs/2401.13834).
+
 ## Citation
 
 Please cite [https://arxiv.org/abs/2401.13834](https://arxiv.org/abs/2401.13834), if you are using TransientX.
