@@ -6,6 +6,7 @@ TransientX is a one command line high performance transient search software (fil
 
 - boost > 1.56
 - PlotX (https://github.com/ypmen/PlotX)
+- XLibs (https://github.com/ypmen/XLibs)
 - sofa (https://www.iausofa.org/2020_0721_C/sofa_c-20200721.tar.gz)
 
 ## Installation
