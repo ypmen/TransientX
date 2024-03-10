@@ -259,7 +259,7 @@ int main(int argc, const char *argv[])
 		search1[k].src_dej = src_dej;
 		search1[k].saveimage = vm.count("saveimage");
 
-		search1[k].fildedisp.tstart = tstart;
+		search1[k].fildedisp.tstart = tstart+nstart*tsamp/86400.;
 		search1[k].fildedisp.ibeam = ibeam;
 		search1[k].fildedisp.fch1 = prep.frequencies.front();
 		search1[k].fildedisp.foff = prep.frequencies.back()-databuf.frequencies.front();
