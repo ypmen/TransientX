@@ -158,7 +158,7 @@ void Boxcar::prepare(RealTime::SubbandDedispersion &dedisp)
 bool Boxcar::run(RealTime::SubbandDedispersion &dedisp, vector<int> &vwn, bool iqr)
 {
 	counter = dedisp.counter;
-	if (counter <= dedisp.offset+dedisp.ndump) return false;
+	if (counter < dedisp.offset-dedisp.noverlap+dedisp.ndump) return false;
 
 	int n = vwn.size();
 	maxwn = vwn[n-1];
