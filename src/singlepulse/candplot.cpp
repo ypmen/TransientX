@@ -124,9 +124,9 @@ void CandPlot::plot(const Cluster<double> &cluster, const Boxcar &boxcar, const 
 		long int nsamples = tim.size();
 		long int nchans = sub.size()/tim.size();
 
-		long int start_sample = isamp-15*wn;
+		long int start_sample = isamp-15*wn < isamp_min ? isamp-15*wn:isamp_min;
 		start_sample = start_sample<0 ? 0:start_sample;
-		long int end_sample = isamp+15*wn;
+		long int end_sample = isamp+15*wn > isamp_max ? isamp+15*wn:isamp_max;
 		end_sample = end_sample>nsamples ? nsamples:end_sample;
 		nsamples = end_sample-start_sample;
 
