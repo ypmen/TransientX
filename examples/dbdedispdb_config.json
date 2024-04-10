@@ -35,8 +35,8 @@
 	"subdedispersion": {
 		"rootname" : "fake",
 		"dms" : 0.0,
-		"ddm" : 1.0,
-		"ndm" : 512,
+		"ddm" : 0.1,
+		"ndm" : 4096,
 		"overlap" : 0.0
 	}
 }

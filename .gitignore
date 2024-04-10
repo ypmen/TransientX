@@ -20,6 +20,8 @@ src/test
 src/dada/dada_fildb
 src/dada/dada_dbdedispdb
 src/dada/dada_dbtim
+src/dada/dada_benchmarkdb
+src/dada/dada_dbnull
 .vscode
 
 # http://www.gnu.org/software/automake
