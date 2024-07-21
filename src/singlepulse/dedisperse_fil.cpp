@@ -259,6 +259,7 @@ int main(int argc, const char *argv[])
 		search1[k].src_dej = src_dej;
 		search1[k].saveimage = vm.count("saveimage");
 
+		reader->get_filterbank_template(search1[k].fildedisp);
 		search1[k].fildedisp.tstart = tstart+nstart*tsamp/86400.;
 		search1[k].fildedisp.ibeam = ibeam;
 		search1[k].fildedisp.fch1 = prep.frequencies.front();
