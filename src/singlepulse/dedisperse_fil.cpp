@@ -96,6 +96,7 @@ int main(int argc, const char *argv[])
 			("nbits", value<int>()->default_value(8), "Data type of dedispersed time series")
 			("savetim", "Output dedispersed data (sigproc format by default)")
 			("format", value<string>()->default_value("pulsarx"), "Output format of dedispersed data [pulsarx(default),sigproc,presto]")
+			("config,c", value<std::string>(), "Config json file (This will cover all relevant configurations)")
 			("wts", "Apply DAT_WTS")
 			("scloffs", "Apply DAT_SCL and DAT_OFFS")
 			("zero_off", "Apply ZERO_OFF")
@@ -127,6 +128,19 @@ int main(int argc, const char *argv[])
 	{
 		cerr<<"Error: no input file"<<endl;
 		return -1;
+	}
+
+	nlohmann::json config;
+	nlohmann::json config_patch;
+	nlohmann::json config_prep;
+
+	if (vm.count("config"))
+	{
+		std::ifstream config_f(vm["config"].as<std::string>());
+		config = nlohmann::json::parse(config_f);
+
+		config_patch = config["patch"];
+		config_prep = config["preprocesslite"];
 	}
 
 	bool contiguous = vm.count("cont");
@@ -203,12 +217,25 @@ int main(int argc, const char *argv[])
 	long int ntotal = reader->nsamples;
 
 	vector<SinglePulse> search1;
-	parse(vm, search1);
+	if (vm.count("config"))
+		parse_json(vm, config, search1);
+	else
+		parse(vm, search1);
 
 	vector<int> tds;
-	for (auto sp=search1.begin(); sp!=search1.end(); ++sp)
+	if (vm.count("config"))
 	{
-		tds.push_back((*sp).td*vm["td"].as<int>());
+		for (auto sp=search1.begin(); sp!=search1.end(); ++sp)
+		{
+			tds.push_back((*sp).td*(long int)(config_prep["td"]));
+		}
+	}
+	else
+	{
+		for (auto sp=search1.begin(); sp!=search1.end(); ++sp)
+		{
+			tds.push_back((*sp).td*vm["td"].as<int>());
+		}
 	}
 
 	long int td_lcm = findlcm(&tds[0], tds.size());
@@ -220,17 +247,31 @@ int main(int argc, const char *argv[])
 	memcpy(&databuf.frequencies[0], reader->frequencies.data(), sizeof(double)*nchans);
 
 	Patch patch;
-	patch.filltype = vm["fillPatch"].as<string>();
-	patch.width = vm["widthPatch"].as<float>();
-	patch.threshold = vm["threPatch"].as<float>();
+	if (vm.count("config"))
+	{
+		patch.read_config(config_patch);
+	}
+	else
+	{
+		patch.filltype = vm["fillPatch"].as<string>();
+		patch.width = vm["widthPatch"].as<float>();
+		patch.threshold = vm["threPatch"].as<float>();
+	}
 	patch.prepare(databuf);
 	patch.close();
 
 	PreprocessLite prep;
-	prep.td = vm["td"].as<int>();
-	prep.fd = vm["fd"].as<int>();
-	prep.thresig = vm["zapthre"].as<float>();
-	prep.filltype = vm["fill"].as<string>();
+	if (vm.count("config"))
+	{
+		prep.read_config(config_prep);
+	}
+	else
+	{
+		prep.td = vm["td"].as<int>();
+		prep.fd = vm["fd"].as<int>();
+		prep.thresig = vm["zapthre"].as<float>();
+		prep.filltype = vm["fill"].as<string>();
+	}
 	prep.prepare(databuf);
 
 	long int nstart = jump[0]/tsamp;
@@ -265,7 +306,6 @@ int main(int argc, const char *argv[])
 		search1[k].fildedisp.fch1 = prep.frequencies.front();
 		search1[k].fildedisp.foff = prep.frequencies.back()-databuf.frequencies.front();
 		search1[k].fildedisp.nchans = prep.frequencies.size();
-		search1[k].filltype = vm["fill"].as<string>();
 		search1[k].prepare(prep);
 	}
 

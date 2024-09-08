@@ -370,6 +370,7 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
 		}
 	}
 
+	sp.filltype = vm["fill"].as<string>();
 	sp.bandlimit = vm["bandlimit"].as<double>();
 	sp.bandlimitKT = vm["bandlimitKT"].as<double>();
 	sp.widthlimit = vm["widthlimit"].as<double>();
@@ -460,3 +461,85 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
 		search.push_back(sp);
 	}
 }
+
+void parse_json(variables_map &vm, nlohmann::json &config, vector<SinglePulse> &search)
+{
+	SinglePulse sp;
+
+	sp.incoherent = vm.count("incoherent");
+
+	sp.outmean = vm["mean"].as<float>();
+	sp.outstd = vm["std"].as<float>();
+	sp.outnbits = vm["nbits"].as<int>();
+	sp.savetim = vm.count("savetim");
+	sp.format = vm["format"].as<string>();
+
+	int id = 0;
+	nlohmann::json config_ddplan = config["ddplan"];
+	for (auto config=config_ddplan.begin(); config!=config_ddplan.end(); ++config)
+	{
+		nlohmann::json config_downsample = (*config)["downsample"];
+		nlohmann::json config_baseline = (*config)["baseline"];
+		nlohmann::json config_rfi = (*config)["rfi"];
+		nlohmann::json config_dedisp = (*config)["subdedispersion"];
+		nlohmann::json config_boxcar = (*config)["boxcar"];
+		nlohmann::json config_clustering = (*config)["clustering"];
+
+		sp.td = config_downsample["td"];
+		sp.fd = config_downsample["fd"];
+
+		sp.bswidth = config_baseline["width"];
+
+		sp.dms = config_dedisp["dms"];
+		sp.ddm = config_dedisp["ddm"];
+		sp.ndm = config_dedisp["ndm"];
+		sp.overlap = config_dedisp["overlap"];
+
+		sp.bandlimit = config_rfi["bandlimit"];
+		sp.bandlimitKT = config_rfi["bandlimitKT"];
+		sp.widthlimit = config_rfi["widthlimit"];
+		sp.threMask = config_rfi["threMask"];
+		sp.threKadaneF = config_rfi["threKadaneF"];
+		sp.threKadaneT = config_rfi["threKadaneT"];
+
+		sp.minw = config_boxcar["minw"];
+		sp.snrloss = config_boxcar["snrloss"];
+		sp.maxw = config_boxcar["maxw"];
+		sp.iqr = config_boxcar["iqr"];
+
+		sp.thre = config_clustering["thre"];
+		sp.radius_smearing = (double)(config_clustering["radius"])/1000.;
+		sp.kvalue = config_clustering["neighbors"];
+		sp.maxncand = config_clustering["maxncand"];
+		sp.minpts = config_clustering["minpts"];
+		sp.remove_cand_with_maxwidth = config_clustering["drop"];
+
+		// parse zaplist
+		auto config_zaplist = config_rfi["zaplist"];
+		for (auto z=config_zaplist.begin(); z!=config_zaplist.end(); ++z)
+		{
+			sp.zaplist.push_back(std::pair<double, double>(z->front(), z->back()));
+		}
+
+		// parse rfilist
+		auto config_rfilist = config_rfi["rfilist"];
+		for (auto r=config_rfilist.begin(); r!=config_rfilist.end(); ++r)
+		{
+			for (auto item=r->begin(); item!=r->end(); ++item)
+			{
+				if ((*item)=="mask" or (*item)=="kadaneF" or (*item)=="kadaneT")
+				{
+					sp.rfilist.push_back(std::vector<std::string>{*item, *(++item), *(++item)});
+				}
+				else if ((*item)=="zero" or (*item)=="zdot")
+				{
+					sp.rfilist.push_back(std::vector<std::string>{*item});
+				}
+			}
+		}
+
+		sp.id = ++id;
+		search.push_back(sp);
+	}
+}
+
