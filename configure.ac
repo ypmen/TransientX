@@ -58,6 +58,5 @@ AC_CHECK_FUNCS([floor memset pow sqrt strchr])
 
 AC_CONFIG_FILES([Makefile
 		 src/Makefile
-		 src/singlepulse/Makefile
-		 src/dada/Makefile])
+                 src/singlepulse/Makefile])
 AC_OUTPUT

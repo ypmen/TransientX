@@ -1,1 +1,1 @@
-SUBDIRS=singlepulse dada
+SUBDIRS=singlepulse
