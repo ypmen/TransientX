@@ -21,7 +21,8 @@ Boxcar::Boxcar()
 	snrloss = 0.1;
 	nbox = 0;
 	iqr = false;
-	
+	repeater = false;
+
 	counter = 0;
 	tsamp = 0.;
 	nsamples = 0;
@@ -41,6 +42,7 @@ Boxcar::Boxcar(nlohmann::json &config)
 	maxw = config["maxw"];
 	snrloss = config["snrloss"];
 	iqr = config["iqr"];
+	repeater = false;
 
 	nbox = 0;
 
@@ -64,6 +66,7 @@ Boxcar::Boxcar(const Boxcar &boxcar)
 	snrloss = boxcar.snrloss;
 	nbox = boxcar.nbox;
 	iqr = boxcar.iqr;
+	repeater = boxcar.repeater;
 
 	counter = boxcar.counter;
 	tsamp = boxcar.tsamp;
@@ -103,6 +106,7 @@ Boxcar & Boxcar::operator=(const Boxcar &boxcar)
 	snrloss = boxcar.snrloss;
 	nbox = boxcar.nbox;
 	iqr = boxcar.iqr;
+	repeater = boxcar.repeater;
 
 	counter = boxcar.counter;
 	tsamp = boxcar.tsamp;

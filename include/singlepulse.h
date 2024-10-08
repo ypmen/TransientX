@@ -77,6 +77,7 @@ public:
 	float snrloss;
 	int nbox;
 	bool iqr;
+	bool repeater;
 	vector<int> vwn;
 
 	//cluster

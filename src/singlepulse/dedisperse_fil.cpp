@@ -35,9 +35,6 @@ unsigned int num_threads;
 unsigned int dbscan_radius;
 unsigned int dbscan_k;
 
-bool repeater;
-bool dumptim=false;
-
 int main(int argc, const char *argv[])
 {
 	init_logging();
@@ -144,7 +141,6 @@ int main(int argc, const char *argv[])
 	}
 
 	bool contiguous = vm.count("cont");
-	repeater = vm.count("repeater");
 
 	num_threads = vm["threads"].as<unsigned int>();
 
