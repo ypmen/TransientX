@@ -116,5 +116,6 @@ public:
 };
 
 void parse(variables_map &vm, vector<SinglePulse> &search);
+void parse_json(variables_map &vm, nlohmann::json &config, vector<SinglePulse> &search);
 
 #endif /* SINGLEPULSE_H_ */

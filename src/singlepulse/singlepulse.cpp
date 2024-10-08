@@ -235,27 +235,33 @@ void SinglePulse::prepare(DataBuffer<float> &databuffer)
 	dedisp.prepare(rfi);
 	if (savetim)
 		dedisp.preparedump(fildedisp, outnbits, format);
-
+	
+	boxcar.minw = minw;
+	boxcar.maxw = maxw;
+	boxcar.snrloss = snrloss;
+	boxcar.iqr = iqr;
 	boxcar.prepare(dedisp);
 
-	minw = minw<boxcar.tsamp ? boxcar.tsamp:minw;
-	float wfactor = 1./((1.-snrloss)*(1.-snrloss));
-	vwn.resize(0);
-	vwn.push_back((int)round(minw/boxcar.tsamp));
-	while (true)
-	{
-		int tmp_wn1 = vwn.back();
-		int tmp_wn2 = tmp_wn1*wfactor;
-		tmp_wn2 = tmp_wn2<tmp_wn1+1 ? tmp_wn1+1:tmp_wn2;
-		if (tmp_wn2*boxcar.tsamp > maxw) break;
-		vwn.push_back(tmp_wn2);
-	}
-	nbox = vwn.size();
+	cluster.threS = thre;
+	cluster.radius_smearing = radius_smearing;
+	cluster.kvalue = kvalue;
+	cluster.maxncand = maxncand;
+	cluster.minpts = minpts;
+	cluster.remove_cand_with_maxwidth = remove_cand_with_maxwidth;
+
+	candplot.rootname = rootname;
+	candplot.id = id;
+	candplot.saveimage = saveimage;
 
 	/** form obsinfo*/
 	obsinfo["Source_name"] = source_name;
 
 	obsinfo["Telescope"] = telescope;
+
+	stringstream ss_tstart;
+	ss_tstart << setprecision(13) << fixed << tstart;
+	string s_tstart = ss_tstart.str();
+	obsinfo["Tstart"] = s_tstart;
 
 	string s_ra, s_dec;
 	get_s_radec(src_raj, src_dej, s_ra, s_dec);
@@ -326,11 +332,11 @@ void SinglePulse::run(DataBuffer<float> &databuffer)
 	if (!databuffer.isbusy) data->closable = true;
 	dedisp.run(*data, data->nsamples);
 
-	if (boxcar.run(dedisp, vwn, iqr))
+	if (boxcar.run(dedisp))
 	{
-		if (cluster.run(boxcar, thre, radius_smearing, kvalue, maxncand, minpts, remove_cand_with_maxwidth))
+		if (cluster.run(boxcar))
 		{
-			candplot.plot(cluster, boxcar, dedisp, tstart, thre, rootname, id, fileid, fname, obsinfo, saveimage);
+			candplot.plot(cluster, boxcar, dedisp, fileid, fname, obsinfo);
 		}
 	}
 	
@@ -370,6 +376,7 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
 		}
 	}
 
+	sp.filltype = vm["fill"].as<string>();
 	sp.bandlimit = vm["bandlimit"].as<double>();
 	sp.bandlimitKT = vm["bandlimitKT"].as<double>();
 	sp.widthlimit = vm["widthlimit"].as<double>();
@@ -393,6 +400,9 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
 	sp.maxncand = vm["maxncand"].as<int>();
 	sp.minpts = vm["minpts"].as<int>();
 	sp.remove_cand_with_maxwidth = vm.count("drop");
+
+	sp.rootname = vm["rootname"].as<string>();
+	sp.saveimage = vm.count("saveimage");
 
 	sp.incoherent = vm.count("incoherent");
 
@@ -460,3 +470,88 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
 		search.push_back(sp);
 	}
 }
+
+void parse_json(variables_map &vm, nlohmann::json &config, vector<SinglePulse> &search)
+{
+	SinglePulse sp;
+
+	sp.incoherent = vm.count("incoherent");
+
+	sp.outmean = vm["mean"].as<float>();
+	sp.outstd = vm["std"].as<float>();
+	sp.outnbits = vm["nbits"].as<int>();
+	sp.savetim = vm.count("savetim");
+	sp.format = vm["format"].as<string>();
+
+	nlohmann::json config_ddplan = config["ddplan"];
+	for (auto config=config_ddplan.begin(); config!=config_ddplan.end(); ++config)
+	{
+		nlohmann::json config_downsample = (*config)["downsample"];
+		nlohmann::json config_baseline = (*config)["baseline"];
+		nlohmann::json config_rfi = (*config)["rfi"];
+		nlohmann::json config_dedisp = (*config)["subdedispersion"];
+		nlohmann::json config_boxcar = (*config)["boxcar"];
+		nlohmann::json config_clustering = (*config)["clustering"];
+		nlohmann::json config_candplot = (*config)["candplot"];
+
+		sp.td = config_downsample["td"];
+		sp.fd = config_downsample["fd"];
+
+		sp.bswidth = config_baseline["width"];
+
+		sp.dms = config_dedisp["dms"];
+		sp.ddm = config_dedisp["ddm"];
+		sp.ndm = config_dedisp["ndm"];
+		sp.overlap = config_dedisp["overlap"];
+
+		sp.bandlimit = config_rfi["bandlimit"];
+		sp.bandlimitKT = config_rfi["bandlimitKT"];
+		sp.widthlimit = config_rfi["widthlimit"];
+		sp.threMask = config_rfi["threMask"];
+		sp.threKadaneF = config_rfi["threKadaneF"];
+		sp.threKadaneT = config_rfi["threKadaneT"];
+
+		sp.minw = config_boxcar["minw"];
+		sp.snrloss = config_boxcar["snrloss"];
+		sp.maxw = config_boxcar["maxw"];
+		sp.iqr = config_boxcar["iqr"];
+
+		sp.thre = config_clustering["thre"];
+		sp.radius_smearing = (double)(config_clustering["radius"])/1000.;
+		sp.kvalue = config_clustering["neighbors"];
+		sp.maxncand = config_clustering["maxncand"];
+		sp.minpts = config_clustering["minpts"];
+		sp.remove_cand_with_maxwidth = config_clustering["drop"];
+
+		sp.rootname = config_candplot["rootname"];
+		sp.id = config_candplot["plan_id"];
+		sp.saveimage = config_candplot["saveimage"];
+
+		// parse zaplist
+		auto config_zaplist = config_rfi["zaplist"];
+		for (auto z=config_zaplist.begin(); z!=config_zaplist.end(); ++z)
+		{
+			sp.zaplist.push_back(std::pair<double, double>(z->front(), z->back()));
+		}
+
+		// parse rfilist
+		auto config_rfilist = config_rfi["rfilist"];
+		for (auto r=config_rfilist.begin(); r!=config_rfilist.end(); ++r)
+		{
+			for (auto item=r->begin(); item!=r->end(); ++item)
+			{
+				if ((*item)=="mask" or (*item)=="kadaneF" or (*item)=="kadaneT")
+				{
+					sp.rfilist.push_back(std::vector<std::string>{*item, *(++item), *(++item)});
+				}
+				else if ((*item)=="zero" or (*item)=="zdot")
+				{
+					sp.rfilist.push_back(std::vector<std::string>{*item});
+				}
+			}
+		}
+
+		search.push_back(sp);
+	}
+}
+

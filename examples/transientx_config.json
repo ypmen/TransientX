@@ -1,0 +1,358 @@
+{
+	"patch" : {
+		"filltype" : "none",
+		"width" : 0.4,
+		"threshold" : 10.0
+	},
+
+	"preprocesslite" : {
+		"td" : 1,
+		"fd" : 1,
+		"zapthre" : 3.0,
+		"filltype" : "mean"
+	},
+
+	"ddplan" : [
+		{
+			"downsample" : {
+				"td" : 1,
+				"fd" : 1
+			},
+
+			"baseline" : {
+				"width" : 0.0
+			},
+
+			"rfi" : {
+				"filltype" : "mean",
+				"threMask" : 10.0,
+				"threKadaneF" : 10.0,
+				"threKadaneT" : 7.0,
+				"widthlimit" : 0.05,
+				"bandlimitKT" : 10.0,
+				"bandlimit" : 10.0,
+				"zaplist" : [
+				],
+				"rfilist": [
+					["kadaneF", "8", "4"],
+					["zdot"]
+				]
+			},
+
+			"subdedispersion": {
+				"rootname" : "fake",
+				"dms" : 0.0,
+				"ddm" : 0.1,
+				"ndm" : 100,
+				"overlap" : 0.1
+			},
+
+			"boxcar" : {
+				"minw" : 1e-4,
+				"maxw" : 0.1,
+				"snrloss" : 0.1,
+				"iqr" : false
+			},
+
+			"clustering" : {
+				"thre" : 6.0,
+				"radius" : 1.0,
+				"neighbors" : 2,
+				"maxncand" : 100,
+				"minpts" : 5,
+				"drop" : false
+			},
+
+			"canplot" : {
+				"plan_id" : 0,
+				"rootname" : "J0000-00",
+				"saveimage" : "false"
+			}
+		},
+
+		{
+			"downsample" : {
+				"td" : 1,
+				"fd" : 1
+			},
+
+			"baseline" : {
+				"width" : 0.0
+			},
+
+			"rfi" : {
+				"filltype" : "mean",
+				"threMask" : 10.0,
+				"threKadaneF" : 10.0,
+				"threKadaneT" : 7.0,
+				"widthlimit" : 0.05,
+				"bandlimitKT" : 10.0,
+				"bandlimit" : 10.0,
+				"zaplist" : [
+				],
+				"rfilist": [
+					["kadaneF", "8", "4"],
+					["zdot"]
+				]
+			},
+
+			"subdedispersion": {
+				"rootname" : "fake",
+				"dms" : 10.0,
+				"ddm" : 0.1,
+				"ndm" : 3244,
+				"overlap" : 0.1
+			},
+
+			"boxcar" : {
+				"minw" : 1e-4,
+				"maxw" : 0.1,
+				"snrloss" : 0.1,
+				"iqr" : false
+			},
+
+			"clustering" : {
+				"thre" : 6.0,
+				"radius" : 1.0,
+				"neighbors" : 2,
+				"maxncand" : 100,
+				"minpts" : 5,
+				"drop" : false
+			},
+
+			"canplot" : {
+				"plan_id" : 1,
+				"rootname" : "J0000-00",
+				"saveimage" : "false"
+			}
+		},
+
+		{
+			"downsample" : {
+				"td" : 2,
+				"fd" : 1
+			},
+
+			"baseline" : {
+				"width" : 0.0
+			},
+
+			"rfi" : {
+				"filltype" : "mean",
+				"threMask" : 10.0,
+				"threKadaneF" : 10.0,
+				"threKadaneT" : 7.0,
+				"widthlimit" : 0.05,
+				"bandlimitKT" : 10.0,
+				"bandlimit" : 10.0,
+				"zaplist" : [
+				],
+				"rfilist": [
+					["kadaneF", "8", "4"],
+					["zdot"]
+				]
+			},
+
+			"subdedispersion": {
+				"rootname" : "fake",
+				"dms" : 334.4,
+				"ddm" : 0.2,
+				"ndm" : 1255,
+				"overlap" : 0.1
+			},
+
+			"boxcar" : {
+				"minw" : 1e-4,
+				"maxw" : 0.1,
+				"snrloss" : 0.1,
+				"iqr" : false
+			},
+
+			"clustering" : {
+				"thre" : 6.0,
+				"radius" : 1.0,
+				"neighbors" : 2,
+				"maxncand" : 100,
+				"minpts" : 5,
+				"drop" : false
+			},
+
+			"canplot" : {
+				"plan_id" : 2,
+				"rootname" : "J0000-00",
+				"saveimage" : "false"
+			}
+		},
+
+		{
+			"downsample" : {
+				"td" : 4,
+				"fd" : 1
+			},
+
+			"baseline" : {
+				"width" : 0.0
+			},
+
+			"rfi" : {
+				"filltype" : "mean",
+				"threMask" : 10.0,
+				"threKadaneF" : 10.0,
+				"threKadaneT" : 7.0,
+				"widthlimit" : 0.05,
+				"bandlimitKT" : 10.0,
+				"bandlimit" : 10.0,
+				"zaplist" : [
+				],
+				"rfilist": [
+					["kadaneF", "8", "4"],
+					["zdot"]
+				]
+			},
+
+			"subdedispersion": {
+				"rootname" : "fake",
+				"dms" : 585.2,
+				"ddm" : 0.3,
+				"ndm" : 1334,
+				"overlap" : 0.1
+			},
+
+			"boxcar" : {
+				"minw" : 1e-4,
+				"maxw" : 0.1,
+				"snrloss" : 0.1,
+				"iqr" : false
+			},
+
+			"clustering" : {
+				"thre" : 6.0,
+				"radius" : 1.0,
+				"neighbors" : 2,
+				"maxncand" : 100,
+				"minpts" : 5,
+				"drop" : false
+			},
+
+			"canplot" : {
+				"plan_id" : 3,
+				"rootname" : "J0000-00",
+				"saveimage" : "false"
+			}
+		},
+
+		{
+			"downsample" : {
+				"td" : 8,
+				"fd" : 1
+			},
+
+			"baseline" : {
+				"width" : 0.0
+			},
+
+			"rfi" : {
+				"filltype" : "mean",
+				"threMask" : 10.0,
+				"threKadaneF" : 10.0,
+				"threKadaneT" : 7.0,
+				"widthlimit" : 0.05,
+				"bandlimitKT" : 10.0,
+				"bandlimit" : 10.0,
+				"zaplist" : [
+				],
+				"rfilist": [
+					["kadaneF", "8", "4"],
+					["zdot"]
+				]
+			},
+
+			"subdedispersion": {
+				"rootname" : "fake",
+				"dms" : 985.4,
+				"ddm" : 0.5,
+				"ndm" : 1674,
+				"overlap" : 0.1
+			},
+
+			"boxcar" : {
+				"minw" : 1e-4,
+				"maxw" : 0.1,
+				"snrloss" : 0.1,
+				"iqr" : false
+			},
+
+			"clustering" : {
+				"thre" : 6.0,
+				"radius" : 1.0,
+				"neighbors" : 2,
+				"maxncand" : 100,
+				"minpts" : 5,
+				"drop" : false
+			},
+
+			"canplot" : {
+				"plan_id" : 4,
+				"rootname" : "J0000-00",
+				"saveimage" : "false"
+			}
+		},
+
+		{
+			"downsample" : {
+				"td" : 16,
+				"fd" : 1
+			},
+
+			"baseline" : {
+				"width" : 0.0
+			},
+
+			"rfi" : {
+				"filltype" : "mean",
+				"threMask" : 10.0,
+				"threKadaneF" : 10.0,
+				"threKadaneT" : 7.0,
+				"widthlimit" : 0.05,
+				"bandlimitKT" : 10.0,
+				"bandlimit" : 10.0,
+				"zaplist" : [
+				],
+				"rfilist": [
+					["kadaneF", "8", "4"],
+					["zdot"]
+				]
+			},
+
+			"subdedispersion": {
+				"rootname" : "fake",
+				"dms" : 1821.9,
+				"ddm" : 1.0,
+				"ndm" : 1179,
+				"overlap" : 0.1
+			},
+
+			"boxcar" : {
+				"minw" : 1e-4,
+				"maxw" : 0.1,
+				"snrloss" : 0.1,
+				"iqr" : false
+			},
+
+			"clustering" : {
+				"thre" : 6.0,
+				"radius" : 1.0,
+				"neighbors" : 2,
+				"maxncand" : 100,
+				"minpts" : 5,
+				"drop" : false
+			},
+
+			"canplot" : {
+				"plan_id" : 5,
+				"rootname" : "J0000-00",
+				"saveimage" : "false"
+			}
+		}
+	]
+}

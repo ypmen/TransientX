@@ -18,15 +18,23 @@ class Boxcar
 {
 public:
 	Boxcar();
+	Boxcar(nlohmann::json &config);
 	Boxcar(const Boxcar &boxcar);
 	Boxcar & operator=(const Boxcar &boxcar);
 	~Boxcar();
 	void prepare(RealTime::SubbandDedispersion &dedisp);
 	void resize(long int nt, long int ndm);
-	bool run(RealTime::SubbandDedispersion &dedisp, vector<int> &vwn, bool iqr=false);
+	bool run(RealTime::SubbandDedispersion &dedisp);
 	void match(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &dedisp, bool iqr);
 	void match2D(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &dedisp);
 	void dump2txt(const string fname) const;
+public:
+	float minw;
+	float maxw;
+	float snrloss;
+	int nbox;
+	bool iqr;
+	vector<int> vwn;
 public:
 	long int counter;
 	double tsamp;
