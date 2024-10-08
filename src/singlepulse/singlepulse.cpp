@@ -38,6 +38,7 @@ SinglePulse::SinglePulse()
 	snrloss = 0.1;
 	nbox = 0;
 	iqr = false;
+	repeater = false;
 	thre = 7;
 	radius_smearing = 0.003;
 	kvalue = 2;
@@ -97,6 +98,7 @@ SinglePulse::SinglePulse(const SinglePulse &sp)
 	nbox = sp.nbox;
 	vwn = sp.vwn;
 	iqr = sp.iqr;
+	repeater = sp.repeater;
 
 	thre = sp.thre;
 	radius_smearing = sp.radius_smearing;
@@ -164,6 +166,7 @@ SinglePulse & SinglePulse::operator=(const SinglePulse &sp)
 	nbox = sp.nbox;
 	vwn = sp.vwn;
 	iqr = sp.iqr;
+	repeater = sp.repeater;
 
 	thre = sp.thre;
 	radius_smearing = sp.radius_smearing;
@@ -240,6 +243,7 @@ void SinglePulse::prepare(DataBuffer<float> &databuffer)
 	boxcar.maxw = maxw;
 	boxcar.snrloss = snrloss;
 	boxcar.iqr = iqr;
+	boxcar.repeater = repeater;
 	boxcar.prepare(dedisp);
 
 	cluster.threS = thre;

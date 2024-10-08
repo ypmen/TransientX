@@ -29,6 +29,7 @@ public:
 	void match2D(int idm, vector<int> &vwn, RealTime::SubbandDedispersion &dedisp);
 	void dump2txt(const string fname) const;
 public:
+	bool repeater;
 	float minw;
 	float maxw;
 	float snrloss;
