@@ -19,6 +19,7 @@ src/singlepulse/replot_fil
 src/test
 src/dada/dada_fildb
 src/dada/dada_dbdedispdb
+src/dada/dada_dbsearch
 src/dada/dada_dbtim
 src/dada/dada_benchmarkdb
 src/dada/dada_dbnull

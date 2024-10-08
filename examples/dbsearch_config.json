@@ -1,0 +1,23 @@
+{
+	"boxcar" : {
+		"minw" : 1e-4,
+		"maxw" : 0.1,
+		"snrloss" : 0.1,
+		"iqr" : false
+	},
+
+	"clustering" : {
+		"thre" : 6.0,
+		"radius" : 1.0,
+		"neighbors" : 2,
+		"maxncand" : 100,
+		"minpts" : 5,
+		"drop" : false
+	},
+
+	"canplot" : {
+		"plan_id" : 0,
+		"rootname" : "J0000-00",
+		"saveimage" : "false"
+	}
+}
