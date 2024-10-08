@@ -35,6 +35,7 @@ int main(int argc, const char *argv[])
 			("threads,t", value<unsigned int>()->default_value(1), "Number of threads")
 			("key_input,i", value<std::string>()->default_value("1111"), "Input dada key")
 			("key_output,o", value<std::string>()->default_value("2222"), "Output dada key")
+			("key_output2,o", value<std::string>(), "Output subband dada key")
 			("config,c", value<std::string>(), "Config json file");
 
 	positional_options_description pos_desc;
@@ -102,15 +103,29 @@ int main(int argc, const char *argv[])
 		{"dms", dedisp.dms},
 		{"ddm", dedisp.ddm},
 		{"ndm", dedisp.ndm},
-		{"ndump", dedisp.ndump},
-		{"tsamp", dedisp.tsamp},
-		{"fmin", *std::min_element(dedisp.frequencies.begin(), dedisp.frequencies.end())},
-		{"fmax", *std::max_element(dedisp.frequencies.begin(), dedisp.frequencies.end())}
+		{"obsinfo", {
+			{"telescope", reader.telescope},
+			{"source_name", reader.source_name},
+			{"ra", reader.ra},
+			{"dec", reader.dec},
+			{"beam", reader.beam},
+			{"tstart", reader.start_mjd.to_day()},
+			{"tsamp", reader.tsamp},
+			{"fch1", reader.frequencies.front()},
+			{"foff", reader.frequencies[1] - reader.frequencies[0]},
+			{"nchans", reader.nchans}
+		}}
 	};
 
 	PSRDADA::Writer writer(vm["key_output"].as<std::string>());
 	writer.prepare(output_header);
 
+	PSRDADA::Writer writer_subband;
+	if (vm.count("key_output2"))
+	{
+		writer_subband.setup(vm["key_output2"].as<std::string>());
+	}
+	
 	while (true)
 	{
 		if (reader.read_data(databuf, ndump) != ndump) break;
@@ -126,5 +141,10 @@ int main(int argc, const char *argv[])
 		if (dedisp.counter < dedisp.offset-dedisp.noverlap+dedisp.ndump) continue;
 
 		writer.run((char *)dedisp.sub.buffertim.data(), dedisp.ndm * dedisp.ndump * sizeof(float));
+
+		if (vm.count("key_output2"))
+		{
+			writer_subband.run((char *)dedisp.sub.bufferT.data(), dedisp.sub.nsub * dedisp.sub.nchans * dedisp.sub.nsamples * sizeof(float));
+		}
 	}
 }
