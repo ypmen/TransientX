@@ -235,27 +235,33 @@ void SinglePulse::prepare(DataBuffer<float> &databuffer)
 	dedisp.prepare(rfi);
 	if (savetim)
 		dedisp.preparedump(fildedisp, outnbits, format);
-
+	
+	boxcar.minw = minw;
+	boxcar.maxw = maxw;
+	boxcar.snrloss = snrloss;
+	boxcar.iqr = iqr;
 	boxcar.prepare(dedisp);
 
-	minw = minw<boxcar.tsamp ? boxcar.tsamp:minw;
-	float wfactor = 1./((1.-snrloss)*(1.-snrloss));
-	vwn.resize(0);
-	vwn.push_back((int)round(minw/boxcar.tsamp));
-	while (true)
-	{
-		int tmp_wn1 = vwn.back();
-		int tmp_wn2 = tmp_wn1*wfactor;
-		tmp_wn2 = tmp_wn2<tmp_wn1+1 ? tmp_wn1+1:tmp_wn2;
-		if (tmp_wn2*boxcar.tsamp > maxw) break;
-		vwn.push_back(tmp_wn2);
-	}
-	nbox = vwn.size();
+	cluster.threS = thre;
+	cluster.radius_smearing = radius_smearing;
+	cluster.kvalue = kvalue;
+	cluster.maxncand = maxncand;
+	cluster.minpts = minpts;
+	cluster.remove_cand_with_maxwidth = remove_cand_with_maxwidth;
+
+	candplot.rootname = rootname;
+	candplot.id = id;
+	candplot.saveimage = saveimage;
 
 	/** form obsinfo*/
 	obsinfo["Source_name"] = source_name;
 
 	obsinfo["Telescope"] = telescope;
+
+	stringstream ss_tstart;
+	ss_tstart << setprecision(13) << fixed << tstart;
+	string s_tstart = ss_tstart.str();
+	obsinfo["Tstart"] = s_tstart;
 
 	string s_ra, s_dec;
 	get_s_radec(src_raj, src_dej, s_ra, s_dec);
@@ -326,11 +332,11 @@ void SinglePulse::run(DataBuffer<float> &databuffer)
 	if (!databuffer.isbusy) data->closable = true;
 	dedisp.run(*data, data->nsamples);
 
-	if (boxcar.run(dedisp, vwn, iqr))
+	if (boxcar.run(dedisp))
 	{
-		if (cluster.run(boxcar, thre, radius_smearing, kvalue, maxncand, minpts, remove_cand_with_maxwidth))
+		if (cluster.run(boxcar))
 		{
-			candplot.plot(cluster, boxcar, dedisp, tstart, thre, rootname, id, fileid, fname, obsinfo, saveimage);
+			candplot.plot(cluster, boxcar, dedisp, fileid, fname, obsinfo);
 		}
 	}
 	
@@ -394,6 +400,9 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
 	sp.maxncand = vm["maxncand"].as<int>();
 	sp.minpts = vm["minpts"].as<int>();
 	sp.remove_cand_with_maxwidth = vm.count("drop");
+
+	sp.rootname = vm["rootname"].as<string>();
+	sp.saveimage = vm.count("saveimage");
 
 	sp.incoherent = vm.count("incoherent");
 
@@ -474,7 +483,6 @@ void parse_json(variables_map &vm, nlohmann::json &config, vector<SinglePulse> &
 	sp.savetim = vm.count("savetim");
 	sp.format = vm["format"].as<string>();
 
-	int id = 0;
 	nlohmann::json config_ddplan = config["ddplan"];
 	for (auto config=config_ddplan.begin(); config!=config_ddplan.end(); ++config)
 	{
@@ -484,6 +492,7 @@ void parse_json(variables_map &vm, nlohmann::json &config, vector<SinglePulse> &
 		nlohmann::json config_dedisp = (*config)["subdedispersion"];
 		nlohmann::json config_boxcar = (*config)["boxcar"];
 		nlohmann::json config_clustering = (*config)["clustering"];
+		nlohmann::json config_candplot = (*config)["candplot"];
 
 		sp.td = config_downsample["td"];
 		sp.fd = config_downsample["fd"];
@@ -514,6 +523,10 @@ void parse_json(variables_map &vm, nlohmann::json &config, vector<SinglePulse> &
 		sp.minpts = config_clustering["minpts"];
 		sp.remove_cand_with_maxwidth = config_clustering["drop"];
 
+		sp.rootname = config_candplot["rootname"];
+		sp.id = config_candplot["plan_id"];
+		sp.saveimage = config_candplot["saveimage"];
+
 		// parse zaplist
 		auto config_zaplist = config_rfi["zaplist"];
 		for (auto z=config_zaplist.begin(); z!=config_zaplist.end(); ++z)
@@ -538,7 +551,6 @@ void parse_json(variables_map &vm, nlohmann::json &config, vector<SinglePulse> &
 			}
 		}
 
-		sp.id = ++id;
 		search.push_back(sp);
 	}
 }

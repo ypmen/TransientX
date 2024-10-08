@@ -16,6 +16,34 @@
 
 Boxcar::Boxcar()
 {
+	minw = 1e-5;
+	maxw = 0.1;
+	snrloss = 0.1;
+	nbox = 0;
+	iqr = false;
+	
+	counter = 0;
+	tsamp = 0.;
+	nsamples = 0;
+	dms = 0.;
+	ddm = 0.;
+	ndm = 0;
+	maxwn = 0;
+	fmin = 0.;
+	fmax = 0.;
+	mxS = NULL;
+	mxwn = NULL;
+}
+
+Boxcar::Boxcar(nlohmann::json &config)
+{
+	minw = config["minw"];
+	maxw = config["maxw"];
+	snrloss = config["snrloss"];
+	iqr = config["iqr"];
+
+	nbox = 0;
+
 	counter = 0;
 	tsamp = 0.;
 	nsamples = 0;
@@ -31,6 +59,12 @@ Boxcar::Boxcar()
 
 Boxcar::Boxcar(const Boxcar &boxcar)
 {
+	minw = boxcar.minw;
+	maxw = boxcar.maxw;
+	snrloss = boxcar.snrloss;
+	nbox = boxcar.nbox;
+	iqr = boxcar.iqr;
+
 	counter = boxcar.counter;
 	tsamp = boxcar.tsamp;
 	nsamples = boxcar.nsamples;
@@ -64,6 +98,12 @@ Boxcar::Boxcar(const Boxcar &boxcar)
 
 Boxcar & Boxcar::operator=(const Boxcar &boxcar)
 {
+	minw = boxcar.minw;
+	maxw = boxcar.maxw;
+	snrloss = boxcar.snrloss;
+	nbox = boxcar.nbox;
+	iqr = boxcar.iqr;
+
 	counter = boxcar.counter;
 	tsamp = boxcar.tsamp;
 	nsamples = boxcar.nsamples;
@@ -153,9 +193,23 @@ void Boxcar::prepare(RealTime::SubbandDedispersion &dedisp)
 		fmax = dedisp.frequencies[j]>fmax? dedisp.frequencies[j]:fmax;
 		fmin = dedisp.frequencies[j]<fmin? dedisp.frequencies[j]:fmin;
 	}
+
+	minw = minw<tsamp ? tsamp:minw;
+	float wfactor = 1./((1.-snrloss)*(1.-snrloss));
+	vwn.resize(0);
+	vwn.push_back((int)round(minw/tsamp));
+	while (true)
+	{
+		int tmp_wn1 = vwn.back();
+		int tmp_wn2 = tmp_wn1*wfactor;
+		tmp_wn2 = tmp_wn2<tmp_wn1+1 ? tmp_wn1+1:tmp_wn2;
+		if (tmp_wn2*tsamp > maxw) break;
+		vwn.push_back(tmp_wn2);
+	}
+	nbox = vwn.size();
 }
 
-bool Boxcar::run(RealTime::SubbandDedispersion &dedisp, vector<int> &vwn, bool iqr)
+bool Boxcar::run(RealTime::SubbandDedispersion &dedisp)
 {
 	counter = dedisp.counter;
 	if (counter < dedisp.offset-dedisp.noverlap+dedisp.ndump) return false;

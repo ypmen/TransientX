@@ -291,14 +291,12 @@ int main(int argc, const char *argv[])
 	long int nsearch = search1.size();
 	for (long int k=0; k<nsearch; k++)
 	{
-		search1[k].rootname = vm["rootname"].as<string>();
 		search1[k].tstart = tstart+nstart*tsamp/86400.;
 		search1[k].source_name = source_name;
 		search1[k].telescope = s_telescope;
 		search1[k].ibeam = ibeam;
 		search1[k].src_raj = src_raj;
 		search1[k].src_dej = src_dej;
-		search1[k].saveimage = vm.count("saveimage");
 
 		reader->get_filterbank_template(search1[k].fildedisp);
 		search1[k].fildedisp.tstart = tstart+nstart*tsamp/86400.;

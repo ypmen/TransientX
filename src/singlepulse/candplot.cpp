@@ -25,15 +25,28 @@ using namespace std;
 
 long int CandPlot::num_cand = 0;
 
-CandPlot::CandPlot(){}
+CandPlot::CandPlot(){
+	rootname = "J0000-00";
+	id = 0;
+	saveimage = false;
+}
+
+CandPlot::CandPlot(nlohmann::json &config)
+{
+	rootname = config["rootname"];
+	id = config["plan_id"];
+	saveimage = config["saveimage"];
+}
 
 CandPlot::~CandPlot(){}
 
-void CandPlot::plot(const Cluster<double> &cluster, const Boxcar &boxcar, const RealTime::SubbandDedispersion &dedisp, double tstart, float threS, const string &rootname, int id, int fileid, std::string &fname, std::map<std::string, std::string> &obsinfo, bool saveimage)
+void CandPlot::plot(const Cluster<double> &cluster, const Boxcar &boxcar, const RealTime::SubbandDedispersion &dedisp, int fileid, std::string &fname, std::map<std::string, std::string> &obsinfo)
 {
 	vector<tuple<long int, long int, int, float>> candlist = cluster.candlist;
 	vector<size_t> idx = argsort(candlist);
 	long int ncand = candlist.size();
+
+	double tstart = std::stold(obsinfo["Tstart"]);
 
 	for (long int iidx=0; iidx<ncand; iidx++)
 	{
@@ -372,9 +385,9 @@ void CandPlot::plot(const Cluster<double> &cluster, const Boxcar &boxcar, const 
 		float vSdm_down_min = *std::min_element(vSdm_down.begin(), vSdm_down.end());
 		float vSdm_down_max = *std::max_element(vSdm_down.begin(), vSdm_down.end());
 		float vdm_down_min = *std::min_element(vdm_down.begin(), vdm_down.end());
-		ax_dmS.annotate("DM = "+s_dm+" cm\\u-3\\dpc", std::min(vSdm_down_min, threS)+0.75*(vSdm_down_max-std::min(vSdm_down_min, threS)), std::min(vdm_down_min, dmpos), {{"xycoords", "data"}, {"rotation", "270"}, {"refpos", "right"}});
+		ax_dmS.annotate("DM = "+s_dm+" cm\\u-3\\dpc", std::min(vSdm_down_min, cluster.threS)+0.75*(vSdm_down_max-std::min(vSdm_down_min, cluster.threS)), std::min(vdm_down_min, dmpos), {{"xycoords", "data"}, {"rotation", "270"}, {"refpos", "right"}});
 		ax_dmS.axhline(dmpos, 0., 1., {{"color", "red"}});
-		ax_dmS.axvline(threS, 0., 1., {{"color", "red"}});
+		ax_dmS.axvline(cluster.threS, 0., 1., {{"color", "red"}});
 		ax_dmS.set_xlabel("S/N");
 		ax_dmS.label(false, false, true, false);
 		ax_dmS.autoscale(true, "y", true);

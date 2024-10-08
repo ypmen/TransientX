@@ -18,12 +18,30 @@ using namespace std;
 template <typename T>
 Cluster<T>::Cluster()
 {
+	threS = 8.;
+	radius_smearing = 1.;
+	kvalue = 2;
+	maxncand = 100;
+	minpts = 5;
+	remove_cand_with_maxwidth = false;
+
 	counter = 0;
 	tsamp = 0.;
 	nsamples = 0;
 	dms = 0.;
 	ddm = 0.;
 	ndm = 0;
+}
+
+template <typename T>
+Cluster<T>::Cluster(nlohmann::json &config)
+{
+	threS = config["thre"];
+	radius_smearing = config["radius"];
+	kvalue = config["neighbors"];
+	maxncand = config["maxncand"];
+	minpts = config["minpts"];
+	remove_cand_with_maxwidth = config["drop"];
 }
 
 template <typename T>
@@ -60,7 +78,7 @@ template <typename T>
 Cluster<T>::~Cluster(){}
 
 template <typename T>
-bool Cluster<T>::run(Boxcar &boxcar, float threS, double radius_smearing, int kvalue, int maxncand, int minpts, bool remove_cand_with_maxwidth)
+bool Cluster<T>::run(Boxcar &boxcar)
 {
 	counter = boxcar.counter;
 	if (counter <= 0) return false;

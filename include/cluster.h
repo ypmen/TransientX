@@ -23,11 +23,19 @@ class Cluster
 {
 public:
 	Cluster();
+	Cluster(nlohmann::json &config);
 	Cluster(const Cluster &cluster);
 	Cluster & operator=(const Cluster &cluster);
 	~Cluster();
-	bool run(Boxcar &boxcar, float threS, double radius_smearing, int kvalue, int maxncand, int minpts, bool remove_cand_with_maxwidth);
+	bool run(Boxcar &boxcar);
 	void dumpstate2txt(const string fname);
+public:
+	float threS;
+	double radius_smearing;
+	int kvalue;
+	int maxncand;
+	int minpts;
+	bool remove_cand_with_maxwidth;
 public:
 	long int counter;
 	double tsamp;

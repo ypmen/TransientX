@@ -15,6 +15,7 @@
 #endif
 
 #include "utils.h"
+#include "json.hpp"
 
 #define RADIUS 4
 #define NEIGHBORS 2
