@@ -15,9 +15,9 @@
 		"drop" : false
 	},
 
-	"canplot" : {
+	"candplot" : {
 		"plan_id" : 0,
 		"rootname" : "J0000-00",
-		"saveimage" : "false"
+		"saveimage" : false
 	}
 }

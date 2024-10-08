@@ -33,9 +33,8 @@ int main(int argc, const char *argv[])
 			("help,h", "Help")
 			("verbose,v", "Print debug information")
 			("threads,t", value<unsigned int>()->default_value(1), "Number of threads")
-			("key_input,i", value<std::string>()->default_value("1111"), "Input dada tim key")
-			("key_input2,i", value<std::string>()->default_value("2222"), "Input dada sub key")
-			("key_output,o", value<std::string>()->default_value("3333"), "Output dada key")
+			("key_input", value<std::string>()->default_value("2222"), "Input dada tim key")
+			("key_input2", value<std::string>()->default_value("3333"), "Input dada sub key")
 			("config,c", value<std::string>(), "Config json file");
 
 	positional_options_description pos_desc;
@@ -85,17 +84,17 @@ int main(int argc, const char *argv[])
 	dedisp.dms = dedisp_header["dms"];
 	dedisp.ddm = dedisp_header["ddm"];
 	dedisp.ndm = dedisp_header["ndm"];
-	dedisp.ndump = reader.get_bufsz() / dedisp.ndm;
+	dedisp.ndump = reader.get_bufsz()/ sizeof(float) / dedisp.ndm;
 
 	nlohmann::json obsinfo_header = dedisp_header["obsinfo"];
 
 	DataBuffer<float> databuf(dedisp.ndump, obsinfo_header["nchans"]);
 	databuf.tsamp = obsinfo_header["tsamp"];
-	double fch1 = dedisp_header["fch1"];
-	double foff = dedisp_header["foff"];
-	for (size_t j=0; j<dedisp_header["nchans"]; j++)
+	double fch1 = obsinfo_header["fch1"];
+	double foff = obsinfo_header["foff"];
+	for (size_t j=0; j<obsinfo_header["nchans"]; j++)
 	{
-		databuf.frequencies.push_back(fch1 + j * foff);
+		databuf.frequencies[j] = fch1 + j * foff;
 	}
 
 	dedisp.prepare(databuf);
@@ -114,7 +113,10 @@ int main(int argc, const char *argv[])
 	std::map<std::string, std::string> obsinfo;
 	obsinfo["Source_name"] = obsinfo_header["source_name"];
 	obsinfo["Telescope"] = obsinfo_header["telescope"];
-	obsinfo["Tstart"] = obsinfo_header["tstart"];
+	stringstream ss_tstart;
+	ss_tstart << setprecision(13) << fixed << obsinfo_header["tstart"];
+	string s_tstart = ss_tstart.str();
+	obsinfo["Tstart"] = s_tstart;
 	obsinfo["RA"] = obsinfo_header["ra"];
 	obsinfo["DEC"] = obsinfo_header["dec"];
 	obsinfo["Beam"] = obsinfo_header["beam"];
@@ -137,7 +139,7 @@ int main(int argc, const char *argv[])
 	while (true)
 	{
 		reader.run((char *)(dedisp.sub.buffertim.data()), dedisp.ndm * dedisp.ndump * sizeof(float));
-		reader.run((char *)(dedisp.sub.bufferT.data()), dedisp.sub.nsub * dedisp.sub.nchans * dedisp.sub.nsamples * sizeof(float));
+		reader_sub.run((char *)(dedisp.sub.bufferT.data()), dedisp.sub.nsub * dedisp.sub.nchans * dedisp.sub.nsamples * sizeof(float));
 		dedisp.counter += dedisp.ndump;
 
 		if (boxcar.run(dedisp))

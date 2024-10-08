@@ -35,7 +35,8 @@ int main(int argc, const char *argv[])
 			("threads,t", value<unsigned int>()->default_value(1), "Number of threads")
 			("key_input,i", value<std::string>()->default_value("1111"), "Input dada key")
 			("key_output,o", value<std::string>()->default_value("2222"), "Output dada key")
-			("key_output2,o", value<std::string>(), "Output subband dada key")
+			("key_output2", value<std::string>(), "Output subband dada key")
+			("nblock,n", value<int>()->default_value(16), "Number of output dada block")
 			("config,c", value<std::string>(), "Config json file");
 
 	positional_options_description pos_desc;
@@ -82,7 +83,7 @@ int main(int argc, const char *argv[])
 	long int nchans = reader.nchans;
 	double tsamp = reader.tsamp;
 
-	long int ndump = reader.get_bufsz() / nchans;
+	long int ndump = reader.get_bufsz() / (reader.nbits / 8) / nchans;
 
 	DataBuffer<float> databuf(ndump, nchans);
 	databuf.tsamp = tsamp;
@@ -97,6 +98,13 @@ int main(int argc, const char *argv[])
 	RealTime::SubbandDedispersion dedisp(config_dedisp);
 	dedisp.ndump = pipeline.nsamples;
 	dedisp.prepare(pipeline);
+
+	// create output dada buffer
+	std::string cmd = "dada_db ";
+	cmd += "-b " + std::to_string(dedisp.ndm * dedisp.ndump * sizeof(float)) + " ";
+	cmd += "-n " + std::to_string(vm["nblock"].as<int>()) + " ";
+	cmd += "-k " + vm["key_output"].as<std::string>();	
+	system(cmd.c_str());
 
 	// write output header
 	nlohmann::json output_header = {
@@ -123,6 +131,12 @@ int main(int argc, const char *argv[])
 	PSRDADA::Writer writer_subband;
 	if (vm.count("key_output2"))
 	{
+		std::string cmd = "dada_db ";
+		cmd += "-b " + std::to_string(dedisp.sub.nsub * dedisp.sub.nchans * dedisp.sub.nsamples * sizeof(float)) + " ";
+		cmd += "-n " + std::to_string(vm["nblock"].as<int>()) + " ";
+		cmd += "-k " + vm["key_output2"].as<std::string>();	
+		system(cmd.c_str());
+
 		writer_subband.setup(vm["key_output2"].as<std::string>());
 	}
 	
