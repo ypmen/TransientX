@@ -37,7 +37,8 @@ template <typename T>
 Cluster<T>::Cluster(nlohmann::json &config)
 {
 	threS = config["thre"];
-	radius_smearing = config["radius"] / 1000.;
+	radius_smearing = config["radius"];
+	radius_smearing /= 1000.;
 	kvalue = config["neighbors"];
 	maxncand = config["maxncand"];
 	minpts = config["minpts"];
