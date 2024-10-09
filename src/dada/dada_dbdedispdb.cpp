@@ -36,6 +36,7 @@ int main(int argc, const char *argv[])
 			("key_input,i", value<std::string>()->default_value("1111"), "Input dada key")
 			("key_output,o", value<std::string>()->default_value("2222"), "Output dada key")
 			("key_output2", value<std::string>(), "Output subband dada key")
+			("dada_args", value<std::string>()->default_value(""), "Extra dada args")
 			("nblock,n", value<int>()->default_value(16), "Number of output dada block")
 			("config,c", value<std::string>(), "Config json file");
 
@@ -100,7 +101,7 @@ int main(int argc, const char *argv[])
 	dedisp.prepare(pipeline);
 
 	// create output dada buffer
-	std::string cmd = "dada_db ";
+	std::string cmd = "dada_db " + vm["dada_args"].as<std::string>() + " ";
 	cmd += "-b " + std::to_string(dedisp.ndm * dedisp.ndump * sizeof(float)) + " ";
 	cmd += "-n " + std::to_string(vm["nblock"].as<int>()) + " ";
 	cmd += "-k " + vm["key_output"].as<std::string>();	
