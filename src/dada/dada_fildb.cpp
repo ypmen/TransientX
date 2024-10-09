@@ -131,13 +131,17 @@ int main(int argc, const char *argv[])
 	reader->skip_head();
 
 	// write output header
+	stringstream ss_tstart;
+	ss_tstart << setprecision(13) << fixed << reader->start_mjd.to_day();
+	string s_tstart = ss_tstart.str();
+
 	nlohmann::json output_header = {
 		{"telescope", reader->telescope},
 		{"source_name",reader->source_name},
 		{"ra", reader->ra},
 		{"dec", reader->dec},
 		{"beam", reader->beam},
-		{"tstart", std::to_string(reader->start_mjd.to_day())},
+		{"tstart", s_tstart},
 		{"nifs", reader->nifs},
 		{"nbits", 8},
 		{"nchans", reader->nchans},

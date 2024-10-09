@@ -119,7 +119,9 @@ int main(int argc, const char *argv[])
 	obsinfo["Tstart"] = s_tstart;
 	obsinfo["RA"] = obsinfo_header["ra"];
 	obsinfo["DEC"] = obsinfo_header["dec"];
-	obsinfo["Beam"] = obsinfo_header["beam"];
+	stringstream ss_beam;
+	ss_beam << setw(5) << setfill('0') << std::stoi(obsinfo_header["beam"].get<std::string>());
+	obsinfo["Beam"] = "Beam" + ss_beam.str();
 
 	double gl = 0., gb = 0.;
 #ifdef HAVE_SOFA
@@ -138,9 +140,11 @@ int main(int argc, const char *argv[])
 
 	while (true)
 	{
+		dedisp.counter += dedisp.ndump;
+		if (dedisp.counter < dedisp.offset-dedisp.noverlap+dedisp.ndump) continue;
+
 		reader.run((char *)(dedisp.sub.buffertim.data()), dedisp.ndm * dedisp.ndump * sizeof(float));
 		reader_sub.run((char *)(dedisp.sub.bufferT.data()), dedisp.sub.nsub * dedisp.sub.nchans * dedisp.sub.nsamples * sizeof(float));
-		dedisp.counter += dedisp.ndump;
 
 		if (boxcar.run(dedisp))
 		{
