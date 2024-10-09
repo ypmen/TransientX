@@ -143,7 +143,11 @@ int main(int argc, const char *argv[])
 	
 	while (true)
 	{
-		if (reader.read_data(databuf, ndump) != ndump) break;
+		if (reader.read_data(databuf, ndump) != ndump) 
+		{
+			BOOST_LOG_TRIVIAL(error)<<"data read failed: size not correct";
+			break;
+		}
 
 		databuf.counter += ndump;
 
