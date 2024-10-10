@@ -119,6 +119,7 @@ SinglePulse::SinglePulse(const SinglePulse &sp)
 	telescope = sp.telescope;
 	fileid = sp.fileid;
 	fname = sp.fname;
+	saveimage = sp.saveimage;
 
 	incoherent = sp.incoherent;
 	verbose = sp.verbose;
@@ -187,6 +188,7 @@ SinglePulse & SinglePulse::operator=(const SinglePulse &sp)
 	telescope = sp.telescope;
 	fileid = sp.fileid;
 	fname = sp.fname;
+	saveimage = sp.saveimage;
 
 	incoherent = sp.incoherent;
 
