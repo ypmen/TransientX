@@ -73,11 +73,13 @@ int main(int argc, const char *argv[])
 	num_threads = vm["threads"].as<unsigned int>();
 
 	nlohmann::json dedisp_header;
+	nlohmann::json dedisp_header2;
 
 	PSRDADA::Reader reader(vm["key_input"].as<std::string>());
 	reader.prepare(dedisp_header);
 
 	PSRDADA::Reader reader_sub(vm["key_input2"].as<std::string>());
+	reader_sub.prepare(dedisp_header2);
 
 	// reconstruct dedisp
 	RealTime::SubbandDedispersion dedisp;

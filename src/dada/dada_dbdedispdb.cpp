@@ -139,6 +139,7 @@ int main(int argc, const char *argv[])
 		system(cmd.c_str());
 
 		writer_subband.setup(vm["key_output2"].as<std::string>());
+		writer_subband.prepare(output_header);
 	}
 	
 	while (true)
