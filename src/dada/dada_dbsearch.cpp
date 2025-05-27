@@ -126,7 +126,7 @@ int main(int argc, const char *argv[])
 	obsinfo["Beam"] = "Beam" + ss_beam.str();
 
 	double gl = 0., gb = 0.;
-#if defined(HAVE_SOFA) || defined(HAVE_ERFA)
+#ifdef HAVE_SOFA
 	get_gl_gb(gl, gb, obsinfo["RA"], obsinfo["DEC"]);
 #endif
 	obsinfo["GL"] = to_string(gl);
