@@ -281,7 +281,7 @@ void SinglePulse::prepare(DataBuffer<float> &databuffer)
 	obsinfo["Beam"] = s_ibeam;
 
 	double gl = 0., gb = 0.;
-#ifdef HAVE_SOFA
+#if defined(HAVE_SOFA) || defined(HAVE_ERFA)
 	get_gl_gb(gl, gb, s_ra, s_dec);
 #endif
 	obsinfo["GL"] = to_string(gl);

@@ -244,7 +244,7 @@ int main(int argc, char *argv[])
 	cand.obsinfo["DEC"] = reader->dec;
 	cand.obsinfo["Telescope"] = reader->telescope;
 	double gl = 0., gb = 0.;
-#ifdef HAVE_SOFA
+#if defined(HAVE_SOFA) || defined(HAVE_ERFA)
 	get_gl_gb(gl, gb, reader->ra, reader->dec);
 #endif
 	cand.obsinfo["GL"] = to_string(gl);

@@ -10,7 +10,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV HOME /home/pulsarx
 
 ENV LD_LIBRARY_PATH=$HOME/software/lib:/usr/local/lib:$LD_LIBRARY_PATH
-ENV YMW16_DIR=$HOME/software/PulsarX/src/ymw16
+ENV YMW16_DIR=$HOME/software/XLibs/src/ymw16
 ENV PATH=$PATH:$HOME/software/bin:$HOME/.local/bin
 ENV OMP_NUM_THREADS=1
 ENV PSRCAT_FILE=/home/pulsarx/software/psrcat_tar/psrcat.db
@@ -72,10 +72,11 @@ USER pulsarx
 
 #install sofa
 WORKDIR $HOME/software
-RUN wget https://www.iausofa.org/2020_0721_C/sofa_c-20200721.tar.gz --no-check-certificate
-RUN tar -zxvf sofa_c-20200721.tar.gz
-WORKDIR $HOME/software/sofa/20200721/c/src
-RUN make && make test
+RUN git clone https://github.com/liberfa/erfa.git
+WORKDIR $HOME/software/erfa
+RUN ./bootstrap
+RUN ./configure --prefix=$HOME/software
+RUN make -j 8 && make install
 
 #install tempo2
 WORKDIR $HOME/software
@@ -84,7 +85,7 @@ WORKDIR $HOME/software/tempo2
 RUN rm -rf .git
 RUN ./bootstrap
 RUN ./configure --prefix=$HOME/software
-RUN make && make install
+RUN make -j 8 && make install
 RUN make plugins-install
 RUN make clean
 
@@ -98,6 +99,8 @@ RUN source makeit && cp psrcat $HOME/software/bin
 WORKDIR $HOME/software
 #install PlotX
 RUN git clone https://github.com/ypmen/PlotX.git
+#install XLibs
+RUN git clone https://github.com/ypmen/XLibs.git
 #install PulsarX
 RUN git clone https://github.com/ypmen/PulsarX.git
 #install BasebandX
@@ -108,25 +111,31 @@ RUN git clone https://github.com/ypmen/TransientX
 WORKDIR $HOME/software/PlotX
 RUN ./bootstrap
 RUN ./configure --prefix=$HOME/software
-RUN make && make install
+RUN make -j 8 && make install
+RUN make clean
+
+WORKDIR $HOME/software/XLibs
+RUN ./bootstrap
+RUN ./configure --prefix=$HOME/software CXXFLAGS="-std=c++11 -O3" LDFLAGS="-L$HOME/software/sofa/20200721/c/src" CPPFLAGS="-I$HOME/software/sofa/20200721/c/src"
+RUN make -j 8 && make install
 RUN make clean
 
 WORKDIR $HOME/software/PulsarX
 RUN ./bootstrap
 RUN ./configure --prefix=$HOME/software CXXFLAGS="-std=c++11 -O3" LDFLAGS="-L$HOME/software/sofa/20200721/c/src -L$HOME/software/lib" CPPFLAGS="-I$HOME/software/sofa/20200721/c/src -I$HOME/software/include"
-RUN make && make install
+RUN make -j 8 && make install
 RUN make clean
 
 WORKDIR $HOME/software/BasebandX
 RUN ./bootstrap
-RUN ./configure --prefix=$HOME/software CXXFLAGS="-std=c++11 -O3"
-RUN make && make install
+RUN ./configure --prefix=$HOME/software CXXFLAGS="-std=c++11 -O3" LDFLAGS="-L$HOME/software/lib" CPPFLAGS="-I$HOME/software/include"
+RUN make -j 8 && make install
 RUN make clean
 
 WORKDIR $HOME/software/TransientX
 RUN ./bootstrap
 RUN ./configure --prefix=$HOME/software CXXFLAGS="-std=c++11 -O3" LDFLAGS="-L$HOME/software/sofa/20200721/c/src -L$HOME/software/lib" CPPFLAGS="-I$HOME/software/sofa/20200721/c/src -I$HOME/software/include"
-RUN make && make install
+RUN make -j 8 && make install
 RUN make clean
 
 USER root
