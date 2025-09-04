@@ -27,6 +27,7 @@ AC_CHECK_LIB([fftw3f_threads], [fftwf_init_threads], [], [echo "library not foun
 BEAR_LIB_PGPLOT([echo "library found"], [echo "library not found!";exit -1])
 X_LIB_PLOTX([echo "library found"], [echo "library not found!";exit -1])
 X_LIB_SOFA([echo "library found"], [echo "library not found!"])
+X_LIB_ERFA([echo "library found"], [echo "library not found!"])
 
 AC_OPENMP
 AX_CHECK_X86_FEATURES
