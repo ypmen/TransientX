@@ -23,6 +23,8 @@ src/dada/dada_dbsearch
 src/dada/dada_dbtim
 src/dada/dada_benchmarkdb
 src/dada/dada_dbnull
+src/dada/dada_dbfiltooldb
+src/dada/dada_dbfil
 .vscode
 
 # http://www.gnu.org/software/automake

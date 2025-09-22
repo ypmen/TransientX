@@ -1,0 +1,6 @@
+{
+	"rootname" : "test",
+	"means" : 128,
+	"std" : 6,
+	"nbits" : 8
+}
