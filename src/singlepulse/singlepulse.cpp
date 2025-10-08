@@ -85,6 +85,7 @@ SinglePulse::SinglePulse(const SinglePulse &sp)
 	threKadaneT = sp.threKadaneT;
 	threKadaneF = sp.threKadaneF;
 	zaplist = sp.zaplist;
+	zaplist_channel = sp.zaplist_channel;
 	rfilist = sp.rfilist;
 	filltype = sp.filltype;
 
@@ -154,6 +155,7 @@ SinglePulse & SinglePulse::operator=(const SinglePulse &sp)
 	threKadaneT = sp.threKadaneT;
 	threKadaneF = sp.threKadaneF;
 	zaplist = sp.zaplist;
+	zaplist_channel = sp.zaplist_channel;
 	rfilist = sp.rfilist;
 	filltype = sp.filltype;
 
@@ -225,6 +227,14 @@ void SinglePulse::prepare(DataBuffer<float> &databuffer)
 	baseline.closable = true;
 
 	rfi.filltype = filltype;
+	rfi.zaplist = zaplist;
+	rfi.zaplist_channel = zaplist_channel;
+	rfi.rfilist = rfilist;
+	rfi.thremask = threMask;
+	rfi.threKadaneT = threKadaneT;
+	rfi.threKadaneF = threKadaneF;
+	rfi.bandlimitKT = bandlimitKT;
+	rfi.widthlimit = widthlimit;
 	rfi.prepare(baseline);
 	rfi.close();
 	rfi.closable = true;
@@ -303,38 +313,8 @@ void SinglePulse::run(DataBuffer<float> &databuffer)
 
 	data = baseline.filter(*data);
 
-	data = rfi.zap(*data, zaplist);
-	if (rfi.isbusy) rfi.closable = false;
-
-	for (auto irfi = rfilist.begin(); irfi!=rfilist.end(); ++irfi)
-	{
-		if ((*irfi)[0] == "mask")
-		{
-			data = rfi.mask(*data, threMask, stoi((*irfi)[1]), stoi((*irfi)[2]));
-			if (rfi.isbusy) rfi.closable = false;
-		}
-		else if ((*irfi)[0] == "kadaneF")
-		{
-			data = rfi.kadaneF(*data, threKadaneF*threKadaneF, widthlimit, stoi((*irfi)[1]), stoi((*irfi)[2]));
-			if (rfi.isbusy) rfi.closable = false;
-		}
-		else if ((*irfi)[0] == "kadaneT")
-		{
-			data = rfi.kadaneT(*data, threKadaneT*threKadaneT, bandlimitKT, stoi((*irfi)[1]), stoi((*irfi)[2]));
-			if (rfi.isbusy) rfi.closable = false;
-		}
-		else if ((*irfi)[0] == "zdot")
-		{
-			data = rfi.zdot(*data);
-			if (rfi.isbusy) rfi.closable = false;
-		}
-		else if ((*irfi)[0] == "zero")
-		{
-			data = rfi.zero(*data);
-			if (rfi.isbusy) rfi.closable = false;
-		}
-	}
-
+	data = rfi.run(*data);
+	
 	if (!databuffer.isbusy) data->closable = true;
 	dedisp.run(*data, data->nsamples);
 
@@ -373,6 +353,25 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
 			{
 				sp.zaplist.push_back(pair<double, double>(stod(*(opt+1)), stod(*(opt+2))));
 				advance(opt, 2);
+			}
+			else if (*opt == "zapchan")
+			{
+				std::string filename = *(opt+1);
+				std::ifstream infile;
+				infile.open(filename);
+				if (infile.fail())
+				{
+					BOOST_LOG_TRIVIAL(error)<<filename<<" not exist";
+					exit(-1);
+				}
+				int ch;
+				while (infile >> ch)
+				{
+					sp.zaplist_channel.push_back(ch);
+				}
+				infile.close();
+
+				advance(opt, 1);
 			}
 			else if (*opt=="zero" or *opt=="zdot")
 			{
@@ -458,6 +457,25 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
 					sp.zaplist.push_back(pair<double, double>(stod(*(opt+1)), stod(*(opt+2))));
 					advance(opt, 2);
 				}
+				else if (*opt == "zapchan")
+				{
+					std::string filename = *(opt+1);
+					std::ifstream infile;
+					infile.open(filename);
+					if (infile.fail())
+					{
+						BOOST_LOG_TRIVIAL(error)<<filename<<" not exist";
+						exit(-1);
+					}
+					int ch;
+					while (infile >> ch)
+					{
+						sp.zaplist_channel.push_back(ch);
+					}
+					infile.close();
+
+					advance(opt, 1);
+				}
 				else if (*opt=="zero" or *opt=="zdot")
 				{
 					vector<string> temp{*opt};
@@ -538,6 +556,12 @@ void parse_json(variables_map &vm, nlohmann::json &config, vector<SinglePulse> &
 		for (auto z=config_zaplist.begin(); z!=config_zaplist.end(); ++z)
 		{
 			sp.zaplist.push_back(std::pair<double, double>(z->front(), z->back()));
+		}
+
+		auto config_zaplist_channel = config_rfi["zaplist_channel"];
+		for (auto z=config_zaplist_channel.begin(); z!=config_zaplist_channel.end(); ++z)
+		{
+			sp.zaplist_channel.push_back(*z);
 		}
 
 		// parse rfilist
