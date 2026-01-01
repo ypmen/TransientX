@@ -78,6 +78,7 @@ int main(int argc, char *argv[])
 			("clean,c", "Remove candidates by dm width snr cutoff")
 			("nosumif", "Do not sum polarizations")
 			("raw", "Extract the raw archives")
+			("white", "Set the background color to white")
 			("cont", "Input files are contiguous")
 			("wts", "Apply DAT_WTS")
 			("scloffs", "Apply DAT_SCL and DAT_OFFS")
@@ -487,7 +488,7 @@ int main(int argc, char *argv[])
 								cands[k].dedisperse(vm.count("coherent"));
 
 								BOOST_LOG_TRIVIAL(debug)<<"save to png...";
-								cands[k].save2png(rootname, snr_threhold);
+								cands[k].save2png(rootname, snr_threhold, vm.count("white"));
 							}
 
 							cands[k].close();

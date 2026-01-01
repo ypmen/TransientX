@@ -107,7 +107,7 @@ public:
 	void save2ar(const std::string &template_file);
 
 	/* save data to png */
-	void save2png(const std::string &rootname, float threS=7.);
+	void save2png(const std::string &rootname, float threS=7., bool white=false);
 
 	/* plot */
 	void plot();
