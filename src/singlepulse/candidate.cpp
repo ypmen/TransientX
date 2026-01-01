@@ -1201,7 +1201,7 @@ void Candidate::peak_search(float snrloss)
 	mjd = mjd_start+(maxtid*tbin)/86400.;
 }
 
-void Candidate::save2png(const std::string &rootname, float threS)
+void Candidate::save2png(const std::string &rootname, float threS, bool white)
 {
 	std::string basename = pngname;
 	basename.erase(basename.find(".png"), 4);
@@ -1472,9 +1472,16 @@ void Candidate::save2png(const std::string &rootname, float threS)
 
 	/** plot */
 	plt::Figure fig(8., 1.5);
-
-	fig.set_background_color("black");
-	fig.set_default_color("white");
+	if (white)
+	{
+		fig.set_background_color("white");
+		fig.set_default_color("black");
+	}
+	else
+	{
+		fig.set_background_color("black");
+		fig.set_default_color("white");
+	}
 
 	float adjustx = 0., adjusty = 0.02;
 	/* profile */
