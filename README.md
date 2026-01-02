@@ -1,6 +1,6 @@
 # TransientX
 
-TransientX is a one command line high performance transient search software (filtterbank and psrfits (--psrfits) are both supported). A detailed user guide can be found in https://transientx.readthedocs.io/en/latest/.
+TransientX is a one command line high performance and environmental friendly transient search software (filtterbank and psrfits (--psrfits) are both supported). A detailed user guide can be found in https://transientx.readthedocs.io/en/latest/.
 
 ## Dependencies
 
