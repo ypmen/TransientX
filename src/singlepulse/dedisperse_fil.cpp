@@ -90,6 +90,7 @@ int main(int argc, const char *argv[])
 			("drop", "Drop candidates with maximum search width")
 			("iqr", "Calculate variance and mean based on IQR")
 			("saveimage", "Save images to fits")
+			("white", "Set the background color to white")
 			("repeater", "Using 2D matched filter (under development)")
 			("mean", value<float>()->default_value(0), "Mean of dedispersed time series")
 			("std", value<float>()->default_value(3), "Standard deviation of dedispersed time series")
@@ -299,6 +300,7 @@ int main(int argc, const char *argv[])
 		search1[k].src_raj = src_raj;
 		search1[k].src_dej = src_dej;
 		search1[k].saveimage = vm.count("saveimage");
+		search1[k].white = vm.count("white");
 
 		reader->get_filterbank_template(search1[k].fildedisp);
 		search1[k].fildedisp.tstart = tstart+nstart*tsamp/86400.;

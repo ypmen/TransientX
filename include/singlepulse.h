@@ -97,6 +97,7 @@ public:
 	int id;
 	string telescope;
 	bool saveimage;
+	bool white;
 
 	int fileid;
 	string fname;

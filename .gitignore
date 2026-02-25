@@ -42,6 +42,7 @@ autom4te.cache
 /config.sub
 /configure
 /configure.scan
+/configure.lineno
 /depcomp
 /install-sh
 /missing

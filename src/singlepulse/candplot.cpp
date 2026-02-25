@@ -29,7 +29,7 @@ CandPlot::CandPlot(){}
 
 CandPlot::~CandPlot(){}
 
-void CandPlot::plot(const Cluster<double> &cluster, const Boxcar &boxcar, const RealTime::SubbandDedispersion &dedisp, double tstart, float threS, const string &rootname, int id, int fileid, std::string &fname, std::map<std::string, std::string> &obsinfo, bool saveimage)
+void CandPlot::plot(const Cluster<double> &cluster, const Boxcar &boxcar, const RealTime::SubbandDedispersion &dedisp, double tstart, float threS, const string &rootname, int id, int fileid, std::string &fname, std::map<std::string, std::string> &obsinfo, bool saveimage, bool white)
 {
 	vector<tuple<long int, long int, int, float>> candlist = cluster.candlist;
 	vector<size_t> idx = argsort(candlist);
@@ -322,8 +322,16 @@ void CandPlot::plot(const Cluster<double> &cluster, const Boxcar &boxcar, const 
 		/** plot */
 		plt::Figure fig(8., 1.5);
 
-		fig.set_background_color("black");
-		fig.set_default_color("white");
+		if (white)
+		{
+			fig.set_background_color("white");
+			fig.set_default_color("black");
+		}
+		else
+		{
+			fig.set_background_color("black");
+			fig.set_default_color("white");
+		}
 
 		float adjustx = 0., adjusty = 0.02;
 		/* profile */
