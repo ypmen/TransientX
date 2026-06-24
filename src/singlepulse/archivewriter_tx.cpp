@@ -54,6 +54,9 @@ void ArchiveWriter::prepare()
 	strcpy(fits.primary.ibeam, to_string(ibeam).c_str());
 
 	fits.primary.chan_dm = dm;
+	fits.primary.obsfreq = 0.5 * (frequencies.back() + frequencies.front());
+	fits.primary.obsbw = (frequencies.back() - frequencies.front()) / (frequencies.size() - 1) * frequencies.size();
+	fits.primary.obsnchan = frequencies.size();
 
 	fits.subint.mode = Integration::FOLD;
 	fits.subint.dtype = Integration::SHORT;
@@ -62,6 +65,18 @@ void ArchiveWriter::prepare()
 	fits.subint.nbin = nbin;
 	fits.subint.tbin = tbin;
 	fits.subint.dm = dm;
+	if (strlen(fits.subint.pol_type) == 0)
+	{
+		if (npol == 1)
+		{
+			strcpy(fits.subint.pol_type, "AA+BB");
+		}
+		else
+		{
+			strcpy(fits.subint.pol_type, "AABBCRCI");
+		}
+	}
+	fits.subint.reffreq = 0.5 * (frequencies.back() + frequencies.front());
 
 	fits.parse_template(template_file);
 	fits.primary.unload(fits.fptr);

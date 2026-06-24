@@ -35,9 +35,6 @@ unsigned int num_threads;
 unsigned int dbscan_radius;
 unsigned int dbscan_k;
 
-bool repeater;
-bool dumptim=false;
-
 int main(int argc, const char *argv[])
 {
 	init_logging();
@@ -74,7 +71,7 @@ int main(int argc, const char *argv[])
 			("maxncand", value<int>()->default_value(100), "Maximum number of candidates in one data block")
 			("minpts", value<int>()->default_value(5), "Minimum points in one cluster")
 			("baseline", value<vector<float>>()->multitoken()->default_value(vector<float>{0.0, 0.1}, "0.0, 0.1"), "The scale of baseline remove (s)")
-			("rfi,z", value<vector<string>>()->multitoken()->zero_tokens()->composing(), "RFI mitigation [[mask tdRFI fdRFI] [kadaneF tdRFI fdRFI] [kadaneT tdRFI fdRFI] [zap fl fh] [zdot] [zero]]")
+			("rfi,z", value<vector<string>>()->multitoken()->zero_tokens()->composing(), "RFI mitigation [[mask tdRFI fdRFI] [kadaneF tdRFI fdRFI] [kadaneT tdRFI fdRFI] [zap fl fh] [zapchan zapfile] [zdot] [zero]]")
 			("bandlimit", value<double>()->default_value(10), "Band limit of RFI mask (MHz)")
 			("bandlimitKT", value<double>()->default_value(10), "Band limit of RFI kadaneT (MHz)")
 			("widthlimit", value<double>()->default_value(50e-3), "Width limit of RFI kadaneF (s)")
@@ -145,7 +142,6 @@ int main(int argc, const char *argv[])
 	}
 
 	bool contiguous = vm.count("cont");
-	repeater = vm.count("repeater");
 
 	num_threads = vm["threads"].as<unsigned int>();
 
@@ -292,7 +288,6 @@ int main(int argc, const char *argv[])
 	long int nsearch = search1.size();
 	for (long int k=0; k<nsearch; k++)
 	{
-		search1[k].rootname = vm["rootname"].as<string>();
 		search1[k].tstart = tstart+nstart*tsamp/86400.;
 		search1[k].source_name = source_name;
 		search1[k].telescope = s_telescope;

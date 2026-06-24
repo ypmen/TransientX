@@ -14,6 +14,8 @@
 #include <utility>
 #include <map>
 
+#include "constants.h"
+
 class Candidate
 {
 public:
@@ -115,7 +117,7 @@ public:
 public:
 	static double dmdelay(double dm, double fh, double fl)
 	{
-		return 4.148741601e3*dm*(1./(fl*fl)-1./(fh*fh));
+		return dispersion_delay(dm, fh, fl);
 	}
 public:
 	bool captured;

@@ -382,8 +382,8 @@ void Candidate::downsample(int td, int fd)
 {
 	if (td == 1 && fd == 1) return;
 
-	int nchan_new = nchan/fd;
-	int nbin_new = nbin/td;
+	size_t nchan_new = nchan/fd;
+	size_t nbin_new = nbin/td;
 
 	std::vector<float> data_new(npol*nchan_new*nbin_new, 0.);
 	

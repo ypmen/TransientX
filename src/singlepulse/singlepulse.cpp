@@ -38,6 +38,7 @@ SinglePulse::SinglePulse()
 	snrloss = 0.1;
 	nbox = 0;
 	iqr = false;
+	repeater = false;
 	thre = 7;
 	radius_smearing = 0.003;
 	kvalue = 2;
@@ -85,6 +86,7 @@ SinglePulse::SinglePulse(const SinglePulse &sp)
 	threKadaneT = sp.threKadaneT;
 	threKadaneF = sp.threKadaneF;
 	zaplist = sp.zaplist;
+	zaplist_channel = sp.zaplist_channel;
 	rfilist = sp.rfilist;
 	filltype = sp.filltype;
 
@@ -98,6 +100,7 @@ SinglePulse::SinglePulse(const SinglePulse &sp)
 	nbox = sp.nbox;
 	vwn = sp.vwn;
 	iqr = sp.iqr;
+	repeater = sp.repeater;
 
 	thre = sp.thre;
 	radius_smearing = sp.radius_smearing;
@@ -118,6 +121,7 @@ SinglePulse::SinglePulse(const SinglePulse &sp)
 	telescope = sp.telescope;
 	fileid = sp.fileid;
 	fname = sp.fname;
+	saveimage = sp.saveimage;
 
 	incoherent = sp.incoherent;
 	verbose = sp.verbose;
@@ -152,6 +156,7 @@ SinglePulse & SinglePulse::operator=(const SinglePulse &sp)
 	threKadaneT = sp.threKadaneT;
 	threKadaneF = sp.threKadaneF;
 	zaplist = sp.zaplist;
+	zaplist_channel = sp.zaplist_channel;
 	rfilist = sp.rfilist;
 	filltype = sp.filltype;
 
@@ -165,6 +170,7 @@ SinglePulse & SinglePulse::operator=(const SinglePulse &sp)
 	nbox = sp.nbox;
 	vwn = sp.vwn;
 	iqr = sp.iqr;
+	repeater = sp.repeater;
 
 	thre = sp.thre;
 	radius_smearing = sp.radius_smearing;
@@ -185,6 +191,7 @@ SinglePulse & SinglePulse::operator=(const SinglePulse &sp)
 	telescope = sp.telescope;
 	fileid = sp.fileid;
 	fname = sp.fname;
+	saveimage = sp.saveimage;
 
 	incoherent = sp.incoherent;
 
@@ -221,6 +228,14 @@ void SinglePulse::prepare(DataBuffer<float> &databuffer)
 	baseline.closable = true;
 
 	rfi.filltype = filltype;
+	rfi.zaplist = zaplist;
+	rfi.zaplist_channel = zaplist_channel;
+	rfi.rfilist = rfilist;
+	rfi.thremask = threMask;
+	rfi.threKadaneT = threKadaneT;
+	rfi.threKadaneF = threKadaneF;
+	rfi.bandlimitKT = bandlimitKT;
+	rfi.widthlimit = widthlimit;
 	rfi.prepare(baseline);
 	rfi.close();
 	rfi.closable = true;
@@ -236,27 +251,34 @@ void SinglePulse::prepare(DataBuffer<float> &databuffer)
 	dedisp.prepare(rfi);
 	if (savetim)
 		dedisp.preparedump(fildedisp, outnbits, format);
-
+	
+	boxcar.minw = minw;
+	boxcar.maxw = maxw;
+	boxcar.snrloss = snrloss;
+	boxcar.iqr = iqr;
+	boxcar.repeater = repeater;
 	boxcar.prepare(dedisp);
 
-	minw = minw<boxcar.tsamp ? boxcar.tsamp:minw;
-	float wfactor = 1./((1.-snrloss)*(1.-snrloss));
-	vwn.resize(0);
-	vwn.push_back((int)round(minw/boxcar.tsamp));
-	while (true)
-	{
-		int tmp_wn1 = vwn.back();
-		int tmp_wn2 = tmp_wn1*wfactor;
-		tmp_wn2 = tmp_wn2<tmp_wn1+1 ? tmp_wn1+1:tmp_wn2;
-		if (tmp_wn2*boxcar.tsamp > maxw) break;
-		vwn.push_back(tmp_wn2);
-	}
-	nbox = vwn.size();
+	cluster.threS = thre;
+	cluster.radius_smearing = radius_smearing;
+	cluster.kvalue = kvalue;
+	cluster.maxncand = maxncand;
+	cluster.minpts = minpts;
+	cluster.remove_cand_with_maxwidth = remove_cand_with_maxwidth;
+
+	candplot.rootname = rootname;
+	candplot.id = id;
+	candplot.saveimage = saveimage;
 
 	/** form obsinfo*/
 	obsinfo["Source_name"] = source_name;
 
 	obsinfo["Telescope"] = telescope;
+
+	stringstream ss_tstart;
+	ss_tstart << setprecision(13) << fixed << tstart;
+	string s_tstart = ss_tstart.str();
+	obsinfo["Tstart"] = s_tstart;
 
 	string s_ra, s_dec;
 	get_s_radec(src_raj, src_dej, s_ra, s_dec);
@@ -292,44 +314,14 @@ void SinglePulse::run(DataBuffer<float> &databuffer)
 
 	data = baseline.filter(*data);
 
-	data = rfi.zap(*data, zaplist);
-	if (rfi.isbusy) rfi.closable = false;
-
-	for (auto irfi = rfilist.begin(); irfi!=rfilist.end(); ++irfi)
-	{
-		if ((*irfi)[0] == "mask")
-		{
-			data = rfi.mask(*data, threMask, stoi((*irfi)[1]), stoi((*irfi)[2]));
-			if (rfi.isbusy) rfi.closable = false;
-		}
-		else if ((*irfi)[0] == "kadaneF")
-		{
-			data = rfi.kadaneF(*data, threKadaneF*threKadaneF, widthlimit, stoi((*irfi)[1]), stoi((*irfi)[2]));
-			if (rfi.isbusy) rfi.closable = false;
-		}
-		else if ((*irfi)[0] == "kadaneT")
-		{
-			data = rfi.kadaneT(*data, threKadaneT*threKadaneT, bandlimitKT, stoi((*irfi)[1]), stoi((*irfi)[2]));
-			if (rfi.isbusy) rfi.closable = false;
-		}
-		else if ((*irfi)[0] == "zdot")
-		{
-			data = rfi.zdot(*data);
-			if (rfi.isbusy) rfi.closable = false;
-		}
-		else if ((*irfi)[0] == "zero")
-		{
-			data = rfi.zero(*data);
-			if (rfi.isbusy) rfi.closable = false;
-		}
-	}
-
+	data = rfi.run(*data);
+	
 	if (!databuffer.isbusy) data->closable = true;
 	dedisp.run(*data, data->nsamples);
 
-	if (boxcar.run(dedisp, vwn, iqr))
+	if (boxcar.run(dedisp))
 	{
-		if (cluster.run(boxcar, thre, radius_smearing, kvalue, maxncand, minpts, remove_cand_with_maxwidth))
+		if (cluster.run(boxcar))
 		{
 			candplot.plot(cluster, boxcar, dedisp, tstart, thre, rootname, id, fileid, fname, obsinfo, saveimage, white);
 		}
@@ -363,6 +355,25 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
 				sp.zaplist.push_back(pair<double, double>(stod(*(opt+1)), stod(*(opt+2))));
 				advance(opt, 2);
 			}
+			else if (*opt == "zapchan")
+			{
+				std::string filename = *(opt+1);
+				std::ifstream infile;
+				infile.open(filename);
+				if (infile.fail())
+				{
+					BOOST_LOG_TRIVIAL(error)<<filename<<" not exist";
+					exit(-1);
+				}
+				int ch;
+				while (infile >> ch)
+				{
+					sp.zaplist_channel.push_back(ch);
+				}
+				infile.close();
+
+				advance(opt, 1);
+			}
 			else if (*opt=="zero" or *opt=="zdot")
 			{
 				vector<string> temp{*opt};
@@ -395,6 +406,9 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
 	sp.maxncand = vm["maxncand"].as<int>();
 	sp.minpts = vm["minpts"].as<int>();
 	sp.remove_cand_with_maxwidth = vm.count("drop");
+
+	sp.rootname = vm["rootname"].as<string>();
+	sp.saveimage = vm.count("saveimage");
 
 	sp.incoherent = vm.count("incoherent");
 
@@ -444,6 +458,25 @@ void parse(variables_map &vm, vector<SinglePulse> &search)
 					sp.zaplist.push_back(pair<double, double>(stod(*(opt+1)), stod(*(opt+2))));
 					advance(opt, 2);
 				}
+				else if (*opt == "zapchan")
+				{
+					std::string filename = *(opt+1);
+					std::ifstream infile;
+					infile.open(filename);
+					if (infile.fail())
+					{
+						BOOST_LOG_TRIVIAL(error)<<filename<<" not exist";
+						exit(-1);
+					}
+					int ch;
+					while (infile >> ch)
+					{
+						sp.zaplist_channel.push_back(ch);
+					}
+					infile.close();
+
+					advance(opt, 1);
+				}
 				else if (*opt=="zero" or *opt=="zdot")
 				{
 					vector<string> temp{*opt};
@@ -475,7 +508,6 @@ void parse_json(variables_map &vm, nlohmann::json &config, vector<SinglePulse> &
 	sp.savetim = vm.count("savetim");
 	sp.format = vm["format"].as<string>();
 
-	int id = 0;
 	nlohmann::json config_ddplan = config["ddplan"];
 	for (auto config=config_ddplan.begin(); config!=config_ddplan.end(); ++config)
 	{
@@ -485,6 +517,7 @@ void parse_json(variables_map &vm, nlohmann::json &config, vector<SinglePulse> &
 		nlohmann::json config_dedisp = (*config)["subdedispersion"];
 		nlohmann::json config_boxcar = (*config)["boxcar"];
 		nlohmann::json config_clustering = (*config)["clustering"];
+		nlohmann::json config_candplot = (*config)["candplot"];
 
 		sp.td = config_downsample["td"];
 		sp.fd = config_downsample["fd"];
@@ -515,11 +548,21 @@ void parse_json(variables_map &vm, nlohmann::json &config, vector<SinglePulse> &
 		sp.minpts = config_clustering["minpts"];
 		sp.remove_cand_with_maxwidth = config_clustering["drop"];
 
+		sp.rootname = config_candplot["rootname"];
+		sp.id = config_candplot["plan_id"];
+		sp.saveimage = config_candplot["saveimage"];
+
 		// parse zaplist
 		auto config_zaplist = config_rfi["zaplist"];
 		for (auto z=config_zaplist.begin(); z!=config_zaplist.end(); ++z)
 		{
 			sp.zaplist.push_back(std::pair<double, double>(z->front(), z->back()));
+		}
+
+		auto config_zaplist_channel = config_rfi["zaplist_channel"];
+		for (auto z=config_zaplist_channel.begin(); z!=config_zaplist_channel.end(); ++z)
+		{
+			sp.zaplist_channel.push_back(*z);
 		}
 
 		// parse rfilist
@@ -539,7 +582,6 @@ void parse_json(variables_map &vm, nlohmann::json &config, vector<SinglePulse> &
 			}
 		}
 
-		sp.id = ++id;
 		search.push_back(sp);
 	}
 }

@@ -21,6 +21,7 @@ class CandPlot
 {
 public:
 	CandPlot();
+	CandPlot(nlohmann::json &config);
 	~CandPlot();
 	void plot(const Cluster<double> &cluster, const Boxcar &boxcar, const RealTime::SubbandDedispersion &dedisp, double tstart, float threS, const string &rootname, int id, int fileid, std::string &fname, std::map<std::string, std::string> &obsinfo, bool saveimage=false, bool white=false);
 private:
@@ -33,6 +34,11 @@ private:
 
 	return idx;
 	}
+public:
+	string rootname;
+	int id;
+	bool saveimage;
+
 public:
 	static long int num_cand;
 };

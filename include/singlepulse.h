@@ -56,6 +56,7 @@ public:
 
 	//rfi
 	vector<pair<double, double>> zaplist;
+	vector<int> zaplist_channel;
 	vector<vector<string>> rfilist;
 	double bandlimit;
 	double bandlimitKT;
@@ -77,6 +78,7 @@ public:
 	float snrloss;
 	int nbox;
 	bool iqr;
+	bool repeater;
 	vector<int> vwn;
 
 	//cluster
