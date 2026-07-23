@@ -323,7 +323,7 @@ void SinglePulse::run(DataBuffer<float> &databuffer)
 	{
 		if (cluster.run(boxcar))
 		{
-			candplot.plot(cluster, boxcar, dedisp, tstart, thre, rootname, id, fileid, fname, obsinfo, saveimage, white);
+			candplot.plot(cluster, boxcar, dedisp, id, fileid, fname, obsinfo, saveimage, white);
 		}
 	}
 	

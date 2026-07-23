@@ -40,7 +40,7 @@ CandPlot::CandPlot(nlohmann::json &config)
 
 CandPlot::~CandPlot(){}
 
-void CandPlot::plot(const Cluster<double> &cluster, const Boxcar &boxcar, const RealTime::SubbandDedispersion &dedisp, double tstart, float threS, const string &rootname, int id, int fileid, std::string &fname, std::map<std::string, std::string> &obsinfo, bool saveimage, bool white)
+void CandPlot::plot(const Cluster<double> &cluster, const Boxcar &boxcar, const RealTime::SubbandDedispersion &dedisp, int id, int fileid, std::string &fname, std::map<std::string, std::string> &obsinfo, bool saveimage, bool white)
 {
 	vector<tuple<long int, long int, int, float>> candlist = cluster.candlist;
 	vector<size_t> idx = argsort(candlist);
